@@ -11,7 +11,7 @@ class NHPP:
         if self.__time_bins[0] != 0 or self.__time_bins[-1] != self.__T:
             raise Exception('Invalid time intervals. Must start with t=0 and end with t=T')
 
-        self.__numOfTimeBins = len(self.__timeBins)
+        self.__numOfTimeBins = len(self.__time_bins)
         # Find the max lambda values for each interval, add [0] to start the indexing from 1
         self.__lambdaValues = [0] + [max(intensity_func(t=self.__time_bins[inx - 1]), intensity_func(t=self.__time_bins[inx])) 
                                         for inx in range(1, self.__numOfTimeBins)]
