@@ -28,9 +28,6 @@ class BasicNewtonianModel:
     def __get_position(self, i, t):
         return self.__x[i, :] + self.__v[i, :] * t
 
-    def __get_velocity(self, i, t):
-        return self.__v[i, :] * t
-
     def __calculate_distance(self, i, j, t):
         '''
         Calculates the Eucledian distance between node i and j at time t
