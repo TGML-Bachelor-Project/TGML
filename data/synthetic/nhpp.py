@@ -55,5 +55,3 @@ class NHPP:
                 # Step 10 -> Loop starts over going back to step 3
 
         return S
-
-
