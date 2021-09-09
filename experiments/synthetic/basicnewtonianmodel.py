@@ -28,7 +28,21 @@ if __name__ == '__main__':
 
     bnm = BasicNewtonianModel(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
     events = bnm.sample_interaction_times_for_all_node_pairs()
+    dataset = []
 
+    # Build dataset of node interactions
     for i in range(numOfNodes):
         for j in range(i+1, numOfNodes):
             print("Events for node pair ({}-{}): {}".format(i, j, events[i][j]))
+        # TODO Create dataset of node interactions by [i,j,events[i][j]]
+
+    
+    # TODO Define model
+
+    # TODO Split dataset into training and testing
+
+    # TODO Train and evaluate model visualize training metrics with plots
+
+    # TODO Visualize model predictions of network evolution over time
+
+    
