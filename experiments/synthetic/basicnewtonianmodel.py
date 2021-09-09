@@ -33,9 +33,15 @@ if __name__ == '__main__':
     # Build dataset of node interactions
     for i in range(numOfNodes):
         for j in range(i+1, numOfNodes):
-            print("Events for node pair ({}-{}): {}".format(i, j, events[i][j]))
-        # TODO Create dataset of node interactions by [i,j,events[i][j]]
+            nodepair_events = events[i][j]
+            print("Events for node pair ({}-{}): {}".format(i, j, nodepair_events))
+            for np_event in nodepair_events:
+                dataset.append([i,j, np_event])
 
+    # Make sure dataset is numpy array
+    dataset = np.asarray(dataset)
+    # Make sure dataset is sorted according to increasing event times in column index 2
+    dataset = dataset[dataset[:, 2].argsort()]
     
     # TODO Define model
 
