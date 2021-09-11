@@ -1,12 +1,9 @@
 import os, sys
 import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__)))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from models.basicnewtonian import BasicNewtonianModel
-
-from data.synthetic import nhpp
-from models import basicnewtonian
+from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 if __name__ == '__main__':
     # A simple example for 2 nodes
@@ -26,7 +23,7 @@ if __name__ == '__main__':
     # Bias values for nodes
     gamma = 0.5 * np.ones(shape=(numOfNodes, ))
 
-    bnm = BasicNewtonianModel(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
+    bnm = ConstantVelocitySimulator(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
     events = bnm.sample_interaction_times_for_all_node_pairs()
     dataset = []
 
@@ -42,6 +39,8 @@ if __name__ == '__main__':
     dataset = np.asarray(dataset)
     # Make sure dataset is sorted according to increasing event times in column index 2
     dataset = dataset[dataset[:, 2].argsort()]
+
+    print(dataset)
     
     # TODO Define model
 
