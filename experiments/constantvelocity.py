@@ -1,8 +1,11 @@
+# Add necessary folders/files to path
 import os, sys
 import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# Imports
+from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 if __name__ == '__main__':
@@ -23,11 +26,12 @@ if __name__ == '__main__':
     # Bias values for nodes
     gamma = 0.5 * np.ones(shape=(numOfNodes, ))
 
-    bnm = ConstantVelocitySimulator(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
-    events = bnm.sample_interaction_times_for_all_node_pairs()
-    dataset = []
+    # Simulate events from a non-homogeneous Poisson distribution
+    event_simulator = ConstantVelocitySimulator(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
+    events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
-    # Build dataset of node interactions
+    # Build dataset of node pair interactions
+    dataset = []
     for i in range(numOfNodes):
         for j in range(i+1, numOfNodes):
             nodepair_events = events[i][j]
@@ -43,11 +47,6 @@ if __name__ == '__main__':
     print(dataset)
     
     # TODO Define model
+    model = BasicEuclideanDistModel()
 
-    # TODO Split dataset into training and testing
-
-    # TODO Train and evaluate model visualize training metrics with plots
-
-    # TODO Visualize model predictions of network evolution over time
-
-    
+    # Model training and evaluation
