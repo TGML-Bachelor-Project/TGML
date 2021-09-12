@@ -5,10 +5,13 @@ from utils.integralapproximation import riemann_sum
 #torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2) # not sure of this line
 
 class BasicEuclideanDistModel(nn.Module):
-    def __init__(self, n_points, init_beta, riemann_samples, node_pair_samples, non_intensity_weight=1):
+    def __init__(self, n_points, init_betas, riemann_samples, node_pair_samples, non_intensity_weight=1):
         super().__init__()
 
-        self.beta = nn.Parameter(torch.tensor([[init_beta]]), requires_grad=True)
+        if len(init_betas) != 2:
+            raise Exception('The BasicEuclideanDistModel uses two beta values for the loglikelihood')
+        self.beta1 = nn.Parameter(torch.tensor([[init_betas[0]]]), requires_grad=True)
+        self.beta2 = nn.Parameter(torch.tensor([[init_betas[1]]]), requires_grad=True)
         self.z0 = nn.Parameter(self.init_parameter(torch.zeros(size=(n_points,2))), requires_grad=False)
         self.v0 = nn.Parameter(self.init_parameter(torch.zeros(size=(n_points,2))), requires_grad=False)
         self.z0 = nn.Parameter(self.init_parameter(self.z0), requires_grad=True)
@@ -22,9 +25,6 @@ class BasicEuclideanDistModel(nn.Module):
         self.integral_samples=riemann_samples
         self.node_pair_samples = node_pair_samples
         self.non_event_weight = non_intensity_weight
-
-    def init_beta(self, tensor):
-        return torch.nn.init.uniform_(tensor, a=0, b=0.025)
 
     def init_parameter(self, tensor):
         #a,b = shape, r1,r2 = range
@@ -46,7 +46,7 @@ class BasicEuclideanDistModel(nn.Module):
     def intensity_fun(self, t, u, v):
         z = self.step(t)
         d = self.get_euclidean_dist(t, u, v)
-        return torch.exp(self.beta - d)
+        return torch.exp(self.beta1  + self.beta2 - d)
 
 
     def forward(self, data, t0, tn):
@@ -55,7 +55,7 @@ class BasicEuclideanDistModel(nn.Module):
 
         for u, v, event_time in data:
             u, v = u.long(), v.long() # cast to int for indexing
-            event_intensity += self.beta - self.get_euclidean_dist(event_time, u, v)
+            event_intensity += self.beta1 - self.get_euclidean_dist(event_time, u, v)
 
         triu_samples = torch.randperm(self.n_node_pairs)[:self.node_pair_samples]
         for idx in triu_samples:

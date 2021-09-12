@@ -1,10 +1,15 @@
 # Add necessary folders/files to path
 import os, sys
-import numpy as np
+from utils.integralapproximation import riemann_sum
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# Set device as cpu or gpu for pytorch
+import torch
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 # Imports
+import numpy as np
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
@@ -43,10 +48,14 @@ if __name__ == '__main__':
     dataset = np.asarray(dataset)
     # Make sure dataset is sorted according to increasing event times in column index 2
     dataset = dataset[dataset[:, 2].argsort()]
-
     print(dataset)
     
-    # TODO Define model
-    model = BasicEuclideanDistModel()
+    # Define model
+    betas = [0.1, 0.1]
+    model = BasicEuclideanDistModel(n_points=4, init_betas=betas, riemann_samples=2, node_pair_samples=3)
 
-    # Model training and evaluation
+    # Send data and model to same Pytorch device
+    data = torch.from_numpy(dataset).to(device)
+    model = model.to(device)
+
+    # Model training and evaluation using pytorch-ignite framework
