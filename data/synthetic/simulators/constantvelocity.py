@@ -1,7 +1,7 @@
 import numpy as np
-from data.synthetic.nhpp import NHPP
+from data.synthetic.distributions.nhpp import NHPP
 
-class BasicNewtonianModel:
+class ConstantVelocitySimulator:
     '''
     Model using Newtonian dynamics in the form of constant velocities
     to model node pair interactions based on Euclidean distance in a latent space.
