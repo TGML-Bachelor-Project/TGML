@@ -1,11 +1,13 @@
 # Add necessary folders/files to path
 import os, sys
-from utils.integralapproximation import riemann_sum
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Set device as cpu or gpu for pytorch
 import torch
+from torch.optim import Adam
+from torch.utils.data import DataLoader
+from utils.integralapproximation import riemann_sum
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Imports
@@ -49,13 +51,90 @@ if __name__ == '__main__':
     # Make sure dataset is sorted according to increasing event times in column index 2
     dataset = dataset[dataset[:, 2].argsort()]
     print(dataset)
+    # Split in train and test set
+    training_portion = 0.8
+    last_training_idx = int(len(dataset)*training_portion)
+    train_data = dataset[:last_training_idx]
+    train_loader = DataLoader(train_data, batch_size=2, shuffle=False)
+    test_data = dataset[last_training_idx:]
+    val_loader = DataLoader(test_data, batch_size=2, shuffle=False)
+
     
     # Define model
     betas = [0.1, 0.1]
     model = BasicEuclideanDistModel(n_points=4, init_betas=betas, riemann_samples=2, node_pair_samples=3)
 
     # Send data and model to same Pytorch device
-    data = torch.from_numpy(dataset).to(device)
     model = model.to(device)
 
     # Model training and evaluation using pytorch-ignite framework
+    t_start = torch.tensor([0.0]).to(device)
+    time_column_idx = 2
+
+    ######### Setting up training
+    optimizer = Adam(model.parameters(), lr=0.025)
+
+    from ignite.engine import Engine
+
+    def train_step(engine, batch):
+        X = batch.to(device)
+
+        model.train()
+        loglikelihood = model(X, t0=t_start, tn=batch[-1][time_column_idx])
+        loss = -loglikelihood
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        print(f'Training Loss: {loss}')
+        return loss
+
+    trainer = Engine(train_step)
+
+    ######## Setting up evaluation
+    def validation_step(engine, batch):
+        model.eval()
+
+        with torch.no_grad():
+            X = batch
+            test_loss = model(X, t0=t_start, tn=batch[-1][time_column_idx])
+            return test_loss
+
+    evaluator = Engine(validation_step)
+
+
+    ########## Handlers
+    from ignite.engine import Events
+
+    # Show a message when the training begins
+    @trainer.on(Events.STARTED)
+    def start_message():
+        print("Start training!")
+
+    # Handler can be what you want, here a lambda ! 
+    trainer.add_event_handler(
+        Events.COMPLETED, 
+        lambda _: print("Training completed!")
+    )
+
+    # Run evaluator on val_loader every trainer's epoch completed
+    @trainer.on(Events.EPOCH_COMPLETED)
+    def run_validation():
+        evaluator.run(val_loader)
+
+    @evaluator.on(Events.STARTED)
+    def eval_start_message():
+        print('Starting evaluation!')
+
+    # Handler can be what you want, here a lambda ! 
+    evaluator.add_event_handler(
+        Events.COMPLETED, 
+        lambda _: print("Evaluation completed!")
+    )
+    trainer.run(train_loader, max_epochs=10)
+
+    # Print model params
+    print(f'Beta: {model.beta}')
+    print(f'Z: {model.z0}')
+    print(f'V: {model.v0}')
