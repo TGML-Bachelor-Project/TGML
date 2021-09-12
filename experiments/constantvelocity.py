@@ -72,6 +72,9 @@ if __name__ == '__main__':
     time_column_idx = 2
 
     ######### Setting up training
+    metrics = {
+        'loss': []
+    }
     optimizer = Adam(model.parameters(), lr=0.025)
 
     from ignite.engine import Engine
@@ -82,12 +85,12 @@ if __name__ == '__main__':
         model.train()
         loglikelihood = model(X, t0=t_start, tn=batch[-1][time_column_idx])
         loss = -loglikelihood
+        metrics['loss'].append(loss.item())
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        print(f'Training Loss: {loss}')
         return loss
 
     trainer = Engine(train_step)
@@ -132,9 +135,17 @@ if __name__ == '__main__':
         Events.COMPLETED, 
         lambda _: print("Evaluation completed!")
     )
+
     trainer.run(train_loader, max_epochs=10)
 
     # Print model params
     print(f'Beta: {model.beta}')
     print(f'Z: {model.z0}')
     print(f'V: {model.v0}')
+
+    import matplotlib.pyplot as plt
+    plt.title('Model Log Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Log Loss')
+    plt.plot(metrics['loss'])
+    plt.show()
