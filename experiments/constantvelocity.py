@@ -73,7 +73,8 @@ if __name__ == '__main__':
 
     ######### Setting up training
     metrics = {
-        'loss': []
+        'train_loss': [],
+        'test_loss': []
     }
     optimizer = Adam(model.parameters(), lr=0.025)
 
@@ -85,7 +86,7 @@ if __name__ == '__main__':
         model.train()
         loglikelihood = model(X, t0=t_start, tn=batch[-1][time_column_idx])
         loss = -loglikelihood
-        metrics['loss'].append(loss.item())
+        metrics['train_loss'].append(loss.item())
 
         optimizer.zero_grad()
         loss.backward()
@@ -102,6 +103,7 @@ if __name__ == '__main__':
         with torch.no_grad():
             X = batch
             test_loss = model(X, t0=t_start, tn=batch[-1][time_column_idx])
+            metrics['test_loss'].append(test_loss.item())
             return test_loss
 
     evaluator = Engine(validation_step)
@@ -136,16 +138,19 @@ if __name__ == '__main__':
         lambda _: print("Evaluation completed!")
     )
 
-    trainer.run(train_loader, max_epochs=10)
+    trainer.run(train_loader, max_epochs=100)
 
     # Print model params
     print(f'Beta: {model.beta}')
     print(f'Z: {model.z0}')
     print(f'V: {model.v0}')
 
+    # Plot loss in training and test
     import matplotlib.pyplot as plt
     plt.title('Model Log Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Log Loss')
-    plt.plot(metrics['loss'])
+    for k in metrics.keys():
+        plt.plot(metrics[k], label=k)
+    plt.legend()
     plt.show()
