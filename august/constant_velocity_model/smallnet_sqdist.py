@@ -370,7 +370,7 @@ def infer_beta(n_points, training_data):
 
 
 class SmallNet(nn.Module):
-    def __init__(self, n_points, init_beta, non_intensity_weight):
+    def __init__(self, n_points, init_beta, non_intensity_weight=1):
         super().__init__()
         self.beta = nn.Parameter(torch.tensor([[init_beta]]))
         self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5) 
@@ -514,7 +514,7 @@ if __name__ == "__main__":
     init_beta = infer_beta(n_points, training_data)
     print("init_beta:", init_beta)
 
-    gt_net = SmallNet(n_points=4,init_beta=7.5, non_intensity_weight=0.5)
+    gt_net = SmallNet(n_points=4, init_beta=7.5)
 
     gt_dict = gt_net.state_dict()
     gt_z = torch.from_numpy(z_gt)
@@ -530,7 +530,7 @@ if __name__ == "__main__":
     training_batches = np.array_split(training_data, 450)
     print(type(training_batches))
 
-    batched, non_batched = integral_count(gt_net, training_data, training_batches)
+    batched, non_batched = integral_count(net=gt_net, full_set=training_data, train_batches=training_batches)
     print(batched)
     print(non_batched)
 
