@@ -24,3 +24,10 @@ def monte_carlo_integral(i, j, t0, tn, n_samples, func):
     int_lambda = interval_length * (1 / n_samples) * int_lambda
 
     return int_lambda
+
+def evaluate_integral(i, j, t0, tn, z, v, beta):
+    a = z[i,0] - z[j,0]
+    b = z[i,1] - z[j,1]
+    m = v[i,0] - v[j,0]
+    n = v[i,1] - v[j,1]
+    return -torch.sqrt(torch.pi)*torch.exp(((-b**2 + beta)*m**2 + 2*a*b*m*n - n**2*(a**2 - beta))/(m**2 + n**2))*(torch.erf(((m**2 + n**2)*t0 + a*m + b*n)/torch.sqrt(m**2 + n**2)) - torch.erf(((m**2 + n**2)*tn + a*m + b*n)/torch.sqrt(m**2 + n**2)))/(2*torch.sqrt(m**2 + n**2))

@@ -8,8 +8,8 @@ class BasicEuclideanDistModel(nn.Module):
     def __init__(self, n_points, init_betas, riemann_samples, node_pair_samples, non_intensity_weight=1):
         super().__init__()
 
-        if len(init_betas) != 2:
-            raise Exception('The BasicEuclideanDistModel uses two beta values for the loglikelihood')
+        #if len(init_betas) != 2:
+        #    raise Exception('The BasicEuclideanDistModel uses two beta values for the loglikelihood')
         self.beta = nn.Parameter(torch.tensor([[init_betas[0]]]), requires_grad=True)
         #self.beta2 = nn.Parameter(torch.tensor([[init_betas[1]]]), requires_grad=True)
         self.z0 = nn.Parameter(self.init_parameter(torch.zeros(size=(n_points,2))), requires_grad=True)
@@ -43,7 +43,6 @@ class BasicEuclideanDistModel(nn.Module):
         d = self.get_euclidean_dist(t, u, v)
         return torch.exp(self.beta - d)
 
-
     def forward(self, data, t0, tn):
         event_intensity = 0.
         non_event_intensity = 0.
@@ -55,6 +54,7 @@ class BasicEuclideanDistModel(nn.Module):
         triu_samples = torch.randperm(self.n_node_pairs)[:self.node_pair_samples]
         for idx in triu_samples:
             u, v = self.node_pair_idxs[0][idx], self.node_pair_idxs[1][idx]
+            #non_event_intensity += evaluate_integral(u, v, t0, tn, self.z0, self.v0, beta=self.beta)
             non_event_intensity += riemann_sum(u, v, t0, tn, n_samples=self.integral_samples, func=self.intensity_fun)
 
         log_likelihood = event_intensity - self.non_event_weight*non_event_intensity

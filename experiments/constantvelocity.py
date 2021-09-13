@@ -7,8 +7,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from utils.integralapproximation import riemann_sum
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
@@ -16,19 +16,19 @@ from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 if __name__ == '__main__':
-    # A simple example for 2 nodes
-    seed = 2
+    # A simple example
+    seed = 2 
 
     # Set the initial position and velocity
-    x0 = np.asarray([[-3, 0], [3, 0]])
-    v0 = np.asarray([[1, 0], [-1, 0]])
+    x0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
+    v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
 
     # Get the number of nodes and dimension size
     numOfNodes = x0.shape[0]
     dim = x0.shape[1]
 
     # Set the max time
-    maxTime = 6
+    maxTime = 100
 
     # Bias values for nodes
     gamma = 0.5 * np.ones(shape=(numOfNodes, ))
@@ -42,7 +42,6 @@ if __name__ == '__main__':
     for i in range(numOfNodes):
         for j in range(i+1, numOfNodes):
             nodepair_events = events[i][j]
-            print("Events for node pair ({}-{}): {}".format(i, j, nodepair_events))
             for np_event in nodepair_events:
                 dataset.append([i,j, np_event])
 
@@ -50,6 +49,7 @@ if __name__ == '__main__':
     dataset = np.asarray(dataset)
     # Make sure dataset is sorted according to increasing event times in column index 2
     dataset = dataset[dataset[:, 2].argsort()]
+    print('Training and evaluation dataset with events for node pairs')
     print(dataset)
     # Split in train and test set
     training_portion = 0.8
@@ -62,13 +62,12 @@ if __name__ == '__main__':
     
     # Define model
     betas = [0.1, 0.1]
-    model = BasicEuclideanDistModel(n_points=4, init_betas=betas, riemann_samples=2, node_pair_samples=3)
+    model = BasicEuclideanDistModel(n_points=numOfNodes, init_betas=betas, riemann_samples=2, node_pair_samples=3)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
 
     # Model training and evaluation using pytorch-ignite framework
-    t_start = torch.tensor([0.0]).to(device)
     time_column_idx = 2
 
     ######### Setting up training
@@ -84,61 +83,42 @@ if __name__ == '__main__':
         X = batch.to(device)
 
         model.train()
-        loglikelihood = model(X, t0=t_start, tn=batch[-1][time_column_idx])
-        loss = -loglikelihood
-        metrics['train_loss'].append(loss.item())
-
         optimizer.zero_grad()
+        loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
+        loss = -loglikelihood
         loss.backward()
         optimizer.step()
+        metrics['train_loss'].append(loss.item())
+        engine.t_start = batch[-1][time_column_idx].to(device)
 
         return loss
 
     trainer = Engine(train_step)
+    trainer.t_start = torch.tensor([0.0]).to(device)
 
     ######## Setting up evaluation
     def validation_step(engine, batch):
         model.eval()
+        print(f't_start: {engine.t_start}')
 
         with torch.no_grad():
             X = batch
-            test_loss = model(X, t0=t_start, tn=batch[-1][time_column_idx])
+            test_loss = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
             metrics['test_loss'].append(test_loss.item())
+            engine.t_start = batch[-1][time_column_idx]
             return test_loss
 
     evaluator = Engine(validation_step)
-
+    evaluator.t_start = torch.tensor([0.0]).to(device)
 
     ########## Handlers
-    from ignite.engine import Events
-
-    # Show a message when the training begins
-    @trainer.on(Events.STARTED)
-    def start_message():
-        print("Start training!")
-
-    # Handler can be what you want, here a lambda ! 
-    trainer.add_event_handler(
-        Events.COMPLETED, 
-        lambda _: print("Training completed!")
-    )
-
-    # Run evaluator on val_loader every trainer's epoch completed
-    @trainer.on(Events.EPOCH_COMPLETED)
-    def run_validation():
-        evaluator.run(val_loader)
-
-    @evaluator.on(Events.STARTED)
-    def eval_start_message():
-        print('Starting evaluation!')
-
-    # Handler can be what you want, here a lambda ! 
-    evaluator.add_event_handler(
-        Events.COMPLETED, 
-        lambda _: print("Evaluation completed!")
-    )
-
-    trainer.run(train_loader, max_epochs=100)
+    print('Starting model training')
+    epochs = 1000
+    trainer.run(train_loader, max_epochs=epochs)
+    print('Completed model training')
+    print('Starting model evaluation')
+    evaluator.run(val_loader, max_epochs=epochs)
+    print('Completed model evaluation')
 
     # Print model params
     print(f'Beta: {model.beta}')
