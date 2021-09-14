@@ -6,27 +6,27 @@ class ConstantVelocitySimulator:
     Model using Newtonian dynamics in the form of constant velocities
     to model node pair interactions based on Euclidean distance in a latent space.
     '''
-    def __init__(self, starting_positions, velocities, T, gamma, seed=42):
+    def __init__(self, starting_positions:list, velocities:list, T:int, beta:list, seed:int=42):
         '''
-        starting_positions:     The 2d coordinates of each node starting position in the latent space
-        velocities:             Velocities for each node. The velocities are constant over time
-        T:                      The end of the time interval which the modelling runs over
-        gamma:                  The gamma parameters used in the intensity function
-        seed:                   The seed used to pseudo randomness of the code
+        :param starting_positions:     The 2d coordinates of each node starting position in the latent space
+        :param velocities:             Velocities for each node. The velocities are constant over time
+        :param T:                      The end of the time interval which the modelling runs over
+        :param gamma:                  The gamma parameters used in the intensity function
+        :param seed:                   The seed used to pseudo randomness of the code
         '''
         # Model parameters
-        self.__x = np.asarray(starting_positions)
-        self.__v = np.asarray(velocities)
+        self.z0 = np.asarray(starting_positions)
+        self.__v0 = np.asarray(velocities)
         self.__max_time = T
-        self.__gamma = gamma
+        self.__beta = beta
         self.__seed = seed
-        self.__num_of_nodes = self.__x.shape[0]
+        self.__num_of_nodes = self.z0.shape[0]
 
         self.__node_pair_indices = np.tril_indices(n=self.__num_of_nodes)
         np.random.seed(seed)
 
     def __get_position(self, i, t):
-        return self.__x[i, :] + self.__v[i, :] * t
+        return self.z0[i, :] + self.__v0[i, :] * t
 
     def __calculate_distance(self, i, j, t):
         '''
@@ -43,8 +43,8 @@ class ConstantVelocitySimulator:
         # Assumption: Euclidean distance
 
         # Get the differences
-        deltaX = self.__x[i, :] - self.__x[j, :]
-        deltaV = self.__v[i, :] - self.__v[j, :]
+        deltaX = self.z0[i, :] - self.z0[j, :]
+        deltaV = self.__v0[i, :] - self.__v0[j, :]
 
         # Add the initial time point
         criticalPoints = [0]
@@ -64,7 +64,7 @@ class ConstantVelocitySimulator:
         The intensity function used to calculate the event frequencies at time t in the
         simulation of the Non-homogeneous Poisson process
         '''
-        return np.exp(self.__gamma[i] + self.__gamma[j] - self.__calculate_distance(i,j,t))
+        return np.exp(self.__beta[i] - self.__calculate_distance(i,j,t))
 
     def sample_interaction_times_for_all_node_pairs(self):
         # Lower triangular matrix of lists

@@ -12,6 +12,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
+from utils import visualize
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
@@ -20,21 +21,21 @@ if __name__ == '__main__':
     seed = 2 
 
     # Set the initial position and velocity
-    x0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
+    z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
     v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
 
     # Get the number of nodes and dimension size
-    numOfNodes = x0.shape[0]
-    dim = x0.shape[1]
+    numOfNodes = z0.shape[0]
+    dim = z0.shape[1]
 
     # Set the max time
     maxTime = 6
 
     # Bias values for nodes
-    gamma = 0.5 * np.ones(shape=(numOfNodes, ))
+    betas = 0.5 * np.ones(shape=(numOfNodes, ))
 
     # Simulate events from a non-homogeneous Poisson distribution
-    event_simulator = ConstantVelocitySimulator(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
+    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, T=maxTime, beta=betas, seed=seed)
     events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
     # Build dataset of node pair interactions
@@ -133,3 +134,7 @@ if __name__ == '__main__':
         plt.plot(metrics[k], label=k)
     plt.legend()
     plt.show()
+
+    # Visualize model Z prediction
+    visualize.compare_positions(model.z0.detach().numpy(), z0,
+        'Model Prediction of Node Starting Positions in 2D Latent Space')

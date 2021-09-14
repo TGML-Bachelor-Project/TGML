@@ -34,7 +34,7 @@ if __name__ == '__main__':
     gamma = 0.5 * np.ones(shape=(numOfNodes, ))
 
     # Simulate events from a non-homogeneous Poisson distribution
-    event_simulator = ConstantVelocitySimulator(starting_positions=x0, velocities=v0, T=maxTime, gamma=gamma, seed=seed)
+    event_simulator = ConstantVelocitySimulator(starting_positions=x0, velocities=v0, T=maxTime, beta=gamma, seed=seed)
     events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
     # Build dataset of node pair interactions
