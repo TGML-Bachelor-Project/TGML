@@ -22,7 +22,7 @@ class ConstantVelocitySimulator:
         self.__seed = seed
         self.__num_of_nodes = self.__x.shape[0]
 
-        self.__node_pair_indices = np.triu_indices(n=self.__num_of_nodes, k=1)
+        self.__node_pair_indices = np.tril_indices(n=self.__num_of_nodes)
         np.random.seed(seed)
 
     def __get_position(self, i, t):
@@ -67,7 +67,8 @@ class ConstantVelocitySimulator:
         return np.exp(self.__gamma[i] + self.__gamma[j] - self.__calculate_distance(i,j,t))
 
     def sample_interaction_times_for_all_node_pairs(self):
-        networkEvents = [[[] for _ in range(i, self.__num_of_nodes)] for i in range(self.__num_of_nodes)]
+        # Lower triangular matrix of lists
+        networkEvents = [[[] for _ in range(i, self.__num_of_nodes)] for i in reversed(range(self.__num_of_nodes))]
 
         for i, j in zip(self.__node_pair_indices[0], self.__node_pair_indices[1]):
             # Define the intensity function for each node pair (i,j)

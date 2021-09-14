@@ -28,7 +28,7 @@ if __name__ == '__main__':
     dim = x0.shape[1]
 
     # Set the max time
-    maxTime = 100
+    maxTime = 6
 
     # Bias values for nodes
     gamma = 0.5 * np.ones(shape=(numOfNodes, ))
@@ -39,8 +39,8 @@ if __name__ == '__main__':
 
     # Build dataset of node pair interactions
     dataset = []
-    for i in range(numOfNodes):
-        for j in range(i+1, numOfNodes):
+    for i in reversed(range(numOfNodes)):
+        for j in range(i):
             nodepair_events = events[i][j]
             for np_event in nodepair_events:
                 dataset.append([i,j, np_event])
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     
     # Define model
-    betas = [0.1, 0.1]
+    betas = [0.5, 0.5]
     model = BasicEuclideanDistModel(n_points=numOfNodes, init_betas=betas, riemann_samples=2, node_pair_samples=3)
 
     # Send data and model to same Pytorch device
@@ -99,7 +99,6 @@ if __name__ == '__main__':
     ######## Setting up evaluation
     def validation_step(engine, batch):
         model.eval()
-        print(f't_start: {engine.t_start}')
 
         with torch.no_grad():
             X = batch
