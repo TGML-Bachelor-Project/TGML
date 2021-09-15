@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     ########## Handlers
     print('Starting model training')
-    epochs = 100
+    epochs = 1000
     trainer.run(train_loader, max_epochs=epochs)
     print('Completed model training')
     print('Starting model evaluation')

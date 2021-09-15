@@ -113,8 +113,11 @@ class ConstantVelocitySimulator:
         '''
         # Lower triangular matrix of lists
         networkEvents = [[[] for _ in range(i, self.__num_of_nodes)] for i in reversed(range(self.__num_of_nodes))]
+        distinct_node_pairs = [pair for pair in 
+                                zip(self.__node_pair_indices[0], self.__node_pair_indices[1])
+                                if pair[0] != pair[1]]
 
-        for i, j in zip(self.__node_pair_indices[0], self.__node_pair_indices[1]):
+        for i, j in distinct_node_pairs:
             # Define the intensity function for each node pair (i,j)
             intensityFunc = lambda t: self.__intensity_function(i=i, j=j, t=t)
             # Get the critical points
