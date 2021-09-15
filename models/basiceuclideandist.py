@@ -10,7 +10,7 @@ class BasicEuclideanDistModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points, init_beta, riemann_samples, non_intensity_weight=1):
+    def __init__(self, n_points:int, init_beta:float, riemann_samples:int, non_intensity_weight:int=1):
         '''
         :param n_points:                Number of nodes in the temporal dynamics graph network
         :param init_beta:               Initialization value of model background intensity measure 
@@ -31,26 +31,72 @@ class BasicEuclideanDistModel(nn.Module):
         self.integral_samples=riemann_samples
         self.non_event_weight = non_intensity_weight
 
-    def init_parameter(self, tensor):
+    def init_parameter(self, tensor:torch.Tensor) -> torch.Tensor:
+        '''
+        Fills the input Tensor with values drawn from the uniform distribution from a to b
+
+        :returns:   The given tensor filled with the values from the uniform distribution from a to b
+        '''
         return torch.nn.init.uniform_(tensor, a=-0.5, b=0.5)
 
-    def step(self, t):
+    def step(self, t:torch.Tensor) -> torch.Tensor:
+        '''
+        Increments the model's time by t by
+        updating the latent node position vector z
+        based on a constant velocity dynamic.
+
+        :param t:   The time to update the latent position vector z with
+
+        :returns:   The updated latent position vector z
+        '''
         self.z = self.z0[:,:] + self.v0[:,:]*t
         return self.z
 
-    def get_euclidean_dist(self, t, u, v):
+    def get_euclidean_dist(self, t:torch.Tensor, i:torch.Tensor, j:torch.Tensor) -> torch.Tensor:
+        '''
+        Calculates the Euclidean distance between node i and j at time t
+
+        :param t:   The time at which to calculate distance between i and j
+                    The time point is a floating point number
+        :param i:   Index of node i
+        :param j:   Index of node j
+
+        :returns:   The Euclidean distance between node i and j at time t
+        '''
         z = self.step(t)
-        z_u = torch.reshape(z[u], shape=(1,2))
-        z_v = torch.reshape(z[v], shape=(1,2))
+        z_i = torch.reshape(z[i], shape=(1,2))
+        z_j = torch.reshape(z[j], shape=(1,2))
 
         # Euclediean distance
-        return torch.cdist(z_u, z_v, p=2)
+        return torch.cdist(z_i, z_j, p=2)
 
-    def intensity_fun(self, t, u, v):
-        d = self.get_euclidean_dist(t, u, v)
+    def intensity_fun(self, t:torch.Tensor, i:torch.Tensor, j:torch.Tensor) -> torch.Tensor:
+        '''
+        The model intensity function between node i and j at time t.
+        The intensity function measures the likelihood of node i and j
+        interacting at time t
+
+        :param t:   The time for which the intensity between i and j is computed
+                    The time point is a floating point number.
+        :param i:   Index of node i
+        :param j:   Index of node j
+
+        :returns:   The intensity between i and j at time t as a measure of
+                    the two nodes' likelihood of interacting.
+        '''
+        d = self.get_euclidean_dist(t, i, j)
         return torch.exp(self.beta - d)
 
-    def forward(self, data, t0, tn):
+    def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
+        '''
+        Standard torch method for training of the model.
+
+        :param data:    Node pair interaction data with columns [node_i, node_j, time_point]
+        :param t0:      Start of the interaction period
+        :param tn:      End of the interaction period
+
+        :returns:       Log liklihood of the model based on the given data
+        '''
         event_intensity = 0.
         non_event_intensity = 0.
         for u, v, event_time in data:

@@ -1,7 +1,19 @@
 import torch
 import numpy as np
 
-def riemann_sum(i, j, t0, tn, n_samples, func):
+def riemann_sum(i:torch.Tensor, j:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor, n_samples:int, func) -> torch.Tensor:
+    '''
+    Calculates the Riemann sum for the integral from t0 to tn
+    based on the nodes i and j and the given function func.
+
+    :param i:           Index of node i
+    :param j:           Index of node j
+    :param t0:          Start of integral interval
+    :param tn:          End of integral interval
+    :param n_samples:   Number of time to split the interval from t0 to tn
+
+    :returns:           The Riemann sum of the integral
+    '''
     # https://secure.math.ubc.ca/~pwalls/math-python/integration/riemann-sums/
     x = torch.linspace(t0.item(), tn.item(), n_samples+1)
     x_mid = (x[:-1]+x[1:])/2

@@ -1,7 +1,20 @@
 import numpy as np
 
 class NHPP:
-    def __init__(self, T, intensity_func, time_bins, seed=42) -> None:
+    '''
+    Class for simulating Non-homogeneously distributed time points
+    for node pair interactions based on a given intensity function.
+
+    '''
+    def __init__(self, T:int, intensity_func, time_bins:list, seed:int=42) -> None:
+        '''
+        :param T:               The end time point of the simulation
+        :param intensity_func:  A given function defining how the intensity between node pairs 
+                                is computed
+        :param time_bins:       A collection of time points for splitting the time interval of
+                                the simulation into discrete time bins
+        :param seed:            The random seed for the simulation
+        '''
         self.__T = T
         self.__intensity_func = intensity_func
         self.__time_bins = time_bins
@@ -19,10 +32,17 @@ class NHPP:
         # Set seed
         np.random.seed(self.__seed)
 
-    def generate_time_units(self):
+    def generate_time_units(self) -> list:
         '''
         Created based on the algorithm on page 86
         in chapter 5 of the book Generating Continuous Random Variables
+
+        The function generates Non-homogeneously distributed time points for 
+        node interactions.
+
+        :returns:   A list of floating point numbers representing the time points
+                    of interaction for a given pair of nodes based on the given 
+                    intensity function
         '''
         t, J, S = 0, 1, []
 
