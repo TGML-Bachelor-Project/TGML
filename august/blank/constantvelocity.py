@@ -62,7 +62,7 @@ if __name__ == '__main__':
     
     # Define model
     betas = [0.1, 0.1]
-    model = BasicEuclideanDistModel(n_points=4, init_betas=betas, riemann_samples=2, node_pair_samples=3)
+    model = BasicEuclideanDistModel(n_points=4, init_beta=betas, riemann_samples=2, node_pair_samples=3)
 
     # Send data and model to same Pytorch device
     model = model.to(device)

@@ -11,8 +11,9 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
+from utils.nodes import visualize as node_visual
+from utils.metrics import visualize as metric_visual
 import numpy as np
-from utils import visualize
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
@@ -32,10 +33,10 @@ if __name__ == '__main__':
     maxTime = 6
 
     # Bias values for nodes
-    betas = 0.5 * np.ones(shape=(numOfNodes, ))
+    beta = 0.5
 
     # Simulate events from a non-homogeneous Poisson distribution
-    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, T=maxTime, beta=betas, seed=seed)
+    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, T=maxTime, beta=beta, seed=seed)
     events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
     # Build dataset of node pair interactions
@@ -62,8 +63,8 @@ if __name__ == '__main__':
 
     
     # Define model
-    betas = [0.5, 0.5]
-    model = BasicEuclideanDistModel(n_points=numOfNodes, init_betas=betas, riemann_samples=2, node_pair_samples=3)
+    beta = 0.5
+    model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
@@ -113,7 +114,7 @@ if __name__ == '__main__':
 
     ########## Handlers
     print('Starting model training')
-    epochs = 1000
+    epochs = 100
     trainer.run(train_loader, max_epochs=epochs)
     print('Completed model training')
     print('Starting model evaluation')
@@ -121,20 +122,13 @@ if __name__ == '__main__':
     print('Completed model evaluation')
 
     # Print model params
-    print(f'Beta: {model.beta}')
-    print(f'Z: {model.z0}')
-    print(f'V: {model.v0}')
+    print(f'Beta: {model.beta.item()}')
+    print(f'Z: {model.z0.detach().numpy()}')
+    print(f'V: {model.v0.detach().numpy()}')
 
-    # Plot loss in training and test
-    import matplotlib.pyplot as plt
-    plt.title('Model Log Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Log Loss')
-    for k in metrics.keys():
-        plt.plot(metrics[k], label=k)
-    plt.legend()
-    plt.show()
+    #Visualize logloss
+    metric_visual.logloss(metrics)
 
     # Visualize model Z prediction
-    visualize.compare_positions(model.z0.detach().numpy(), z0,
+    node_visual.compare_positions(model.z0.detach().numpy(), z0,
         'Model Prediction of Node Starting Positions in 2D Latent Space')
