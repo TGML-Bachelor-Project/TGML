@@ -8,6 +8,7 @@ import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
