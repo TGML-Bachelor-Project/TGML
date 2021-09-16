@@ -31,7 +31,7 @@ if __name__ == '__main__':
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 6
+    maxTime = 50
 
     # Bias values for nodes
     beta = 0.5
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     ########## Handlers
     print('Starting model training')
-    epochs = 1000
+    epochs = 100
     trainer.run(train_loader, max_epochs=epochs)
     print('Completed model training')
     print('Starting model evaluation')
