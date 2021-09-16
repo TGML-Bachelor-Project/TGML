@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib.animation import FuncAnimation
 
 def node_movements(node_positions:list, title:str, trail:bool) -> None:
@@ -16,6 +16,9 @@ def node_movements(node_positions:list, title:str, trail:bool) -> None:
                             node positions, so only a sinle dot per node throughout
                             the animation.
     '''
+    # starting from index 1 to get rid of bright color, which is hard to see
+    shift = 1
+    node_colors = list(mcolors.CSS4_COLORS.keys())[shift:(len(node_positions[0])+shift)]
     xs, ys = [], []
     for time_step in node_positions:
         for positions in time_step:
@@ -24,28 +27,38 @@ def node_movements(node_positions:list, title:str, trail:bool) -> None:
 
     fig, ax = plt.subplots()
     xdata, ydata = [], []
-    ln, = plt.plot([], [], 'ro')
+    ln = [plt.plot([], [], 'o', label=f'Node {i}', color=node_colors[i])[0] for i in range(len(node_positions[0]))]
     
     def init():
-        ax.set_xlim(min(xs), max(xs))
-        ax.set_ylim(min(ys), min(ys))
-        return ln,
+        # Setting the limit a little larger to not cut of nodes at the edge of plot
+        ax.set_xlim(min(xs)-0.1*abs(min(xs)), max(xs)+0.1*abs(max(xs)))
+        ax.set_ylim(min(ys)-0.1*abs(min(ys)), max(ys)+0.1*abs(max(ys)))
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        return ln
     
     def update(frame):
         xs = [n[0] for n in frame]
         ys = [n[1] for n in frame]
 
         # Clear data to only plot new node position without trail
-        if not trail:
-            xdata = []
-            ydata = []
+        if trail:
+            for i in len(xdata):
+                for j in range(len(ln)):
+                    ln[j].set_data(xdata[i][j], ydata[i][j])
 
-        xdata.append(xs)
-        ydata.append(ys)
-        ln.set_data(xdata, ydata)
-        return ln,
+            # Added current x and y to trail history
+            xdata.append(xs)
+            ydata.append(ys)
+        
+        # Add current x and y pos to plot data
+        for i in range(len(xs)):
+            ln[i].set_data(xs[i], ys[i])
+
+        return ln 
     
     ani = FuncAnimation(fig, update, frames=node_positions,
                                     init_func=init, blit=True)
     plt.title(title)
+    plt.legend()
     plt.show()

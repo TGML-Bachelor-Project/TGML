@@ -1,5 +1,5 @@
 import numpy as np
-from utils.movements import get_position
+from utils.movement import get_position
 from data.synthetic.distributions.nhpp import NHPP
 
 class ConstantVelocitySimulator:
@@ -17,7 +17,7 @@ class ConstantVelocitySimulator:
         '''
         # Model parameters
         self.z0 = np.asarray(starting_positions)
-        self.__v0 = np.asarray(velocities)
+        self.v0 = np.asarray(velocities)
         self.__max_time = T
         self.__beta = beta
         self.__seed = seed
@@ -37,7 +37,7 @@ class ConstantVelocitySimulator:
         
         :returns:   The Euclidean distance of node i and j at time t
         '''
-        xi, xj = get_position(self.z0, i, t), get_position(self.v0, j, t)
+        xi, xj = get_position(self.z0, self.v0, i, t), get_position(self.z0, self.v0, j, t)
 
         # Euclediean distance
         return np.linalg.norm(xi-xj)
@@ -57,7 +57,7 @@ class ConstantVelocitySimulator:
         '''
         # Get the differences
         deltaX = self.z0[i, :] - self.z0[j, :]
-        deltaV = self.__v0[i, :] - self.__v0[j, :]
+        deltaV = self.v0[i, :] - self.v0[j, :]
 
         # Add the initial time point
         criticalPoints = [0]

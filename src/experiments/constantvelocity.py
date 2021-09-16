@@ -1,7 +1,5 @@
 # Add necessary folders/files to path
 import os, sys
-
-from utils.visualize.positions import node_positions
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -15,7 +13,8 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
-from utils import visualize, movements
+from utils import visualize, movement
+from utils.visualize.positions import node_positions
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
@@ -141,5 +140,5 @@ if __name__ == '__main__':
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
     # Animate node movements
-    node_positions = movements.compute_node_positions(model_z0, model_v0, maxTime)
+    node_positions = movement.contant_velocity(model_z0, model_v0, maxTime, time_steps=100)
     visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
