@@ -132,5 +132,5 @@ if __name__ == '__main__':
     visualize.metrics(metrics)
 
     # Visualize model Z prediction
-    visualize.compare_positions(model.z0.cpu().detach().numpy(), z0,
-        'Model Prediction of Node Starting Positions in 2D Latent Space')
+    latent_space_positions = [model.z0.cpu().detach().numpy(), z0]
+    visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])

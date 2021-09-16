@@ -22,4 +22,5 @@ def metrics(metrics:dict) -> None:
         ax.plot(metrics[metric], label=metric)
         ax.legend()
 
+    plt.tight_layout()
     plt.show()

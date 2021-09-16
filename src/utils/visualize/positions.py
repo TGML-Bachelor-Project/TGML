@@ -1,3 +1,4 @@
+import math
 import matplotlib.pyplot as plt
 
 def node_positions(z:list, title:str) -> None:
@@ -19,30 +20,32 @@ def node_positions(z:list, title:str) -> None:
     plt.legend()
     plt.show()
 
-def compare_positions(z1:list, z2:list, title:str) -> None:
+def compare_positions(zs:list, titles:list) -> None:
     '''
-    Visualizes the predicted node positions in z1 
-    against the actual node positions in z2.
-    z1 and z2 should be equal in length.
+    Visualizes the predicted node positions in a
+    separate subplot for each z vector in zs. 
+    Subplot i will plot z_i with title t_i
+    from the list of titles.
 
-    :param z1:      First set of node positions in 2D latent space
-    :param z2:      Second set of node positions in 2D latent space
-    "param title:   Title of the plot
+    :param zs:      A list of latent space vectors
+    "param titles:  A list of string titles
     '''
+    rows = int(len(zs)**(1/2))
+    cols = math.ceil(len(zs)/rows)
 
-    if len(z1) != len(z2):
-        raise Exception('z1 and z2 represents positions of the same node. \
-                        So they should be equal length.')
+    fig = plt.figure()
+    fig.suptitle('Initial Node Positions - Predicted vs Actual')
+    for i, zi in enumerate(zs):
+        ax = fig.add_subplot(rows, cols, i+1)
+        ax.set_title(titles[i])
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Log Loss')
 
-    plt.title(title)
-    plt.xlabel('x')
-    plt.ylabel('y')
+        # Plot each node in zi in the subplot ax
+        for j, val in enumerate(zi): 
+            ax.scatter(val[0], val[1], label=f'Node {j}')
+            
+        ax.legend()
 
-    for i in range(len(z1)):
-        zi1 = z1[i]
-        zi2 = z2[i]
-        plt.scatter(x=zi1[0], y=zi1[1], label=f'Predicted Node: {i}')
-        plt.scatter(x=zi2[0], y=zi2[1], label=f'Actual Node: {i}')
-
-    plt.legend()
+    plt.tight_layout()
     plt.show()
