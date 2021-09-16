@@ -124,12 +124,12 @@ if __name__ == '__main__':
 
     # Print model params
     print(f'Beta: {model.beta.item()}')
-    print(f'Z: {model.z0.detach().numpy()}')
-    print(f'V: {model.v0.detach().numpy()}')
+    print(f'Z: {model.z0.cpu().detach().numpy()}')
+    print(f'V: {model.v0.cpu().detach().numpy()}')
 
     #Visualize logloss
     metric_visual.logloss(metrics)
 
     # Visualize model Z prediction
-    node_visual.compare_positions(model.z0.detach().numpy(), z0,
+    node_visual.compare_positions(model.z0.cpu().detach().numpy(), z0,
         'Model Prediction of Node Starting Positions in 2D Latent Space')
