@@ -12,9 +12,8 @@ print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
-from utils.nodes import visualize as node_visual
-from utils.metrics import visualize as metric_visual
 import numpy as np
+from utils import visualize
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
@@ -130,8 +129,8 @@ if __name__ == '__main__':
     print(f'V: {model.v0.cpu().detach().numpy()}')
 
     #Visualize logloss
-    metric_visual.logloss(metrics)
+    visualize.metrics(metrics)
 
     # Visualize model Z prediction
-    node_visual.compare_positions(model.z0.cpu().detach().numpy(), z0,
+    visualize.compare_positions(model.z0.cpu().detach().numpy(), z0,
         'Model Prediction of Node Starting Positions in 2D Latent Space')

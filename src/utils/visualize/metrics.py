@@ -1,15 +1,15 @@
 import math
 import matplotlib.pyplot as plt
 
-def logloss(loglosses:dict) -> None:
+def metrics(metrics:dict) -> None:
     '''
     Plots the logloss for each entry in the 
     given dictionary of loglosses as different subplots.
 
-    :param loglosses:   A dictionary with key = name of logloss, and
-                        val = list of loglosses for each epoch
+    :param metrics:   A dictionary with key = name of metric, and
+                        val = list of metric values for each epoch
     '''
-    metric_keys = list(loglosses.keys())
+    metric_keys = list(metrics.keys())
     rows = int(len(metric_keys)**(1/2))
     cols = math.ceil(len(metric_keys)/rows)
 
@@ -19,7 +19,7 @@ def logloss(loglosses:dict) -> None:
         ax.set_title(metric)
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Log Loss')
-        ax.plot(loglosses[metric], label=metric)
+        ax.plot(metrics[metric], label=metric)
         ax.legend()
 
     plt.show()
