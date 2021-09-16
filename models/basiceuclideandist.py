@@ -38,7 +38,7 @@ class BasicEuclideanDistModel(nn.Module):
 
         :returns:   The given tensor filled with the values from the uniform distribution from a to b
         '''
-        return torch.nn.init.uniform_(tensor, a=-0.5, b=0.5)
+        return torch.nn.init.uniform_(tensor, a=-0.25, b=0.25)
 
     def step(self, t:torch.Tensor) -> torch.Tensor:
         '''

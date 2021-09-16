@@ -122,10 +122,12 @@ class ConstantVelocitySimulator:
             intensityFunc = lambda t: self.__intensity_function(i=i, j=j, t=t)
             # Get the critical points
             criticalPoints = self.__critical_time_points(i=i, j=j)
+            print(f'Critical points: {criticalPoints}')
             # Simulate the models
             nhppij = NHPP(T=self.__max_time, intensity_func=intensityFunc, time_bins=criticalPoints, seed=self.__seed)
             eventTimes = nhppij.generate_time_units()
             # Add the event times
             networkEvents[i][j].extend(eventTimes)
         
+        print(f'Network Events Lower Triangular Matrix: {networkEvents}')
         return networkEvents
