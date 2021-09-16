@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # Set the initial position and velocity
     z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
-    v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
+    v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
 
     # Get the number of nodes and dimension size
     numOfNodes = z0.shape[0]
