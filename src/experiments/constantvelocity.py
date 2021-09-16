@@ -76,7 +76,8 @@ if __name__ == '__main__':
     ######### Setting up training
     metrics = {
         'train_loss': [],
-        'test_loss': []
+        'test_loss': [],
+        'Bias Term - Beta': []
     }
     optimizer = Adam(model.parameters(), lr=0.025)
 
@@ -92,6 +93,7 @@ if __name__ == '__main__':
         loss.backward()
         optimizer.step()
         metrics['train_loss'].append(loss.item())
+        metrics['Bias Term - Beta'].append(model.beta.item())
         engine.t_start = batch[-1][time_column_idx].to(device)
 
         return loss
