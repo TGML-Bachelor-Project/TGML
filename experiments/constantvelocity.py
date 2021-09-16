@@ -24,14 +24,14 @@ if __name__ == '__main__':
 
     # Set the initial position and velocity
     z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
-    v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
+    v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
 
     # Get the number of nodes and dimension size
     numOfNodes = z0.shape[0]
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 50
+    maxTime = 6
 
     # Bias values for nodes
     beta = 0.5
@@ -58,9 +58,9 @@ if __name__ == '__main__':
     training_portion = 0.8
     last_training_idx = int(len(dataset)*training_portion)
     train_data = dataset[:last_training_idx]
-    train_loader = DataLoader(train_data, batch_size=2, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=10, shuffle=False)
     test_data = dataset[last_training_idx:]
-    val_loader = DataLoader(test_data, batch_size=2, shuffle=False)
+    val_loader = DataLoader(test_data, batch_size=10, shuffle=False)
 
     
     # Define model
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             X = batch
-            test_loss = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
+            test_loss = - model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
             metrics['test_loss'].append(test_loss.item())
             engine.t_start = batch[-1][time_column_idx]
             return test_loss

@@ -20,6 +20,8 @@ class BasicEuclideanDistModel(nn.Module):
         '''
         super().__init__()
 
+        # self.z0 = nn.Parameter(torch.tensor([[-3., 0.], [3., 0.], [0., 3.], [0., -3.]]), requires_grad=True)
+        # self.v0 = nn.Parameter(torch.tensor([[1., 0.], [-1., 0.], [0., -1.], [0., 1.]]), requires_grad=True)
         self.beta = nn.Parameter(torch.tensor([[init_beta]]), requires_grad=True)
         self.z0 = nn.Parameter(self.init_parameter(torch.zeros(size=(n_points,2))), requires_grad=True)
         self.v0 = nn.Parameter(self.init_parameter(torch.zeros(size=(n_points,2))), requires_grad=True)
@@ -27,7 +29,7 @@ class BasicEuclideanDistModel(nn.Module):
         self.n_points = n_points
         self.n_node_pairs = n_points*(n_points-1) // 2
 
-        self.node_pair_idxs = torch.triu_indices(row=self.n_points, col=self.n_points, offset=1)
+        self.node_pair_idxs = torch.tril_indices(row=self.n_points, col=self.n_points, offset=-1)
         self.integral_samples = riemann_samples
         self.integral_approximator = riemann_sum
         self.non_event_weight = non_intensity_weight
