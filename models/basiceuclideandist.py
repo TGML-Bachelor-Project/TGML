@@ -29,7 +29,7 @@ class BasicEuclideanDistModel(nn.Module):
 
         self.node_pair_idxs = torch.triu_indices(row=self.n_points, col=self.n_points, offset=1)
         self.integral_samples = riemann_samples
-        self.integral_estimator = riemann_sum
+        self.integral_approximator = riemann_sum
         self.non_event_weight = non_intensity_weight
 
     def init_parameter(self, tensor:torch.Tensor) -> torch.Tensor:
@@ -105,7 +105,7 @@ class BasicEuclideanDistModel(nn.Module):
             event_intensity += self.beta - self.get_euclidean_dist(event_time, u, v)
 
         for u, v in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
-            non_event_intensity += self.integral_estimator(u, v, t0, tn, self.integral_samples, func=self.intensity_fun)
+            non_event_intensity += self.integral_approximator(u, v, t0, tn, self.integral_samples, func=self.intensity_fun)
 
         log_likelihood = event_intensity - self.non_event_weight*non_event_intensity
 
