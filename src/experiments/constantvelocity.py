@@ -1,5 +1,7 @@
 # Add necessary folders/files to path
 import os, sys
+
+from utils.visualize.positions import node_positions
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -13,7 +15,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
-from utils import visualize
+from utils import visualize, movements
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
@@ -36,7 +38,8 @@ if __name__ == '__main__':
     beta = 0.5
 
     # Simulate events from a non-homogeneous Poisson distribution
-    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, T=maxTime, beta=beta, seed=seed)
+    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
+                                                        T=maxTime, beta=beta, seed=seed)
     events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
     # Build dataset of node pair interactions
@@ -124,13 +127,19 @@ if __name__ == '__main__':
     print('Completed model evaluation')
 
     # Print model params
+    model_z0 = model.z0.cpu().detach().numpy() 
+    model_v0 = model.v0.cpu().detach().numpy()
     print(f'Beta: {model.beta.item()}')
-    print(f'Z: {model.z0.cpu().detach().numpy()}')
-    print(f'V: {model.v0.cpu().detach().numpy()}')
+    print(f'Z: {model_z0}')
+    print(f'V: {model_v0}')
 
     #Visualize logloss
     visualize.metrics(metrics)
 
     # Visualize model Z prediction
-    latent_space_positions = [model.z0.cpu().detach().numpy(), z0]
+    latent_space_positions = [model_z0, z0]
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
+
+    # Animate node movements
+    node_positions = movements.compute_node_positions(model_z0, model_v0, maxTime)
+    visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)

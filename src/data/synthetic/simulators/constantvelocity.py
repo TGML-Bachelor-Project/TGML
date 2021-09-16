@@ -1,4 +1,5 @@
 import numpy as np
+from utils.movements import get_position
 from data.synthetic.distributions.nhpp import NHPP
 
 class ConstantVelocitySimulator:
@@ -25,19 +26,6 @@ class ConstantVelocitySimulator:
         self.__node_pair_indices = np.tril_indices(n=self.__num_of_nodes)
         np.random.seed(seed)
 
-    def __get_position(self, i:int, t:int) -> np.ndarray:
-        '''
-        Calculates position of node i at time t.
-        With the assumption of constant velocity of node i.
-
-        :param i:   Index of the node to get the position of
-        :param t:   The current time
-
-        :returns:   The current position of node i based on 
-                    its starting position and velocity
-        '''
-        return self.z0[i, :] + self.__v0[i, :] * t
-
     def __calculate_distance(self, i:int, j:int, t:int) -> np.float64:
         '''
         Calculates the Eucledian distance between node i and j at time t
@@ -49,7 +37,7 @@ class ConstantVelocitySimulator:
         
         :returns:   The Euclidean distance of node i and j at time t
         '''
-        xi, xj = self.__get_position(i, t), self.__get_position(j, t)
+        xi, xj = get_position(self.z0, i, t), get_position(self.v0, j, t)
 
         # Euclediean distance
         return np.linalg.norm(xi-xj)
