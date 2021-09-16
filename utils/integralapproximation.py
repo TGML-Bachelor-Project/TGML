@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 def riemann_sum(i:torch.Tensor, j:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor, n_samples:int, func) -> torch.Tensor:
     '''
     Calculates the Riemann sum for the integral from t0 to tn
@@ -18,7 +20,7 @@ def riemann_sum(i:torch.Tensor, j:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor
     x = torch.linspace(t0.item(), tn.item(), n_samples+1)
     x_mid = (x[:-1]+x[1:])/2
     dx = (tn - t0) / n_samples
-    rsum = torch.zeros(size=(1,1))
+    rsum = torch.zeros(size=(1,1)).to(device)
 
     for x_i in x_mid:
         rsum += func(x_i, i, j) * dx
