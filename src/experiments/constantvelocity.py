@@ -13,7 +13,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
-# from utils import visualize, movement
+import utils.visualize as visualize
 from utils import movement
 from utils.visualize.positions import node_positions
 from models.basiceuclideandist import BasicEuclideanDistModel
