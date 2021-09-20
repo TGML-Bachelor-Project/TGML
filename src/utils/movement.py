@@ -1,7 +1,4 @@
 import numpy as np
-from utils.visualize.animation import node_movements
-
-from utils.visualize.positions import node_positions
 
 def get_position(z:np.ndarray, v:np.ndarray, i:int, t:int) -> np.ndarray:
     '''

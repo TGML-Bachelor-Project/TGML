@@ -3,7 +3,8 @@ import numpy as np
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def riemann_sum(i:torch.Tensor, j:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor, n_samples:int, func) -> torch.Tensor:
+def riemann_sum(i:torch.Tensor, j:torch.Tensor, t0:torch.Tensor, 
+                tn:torch.Tensor, n_samples:int, func) -> torch.Tensor:
     '''
     Calculates the Riemann sum for the integral from t0 to tn
     based on the nodes i and j and the given function func.
