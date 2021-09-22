@@ -21,18 +21,19 @@ from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 if __name__ == '__main__':
     # A simple example
-    seed = 2 
+    seed = 2
 
     # Set the initial position and velocity
-    z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
-    v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
+    z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
+    # v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
+    v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
 
     # Get the number of nodes and dimension size
     numOfNodes = z0.shape[0]
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 6
+    maxTime = 50
 
     # Bias values for nodes
     beta = 0.5
@@ -90,8 +91,8 @@ if __name__ == '__main__':
 
         model.train()
         optimizer.zero_grad()
-        loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
-        loss = -loglikelihood
+        train_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
+        loss = - train_loglikelihood
         loss.backward()
         optimizer.step()
         metrics['train_loss'].append(loss.item())
@@ -109,7 +110,8 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             X = batch
-            test_loss = - model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
+            test_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
+            test_loss = - test_loglikelihood
             metrics['test_loss'].append(test_loss.item())
             engine.t_start = batch[-1][time_column_idx]
             return test_loss
