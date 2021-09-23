@@ -25,13 +25,15 @@ from ignite.engine import Engine
 def nll(ll):
     return -ll
 
-def single_batch_train(net, n_train, training_data, test_data, num_epochs):
+def single_batch_train(net, training_data, test_data, num_epochs):
     optimizer = torch.optim.Adam(net.parameters(), lr=0.025)
     training_losses = []
     test_losses = []
     tn_train = training_data[-1][-1] # last time point in training data
     tn_test = test_data[-1][-1] # last time point in test data
+    n_train = len(train_data)
     n_test = len(test_data)
+
 
     for epoch in range(num_epochs):
         start_time = time.time()
@@ -39,7 +41,7 @@ def single_batch_train(net, n_train, training_data, test_data, num_epochs):
 
         net.train()
         optimizer.zero_grad()
-        output, train_ratio = net(training_data, t0=0, tn=tn_train)
+        output = net(training_data, t0=0, tn=tn_train)
         loss = nll(output)
         loss.backward()
         optimizer.step()
@@ -48,15 +50,16 @@ def single_batch_train(net, n_train, training_data, test_data, num_epochs):
 
         net.eval()
         with torch.no_grad():
-            test_output, test_ratio = net(test_data, t0=tn_train, tn=tn_test)
-            test_loss = nll(test_output).item()
+            test_output = net(test_data, t0=tn_train, tn=tn_test)
+            test_loss = nll(test_output)
                 
 
         avg_train_loss = running_loss / n_train
-        avg_test_loss = test_loss / n_test
+        avg_test_loss = test_loss.cpu() / n_test
+        # avg_test_loss
         current_time = time.time()
         
-        if epoch == 0 or (epoch+1) % 5 == 0:
+        if epoch == 0 or (epoch+1) % 20 == 0:
             print(f"Epoch {epoch+1}")
             print(f"elapsed time: {current_time - start_time}" )
             print(f"train loss: {avg_train_loss}")
@@ -157,9 +160,8 @@ if __name__ == '__main__':
 
         return loss
 
-    trainer = Engine(train_step)
-    trainer.t_start = torch.tensor([0.0]).to(device)
-
+    # trainer = Engine(train_step)
+    # trainer.t_start = torch.tensor([0.0]).to(device)
 
     ### Evaluation setup
     def validation_step(engine, batch):
@@ -174,15 +176,15 @@ if __name__ == '__main__':
             engine.t_start = batch[-1][time_column_idx]
             return test_loss
 
-    evaluator = Engine(validation_step)
-    evaluator.t_start = torch.tensor([0.0]).to(device)
+    # evaluator = Engine(validation_step)
+    # evaluator.t_start = torch.tensor([0.0]).to(device)
 
 
     ### Handlers
     print('Starting model training')
     epochs = 100
     # trainer.run(train_loader, max_epochs=epochs)
-    model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, n_train=last_training_idx, training_data=train_data, 
+    model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, training_data=train_data, 
                         test_data=test_data, num_epochs=epochs)
     print('Completed model training')
     # print('Starting model evaluation')
