@@ -18,7 +18,7 @@ def riemann_sum(i:torch.Tensor, j:torch.Tensor, t0:torch.Tensor,
     :returns:           The Riemann sum of the integral
     '''
     # https://secure.math.ubc.ca/~pwalls/math-python/integration/riemann-sums/
-    x = torch.linspace(t0.item(), tn.item(), n_samples+1)
+    x = torch.linspace(t0, tn, n_samples+1)
     x_mid = (x[:-1]+x[1:])/2
     dx = (tn - t0) / n_samples
     rsum = torch.zeros(size=(1,1)).to(device)
