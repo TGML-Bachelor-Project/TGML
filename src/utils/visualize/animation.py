@@ -17,7 +17,7 @@ def node_movements(node_positions:list, title:str, trail:bool) -> None:
                             the animation.
     '''
     # starting from index 1 to get rid of bright color, which is hard to see
-    shift = 1
+    shift = 10
     node_colors = list(mcolors.CSS4_COLORS.keys())[shift:(len(node_positions[0])+shift)]
     xs, ys = [], []
     for time_step in node_positions:

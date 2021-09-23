@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Set device as cpu or gpu for pytorch
 import torch
-# from torch.optim import Adam
+from ignite.engine import Events
 from torch.utils.data import DataLoader
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Running with pytorch device: {device}')
@@ -13,8 +13,8 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
-import utils.visualize as visualize
 from utils import movement
+import utils.visualize as visualize
 from utils.visualize.positions import node_positions
 from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         return loss
 
     trainer = Engine(train_step)
-    trainer.t_start = torch.tensor([0.0]).to(device)
+    trainer.t_start = 0.
 
 
     ### Evaluation setup
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             X = batch.to(device)
-            test_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
+            test_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx].item())
             test_loss = - test_loglikelihood
             # optimizer.step()
             metrics['test_loss'].append(test_loss.item())
@@ -123,16 +123,18 @@ if __name__ == '__main__':
             return test_loss
 
     evaluator = Engine(validation_step)
-    evaluator.t_start = torch.tensor([0.0]).to(device)
+    evaluator.t_start = 0.
 
     ### Handlers
-    print('Starting model training')
+    @trainer.on(Events.EPOCH_COMPLETED(every=5))
+    def evaluate_model():
+        evaluator.run(val_loader)
+
+
     epochs = 100
+    print(f'Starting model training with {epochs} epochs')
     trainer.run(train_loader, max_epochs=epochs)
     print('Completed model training')
-    print('Starting model evaluation')
-    evaluator.run(val_loader, max_epochs=epochs)
-    print('Completed model evaluation')
 
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
