@@ -110,7 +110,7 @@ class BasicEuclideanDistModel(nn.Module):
         event_intensity = 0.
         non_event_intensity = 0.
         for u, v, event_time in data:
-            u, v = u.long(), v.long() # cast to int for indexing
+            u, v = int(u), int(v) # cast to int for indexing
             event_intensity += self.beta - self.get_euclidean_dist(event_time, u, v)
 
         for u, v in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
