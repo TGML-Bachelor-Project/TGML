@@ -34,6 +34,10 @@ class BasicEuclideanDistModel(nn.Module):
         self.integral_approximator = riemann_sum
         self.non_event_weight = non_intensity_weight
 
+        self.pdist = nn.PairwiseDistance(p=2)
+
+
+
     def init_parameter(self, tensor:torch.Tensor) -> torch.Tensor:
         '''
         Fills the input Tensor with values drawn from the uniform distribution from a to b
@@ -71,7 +75,9 @@ class BasicEuclideanDistModel(nn.Module):
         z_j = torch.reshape(z[j], shape=(1,2))
 
         # Euclediean distance
-        return torch.cdist(z_i, z_j, p=2)
+        return self.pdist(z_i, z_j)
+        # return torch.cdist(z_i, z_j, p=2)
+
 
     def intensity_fun(self, t:torch.Tensor, i:torch.Tensor, j:torch.Tensor) -> torch.Tensor:
         '''
@@ -87,6 +93,7 @@ class BasicEuclideanDistModel(nn.Module):
         :returns:   The intensity between i and j at time t as a measure of
                     the two nodes' likelihood of interacting.
         '''
+        z = self.step(t)
         d = self.get_euclidean_dist(t, i, j)
         return torch.exp(self.beta - d)
 

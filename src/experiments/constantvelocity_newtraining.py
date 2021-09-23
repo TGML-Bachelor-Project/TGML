@@ -13,6 +13,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
+import time
 import utils.visualize as visualize
 from utils import movement
 from utils.visualize.positions import node_positions
@@ -20,6 +21,55 @@ from models.basiceuclideandist import BasicEuclideanDistModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 from ignite.engine import Engine
+
+def nll(ll):
+    return -ll
+
+def single_batch_train(net, n_train, training_data, test_data, num_epochs):
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.025)
+    training_losses = []
+    test_losses = []
+    tn_train = training_data[-1][-1] # last time point in training data
+    tn_test = test_data[-1][-1] # last time point in test data
+    n_test = len(test_data)
+
+    for epoch in range(num_epochs):
+        start_time = time.time()
+        running_loss = 0.
+
+        net.train()
+        optimizer.zero_grad()
+        output, train_ratio = net(training_data, t0=0, tn=tn_train)
+        loss = nll(output)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+
+        net.eval()
+        with torch.no_grad():
+            test_output, test_ratio = net(test_data, t0=tn_train, tn=tn_test)
+            test_loss = nll(test_output).item()
+                
+
+        avg_train_loss = running_loss / n_train
+        avg_test_loss = test_loss / n_test
+        current_time = time.time()
+        
+        if epoch == 0 or (epoch+1) % 5 == 0:
+            print(f"Epoch {epoch+1}")
+            print(f"elapsed time: {current_time - start_time}" )
+            print(f"train loss: {avg_train_loss}")
+            print(f"test loss: {avg_test_loss}")
+            print("State dict:")
+            print(net.state_dict())
+            #print(f"train event to non-event ratio: {train_ratio.item()}")
+            #print(f"test event to non-event-ratio: {test_ratio.item()}")
+        
+        training_losses.append(avg_train_loss)
+        test_losses.append(avg_test_loss)
+    
+    return net, training_losses, test_losses
 
 
 
@@ -74,7 +124,8 @@ if __name__ == '__main__':
     
     # Define model
     beta = 0.5
-    model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=0.2)
+    non_weight = 0.2
+    model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=non_weight)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
@@ -87,6 +138,7 @@ if __name__ == '__main__':
         'Bias Term - Beta': []
     }
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
 
 
     ### Training setup
@@ -125,14 +177,17 @@ if __name__ == '__main__':
     evaluator = Engine(validation_step)
     evaluator.t_start = torch.tensor([0.0]).to(device)
 
+
     ### Handlers
     print('Starting model training')
     epochs = 100
-    trainer.run(train_loader, max_epochs=epochs)
+    # trainer.run(train_loader, max_epochs=epochs)
+    model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, n_train=last_training_idx, training_data=train_data, 
+                        test_data=test_data, num_epochs=epochs)
     print('Completed model training')
-    print('Starting model evaluation')
-    evaluator.run(val_loader, max_epochs=epochs)
-    print('Completed model evaluation')
+    # print('Starting model evaluation')
+    # evaluator.run(val_loader, max_epochs=epochs)
+    # print('Completed model evaluation')
 
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
