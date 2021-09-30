@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # Define model
     beta = 0.25
     intensity_fun = CommonBias(beta)
-    integral_approximator = lambda t0, tn, z, u, v, intensity_fun: riemann_sum(t0, tn, n_samples=10, z=z, u=u, v=v, func=intensity_fun)
+    integral_approximator = lambda t0, tn, intensity_fun: riemann_sum(t0, tn, n_samples=10, func=intensity_fun)
     model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=0.2, 
                         intensity_func=intensity_fun, integral_approximator=integral_approximator)
 

@@ -68,7 +68,7 @@ class ConstantVelocityModel(nn.Module):
             event_intensity += self.intensity_function.log_result(self.step(event_time), u, v)
 
         for u, v in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
-            non_event_intensity += self.integral_approximator(t0, tn, lambda t: self.intensity_function.result(self.step(t), u, v))
+            non_event_intensity += self.integral_approximator(t0, tn, lambda t: self.step(t), u, v, self.intensity_function.result)
 
         log_likelihood = event_intensity - self.non_event_weight*non_event_intensity
 
