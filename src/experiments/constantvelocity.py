@@ -16,9 +16,9 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
-from models.constantvelocity import ConstantVelocityModel
 from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
+from models.constantvelocity import ConstantVelocityModel
 from models.intensityfunctions.commonbias import CommonBias
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 

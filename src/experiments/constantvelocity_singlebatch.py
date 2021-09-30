@@ -12,15 +12,15 @@ print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
-import numpy as np
 import time
-import utils.visualize as visualize
+import numpy as np
 from utils import movement
+import utils.visualize as visualize
+from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
 from models.constantvelocity import ConstantVelocityModel
+from models.intensityfunctions.commonbias import CommonBias
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
-
-from ignite.engine import Engine
 
 def nll(ll):
     return -ll
@@ -90,10 +90,10 @@ if __name__ == '__main__':
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 50
+    maxTime = 6
 
     # Bias values for nodes
-    beta = 0.5
+    beta = 0.75
 
     # Simulate events from a non-homogeneous Poisson distribution
     event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
@@ -128,7 +128,10 @@ if __name__ == '__main__':
     # Define model
     beta = 0.5
     non_weight = 0.2
-    model = ConstantVelocityModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=non_weight)
+    intensity_fun = CommonBias(beta)
+    integral_approximator = lambda t0, tn, intensity_fun: riemann_sum(t0, tn, n_samples=10, func=intensity_fun)
+    model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=non_weight, 
+                        intensity_func=intensity_fun, integral_approximator=integral_approximator)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
@@ -138,63 +141,20 @@ if __name__ == '__main__':
     metrics = {
         'train_loss': [],
         'test_loss': [],
-        'Bias Term - Beta': []
     }
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.025)
 
 
-
-    ### Training setup
-    def train_step(engine, batch):
-        X = batch.to(device)
-
-        model.train()
-        optimizer.zero_grad()
-        train_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
-        loss = - train_loglikelihood
-        loss.backward()
-        optimizer.step()
-        metrics['train_loss'].append(loss.item())
-        metrics['Bias Term - Beta'].append(model.beta.item())
-        engine.t_start = batch[-1][time_column_idx].to(device)
-
-        return loss
-
-    # trainer = Engine(train_step)
-    # trainer.t_start = torch.tensor([0.0]).to(device)
-
-    ### Evaluation setup
-    def validation_step(engine, batch):
-        model.eval()
-
-        with torch.no_grad():
-            X = batch.to(device)
-            test_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
-            test_loss = - test_loglikelihood
-            # optimizer.step()
-            metrics['test_loss'].append(test_loss.item())
-            engine.t_start = batch[-1][time_column_idx]
-            return test_loss
-
-    # evaluator = Engine(validation_step)
-    # evaluator.t_start = torch.tensor([0.0]).to(device)
-
-
-    ### Handlers
     print('Starting model training')
     epochs = 100
-    # trainer.run(train_loader, max_epochs=epochs)
     model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, training_data=train_data, 
                         test_data=test_data, num_epochs=epochs)
     print('Completed model training')
-    # print('Starting model evaluation')
-    # evaluator.run(val_loader, max_epochs=epochs)
-    # print('Completed model evaluation')
 
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()
-    print(f'Beta: {model.beta.item()}')
+    print(f'Beta: {model.intensity_function.beta.item()}')
     print(f'Z: {model_z0}')
     print(f'V: {model_v0}')
 
