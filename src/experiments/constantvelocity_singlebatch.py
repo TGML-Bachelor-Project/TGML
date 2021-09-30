@@ -17,7 +17,7 @@ import time
 import utils.visualize as visualize
 from utils import movement
 from utils.visualize.positions import node_positions
-from models.basiceuclideandist import BasicEuclideanDistModel
+from models.constantvelocity import ConstantVelocityModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 from ignite.engine import Engine
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     # Define model
     beta = 0.5
     non_weight = 0.2
-    model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=non_weight)
+    model = ConstantVelocityModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=non_weight)
 
     # Send data and model to same Pytorch device
     model = model.to(device)

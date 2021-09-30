@@ -1,5 +1,6 @@
 # Add necessary folders/files to path
 import os, sys
+
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -15,8 +16,10 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
+from models.constantvelocity import ConstantVelocityModel
+from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
-from models.basiceuclideandist import BasicEuclideanDistModel
+from models.intensityfunctions.commonbias import CommonBias
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 from ignite.engine import Engine
@@ -37,10 +40,10 @@ if __name__ == '__main__':
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 50
+    maxTime = 6
 
     # Bias values for nodes
-    beta = 0.5
+    beta = 0.75
 
     # Simulate events from a non-homogeneous Poisson distribution
     event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
@@ -67,14 +70,17 @@ if __name__ == '__main__':
     training_portion = 0.8
     last_training_idx = int(len(dataset)*training_portion)
     train_data = dataset[:last_training_idx]
-    train_loader = DataLoader(train_data, batch_size=10, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=len(train_data), shuffle=False)
     test_data = dataset[last_training_idx:]
-    val_loader = DataLoader(test_data, batch_size=10, shuffle=False)
+    val_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
 
     
     # Define model
-    beta = 0.5
-    model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=0.2)
+    beta = 0.25
+    intensity_fun = CommonBias(beta)
+    integral_approximator = lambda t0, tn, intensity_fun: riemann_sum(t0, tn, n_samples=10, func=intensity_fun)
+    model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=0.2, 
+                        intensity_func=intensity_fun, integral_approximator=integral_approximator)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
@@ -100,7 +106,7 @@ if __name__ == '__main__':
         loss.backward()
         optimizer.step()
         metrics['train_loss'].append(loss.item())
-        metrics['Bias Term - Beta'].append(model.beta.item())
+        metrics['Bias Term - Beta'].append(model.intensity_function.beta.item())
         engine.t_start = batch[-1][time_column_idx].to(device)
 
         return loss
@@ -139,7 +145,7 @@ if __name__ == '__main__':
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()
-    print(f'Beta: {model.beta.item()}')
+    print(f'Beta: {model.intensity_function.beta.item()}')
     print(f'Z: {model_z0}')
     print(f'V: {model_v0}')
 
