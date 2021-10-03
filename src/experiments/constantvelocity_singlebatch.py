@@ -12,15 +12,15 @@ print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
-import numpy as np
 import time
-import utils.visualize as visualize
+import numpy as np
 from utils import movement
+import utils.visualize as visualize
+from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
-from models.basiceuclideandist import BasicEuclideanDistModel
+from models.constantvelocity import ConstantVelocityModel
+from models.intensityfunctions.commonbias import CommonBias
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
-
-from ignite.engine import Engine
 
 def nll(ll):
     return -ll
@@ -92,10 +92,10 @@ if __name__ == '__main__':
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 250
+    maxTime = 6
 
     # Bias values for nodes
-    beta = 5.
+    beta = 0.75
 
     # Simulate events from a non-homogeneous Poisson distribution
     event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
@@ -129,7 +129,10 @@ if __name__ == '__main__':
     
     # Define model
     non_weight = 0.2
-    model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=non_weight)
+    intensity_fun = CommonBias(beta)
+    integral_approximator = lambda t0, tn, intensity_fun: riemann_sum(t0, tn, n_samples=10, func=intensity_fun)
+    model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=non_weight, 
+                        intensity_func=intensity_fun, integral_approximator=integral_approximator)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
@@ -139,21 +142,24 @@ if __name__ == '__main__':
     metrics = {
         'train_loss': [],
         'test_loss': [],
-        'Bias Term - Beta': []
     }
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.025)
 
 
-    ### Train model
-    epochs = 100
-    lr = 0.025
     print('Starting model training')
-    model, metrics['train_loss'], metrics['test_loss'], metrics['Bias Term - Beta'] = single_batch_train(net=model, training_data=train_data, 
-                        test_data=test_data, num_epochs=epochs, learning_rate=lr)
+    epochs = 100
+    model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, training_data=train_data, 
+                        test_data=test_data, num_epochs=epochs)
     print('Completed model training')
 
     ## Extract model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()
+    print(f'Beta: {model.intensity_function.beta.item()}')
+    print(f'Z: {model_z0}')
+    print(f'V: {model_v0}')
+
+
 
     ### Visualization
     ## Visualize logloss
