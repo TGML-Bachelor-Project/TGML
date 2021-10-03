@@ -25,10 +25,11 @@ from ignite.engine import Engine
 def nll(ll):
     return -ll
 
-def single_batch_train(net, training_data, test_data, num_epochs):
-    optimizer = torch.optim.Adam(net.parameters(), lr=0.025)
+def single_batch_train(net, training_data, test_data, num_epochs, learning_rate=0.001):
+    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     training_losses = []
     test_losses = []
+    beta = []
     tn_train = training_data[-1][-1] # last time point in training data
     tn_test = test_data[-1][-1] # last time point in test data
     n_train = len(train_data)
@@ -59,7 +60,7 @@ def single_batch_train(net, training_data, test_data, num_epochs):
         # avg_test_loss
         current_time = time.time()
         
-        if epoch == 0 or (epoch+1) % 20 == 0:
+        if epoch == 0 or (epoch+1) % 100 == 0:
             print(f"Epoch {epoch+1}")
             print(f"elapsed time: {current_time - start_time}" )
             print(f"train loss: {avg_train_loss}")
@@ -71,8 +72,9 @@ def single_batch_train(net, training_data, test_data, num_epochs):
         
         training_losses.append(avg_train_loss)
         test_losses.append(avg_test_loss)
+        beta.append(net.beta.item())
     
-    return net, training_losses, test_losses
+    return net, training_losses, test_losses, beta
 
 
 
@@ -83,17 +85,17 @@ if __name__ == '__main__':
     # Set the initial position and velocity
     z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
     # v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
-    v0 = np.asarray([[0.02, 0], [-0.02, 0], [0, -0.02], [0, 0.02]])
+    v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
 
     # Get the number of nodes and dimension size
     numOfNodes = z0.shape[0]
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 50
+    maxTime = 250
 
     # Bias values for nodes
-    beta = 0.5
+    beta = 5.
 
     # Simulate events from a non-homogeneous Poisson distribution
     event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
@@ -126,7 +128,6 @@ if __name__ == '__main__':
 
     
     # Define model
-    beta = 0.5
     non_weight = 0.2
     model = BasicEuclideanDistModel(n_points=numOfNodes, init_beta=beta, riemann_samples=10, non_intensity_weight=non_weight)
 
@@ -140,73 +141,28 @@ if __name__ == '__main__':
         'test_loss': [],
         'Bias Term - Beta': []
     }
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
-
-    ### Training setup
-    def train_step(engine, batch):
-        X = batch.to(device)
-
-        model.train()
-        optimizer.zero_grad()
-        train_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
-        loss = - train_loglikelihood
-        loss.backward()
-        optimizer.step()
-        metrics['train_loss'].append(loss.item())
-        metrics['Bias Term - Beta'].append(model.beta.item())
-        engine.t_start = batch[-1][time_column_idx].to(device)
-
-        return loss
-
-    # trainer = Engine(train_step)
-    # trainer.t_start = torch.tensor([0.0]).to(device)
-
-    ### Evaluation setup
-    def validation_step(engine, batch):
-        model.eval()
-
-        with torch.no_grad():
-            X = batch.to(device)
-            test_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
-            test_loss = - test_loglikelihood
-            # optimizer.step()
-            metrics['test_loss'].append(test_loss.item())
-            engine.t_start = batch[-1][time_column_idx]
-            return test_loss
-
-    # evaluator = Engine(validation_step)
-    # evaluator.t_start = torch.tensor([0.0]).to(device)
-
-
-    ### Handlers
-    print('Starting model training')
+    ### Train model
     epochs = 100
-    # trainer.run(train_loader, max_epochs=epochs)
-    model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, training_data=train_data, 
-                        test_data=test_data, num_epochs=epochs)
+    lr = 0.025
+    print('Starting model training')
+    model, metrics['train_loss'], metrics['test_loss'], metrics['Bias Term - Beta'] = single_batch_train(net=model, training_data=train_data, 
+                        test_data=test_data, num_epochs=epochs, learning_rate=lr)
     print('Completed model training')
-    # print('Starting model evaluation')
-    # evaluator.run(val_loader, max_epochs=epochs)
-    # print('Completed model evaluation')
 
-    # Print model params
+    ## Extract model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()
-    print(f'Beta: {model.beta.item()}')
-    print(f'Z: {model_z0}')
-    print(f'V: {model_v0}')
 
-
-
-    # Visualize logloss
+    ### Visualization
+    ## Visualize logloss
     visualize.metrics(metrics)
 
-    # Visualize model Z prediction
+    ## Visualize model Z prediction
     latent_space_positions = [model_z0, z0]
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
-    # Animate node movements
+    ## Animate node movements
     node_positions = movement.contant_velocity(model_z0, model_v0, maxTime, time_steps=100)
     visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
