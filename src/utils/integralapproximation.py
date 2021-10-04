@@ -21,11 +21,11 @@ def riemann_sum(t0:float, tn:float, n_samples:int, z, u, v, func) -> torch.Tenso
     rsum = torch.zeros(size=(1,1)).to(device)
 
     for t_i in t_mid:
-        rsum += func(z(t_i), u, v) * dt
+        rsum += func.result(z(t_i), u, v) * dt
     
     return rsum
 
-def analytical_squared_euclidean(t0:float, tn:float, z, u, v, func):
+def analytical_squared_euclidean(t0:float, tn:float, zt, v, i, j, func):
     '''
     Calculates the Riemann sum for the integral from t0 to tn
     based on the nodes i and j and the given function func.
@@ -35,4 +35,21 @@ def analytical_squared_euclidean(t0:float, tn:float, z, u, v, func):
 
     :returns:           The closed form solution of the squared euclidean intensity function
     '''
-    raise Exception('Not implemented')
+    z = zt(t0)
+    pos_i, pos_j = z[i, :], z[j, :]
+    xi, yi, xj, yj = pos_i[0], pos_i[1], pos_j[0], pos_j[1]
+    vi, vj = v[i, :], v[j, :]
+    vxi, vyi, vxj, vyj = vi[0], vi[1], vj[0], vj[1]
+
+    a = xi-xj
+    m = vxi - vxj
+    b = yi - yj
+    n = vyi - vyj
+
+    # **.5 is often faster than math.sqrt
+    return  (-((math.pi**.5)/(2*(m**2+n**2)**.5)) * 
+                math.exp(((-b**2+func.beta)*m**2 + 2*a*b*m*n - n**2*(a**2-func.beta))/(m**2 + n**2)) *
+                (math.erf(((m**2 + n**2)*t0+a*m+b*n)/((m**2+n**2)**0.5)) -
+                 math.erf( ((m**2+n**2)*tn + a*m + b*n)/((m**2+n**2)**.5))
+                )
+             )

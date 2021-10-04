@@ -16,7 +16,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
-from utils.integralapproximation import riemann_sum
+from utils.integralapproximation import analytical_squared_euclidean, riemann_sum
 from utils.visualize.positions import node_positions
 from models.constantvelocity import ConstantVelocityModel
 from models.intensityfunctions.commonbias import CommonBias
@@ -78,9 +78,8 @@ if __name__ == '__main__':
     # Define model
     beta = 0.25
     intensity_fun = CommonBias(beta)
-    integral_approximator = lambda t0, tn, intensity_fun: riemann_sum(t0, tn, n_samples=10, func=intensity_fun)
     model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=0.2, 
-                        intensity_func=intensity_fun, integral_approximator=integral_approximator)
+                        intensity_func=intensity_fun, integral_approximator=analytical_squared_euclidean)
 
     # Send data and model to same Pytorch device
     model = model.to(device)
