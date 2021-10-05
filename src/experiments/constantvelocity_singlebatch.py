@@ -1,6 +1,5 @@
 # Add necessary folders/files to path
 import os, sys
-
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -20,8 +19,8 @@ import utils.visualize as visualize
 from data.builder import build_dataset
 from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
-from models.constantvelocity import ConstantVelocityModel
 from models.intensityfunctions.commonbias import CommonBias
+from models.constantvelocity.base import ConstantVelocityModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 def nll(ll):
@@ -106,7 +105,8 @@ if __name__ == '__main__':
 
 
     # Split in train and test set
-    dataset = build_dataset(num_of_nodes, events)
+    time_column_idx = 2
+    dataset = build_dataset(num_of_nodes, events, time_column_idx)
     training_portion = 0.8
     last_training_idx = int(len(dataset)*training_portion)
     train_data = dataset[:last_training_idx]

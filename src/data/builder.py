@@ -1,6 +1,6 @@
 import numpy as np
 
-def build_dataset(num_of_nodes:int, events:list) -> list:
+def build_dataset(num_of_nodes:int, events:list, time_column_idx:int) -> list:
     '''
     Builds a dataset of node pair interactions
 
@@ -9,6 +9,8 @@ def build_dataset(num_of_nodes:int, events:list) -> list:
                             second dimension is [index_node_i, index_node_j, interaction_time]
                             for instance events[0,:] could be [0,1,2.43] where
                             node 0 and node 1 interacted at time 2.43
+    :param time_column_idx: Index of the column in the events data which 
+                            holds the time of the interaction
     '''
     dataset = []
     for i in reversed(range(num_of_nodes)):
@@ -20,7 +22,6 @@ def build_dataset(num_of_nodes:int, events:list) -> list:
     # Make sure dataset is numpy array
     dataset = np.asarray(dataset)
     # Make sure dataset is sorted according to increasing event times in column index 2
-    time_column_idx = 2
     dataset = dataset[dataset[:, time_column_idx].argsort()]
     print('Training and evaluation dataset with events for node pairs')
     print(dataset)
