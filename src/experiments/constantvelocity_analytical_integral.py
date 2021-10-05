@@ -16,6 +16,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
+from data.builder import build_dataset
 from utils.integralapproximation import analytical_squared_euclidean, riemann_sum
 from utils.visualize.positions import node_positions
 from models.constantvelocity import ConstantVelocityModel
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     v0 = np.asarray([[0.02, 0], [-0.02, 0], [0, -0.02], [0, 0.02]])
 
     # Get the number of nodes and dimension size
-    numOfNodes = z0.shape[0]
+    num_of_nodes = z0.shape[0]
     dim = z0.shape[1]
 
     # Set the max time
@@ -50,23 +51,9 @@ if __name__ == '__main__':
                                                         T=maxTime, beta=beta, seed=seed)
     events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
-    # Build dataset of node pair interactions
-    dataset = []
-    for i in reversed(range(numOfNodes)):
-        for j in range(i):
-            nodepair_events = events[i][j]
-            for np_event in nodepair_events:
-                dataset.append([i,j, np_event])
-
-    # Make sure dataset is numpy array
-    dataset = np.asarray(dataset)
-    # Make sure dataset is sorted according to increasing event times in column index 2
-    time_column_idx = 2
-    dataset = dataset[dataset[:, time_column_idx].argsort()]
-    print('Training and evaluation dataset with events for node pairs')
-    print(dataset)
 
     # Split in train and test set
+    dataset = build_dataset(num_of_nodes, events)
     training_portion = 0.8
     last_training_idx = int(len(dataset)*training_portion)
     train_data = dataset[:last_training_idx]
@@ -78,7 +65,7 @@ if __name__ == '__main__':
     # Define model
     beta = 0.25
     intensity_fun = CommonBias(beta)
-    model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=0.2, 
+    model = ConstantVelocityModel(n_points=num_of_nodes, non_intensity_weight=0.2, 
                         intensity_func=intensity_fun, integral_approximator=analytical_squared_euclidean)
 
     # Send data and model to same Pytorch device

@@ -1,5 +1,6 @@
 # Add necessary folders/files to path
 import os, sys
+
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -16,6 +17,7 @@ import time
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
+from data.builder import build_dataset
 from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
 from models.constantvelocity import ConstantVelocityModel
@@ -72,7 +74,7 @@ def single_batch_train(net, training_data, test_data, num_epochs, learning_rate=
         
         training_losses.append(avg_train_loss)
         test_losses.append(avg_test_loss)
-        beta.append(net.beta.item())
+        beta.append(net.intensity_function.beta.item())
     
     return net, training_losses, test_losses, beta
 
@@ -88,7 +90,7 @@ if __name__ == '__main__':
     v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
 
     # Get the number of nodes and dimension size
-    numOfNodes = z0.shape[0]
+    num_of_nodes = z0.shape[0]
     dim = z0.shape[1]
 
     # Set the max time
@@ -102,23 +104,9 @@ if __name__ == '__main__':
                                                         T=maxTime, beta=beta, seed=seed)
     events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
-    # Build dataset of node pair interactions
-    dataset = []
-    for i in reversed(range(numOfNodes)):
-        for j in range(i):
-            nodepair_events = events[i][j]
-            for np_event in nodepair_events:
-                dataset.append([i,j, np_event])
-
-    # Make sure dataset is numpy array
-    dataset = np.asarray(dataset)
-    # Make sure dataset is sorted according to increasing event times in column index 2
-    time_column_idx = 2
-    dataset = dataset[dataset[:, time_column_idx].argsort()]
-    print('Training and evaluation dataset with events for node pairs')
-    print(dataset)
 
     # Split in train and test set
+    dataset = build_dataset(num_of_nodes, events)
     training_portion = 0.8
     last_training_idx = int(len(dataset)*training_portion)
     train_data = dataset[:last_training_idx]
@@ -130,8 +118,8 @@ if __name__ == '__main__':
     # Define model
     non_weight = 0.2
     intensity_fun = CommonBias(beta)
-    integral_approximator = lambda t0, tn, intensity_fun: riemann_sum(t0, tn, n_samples=10, func=intensity_fun)
-    model = ConstantVelocityModel(n_points=numOfNodes, non_intensity_weight=non_weight, 
+    integral_approximator = lambda t0, tn, z, v, i, j, intensity_fun: riemann_sum(t0, tn, n_samples=10, z=z, u=i, v=j, func=intensity_fun)
+    model = ConstantVelocityModel(n_points=num_of_nodes, non_intensity_weight=0.2, 
                         intensity_func=intensity_fun, integral_approximator=integral_approximator)
 
     # Send data and model to same Pytorch device
@@ -142,13 +130,14 @@ if __name__ == '__main__':
     metrics = {
         'train_loss': [],
         'test_loss': [],
+        'beta': []
     }
     optimizer = torch.optim.Adam(model.parameters(), lr=0.025)
 
 
     print('Starting model training')
     epochs = 100
-    model, metrics['train_loss'], metrics['test_loss'] = single_batch_train(net=model, training_data=train_data, 
+    model, metrics['train_loss'], metrics['test_loss'], metrics['beta'] = single_batch_train(net=model, training_data=train_data, 
                         test_data=test_data, num_epochs=epochs)
     print('Completed model training')
 

@@ -32,6 +32,11 @@ def analytical_squared_euclidean(t0:float, tn:float, zt, v, i, j, func):
 
     :param t0:          Start of integral interval
     :param tn:          End of integral interval
+    :param zt:          A function z(t) which gives the latent representation z to the time t
+    :param v:           The constant velocity vector
+    :param i:           The index of node i
+    :param j:           The index of node j
+    :param func:        The intensity function to compute the integral of
 
     :returns:           The closed form solution of the squared euclidean intensity function
     '''
