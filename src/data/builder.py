@@ -22,6 +22,9 @@ def build_dataset(num_of_nodes:int, events:list, time_column_idx:int) -> list:
     # Make sure dataset is numpy array
     dataset = np.asarray(dataset)
     # Make sure dataset is sorted according to increasing event times in column index 2
+    if len(dataset) == 0:
+        raise Exception('No node interactions have happened. Try increasing the max_time')
+
     dataset = dataset[dataset[:, time_column_idx].argsort()]
     print('Training and evaluation dataset with events for node pairs')
     print(dataset)

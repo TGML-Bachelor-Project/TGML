@@ -18,7 +18,7 @@ class TestIntegralApproximation(unittest.TestCase):
         n_samples = 10
         intensity_func = CommonBias()
         intensity_func.result = MagicMock(return_value=0)
-        self.assertEqual(riemann_sum(i, j, t0, tn, n_samples, intensity_func), torch.tensor([0]))
+        self.assertEqual(riemann_sum(t0, tn, n_samples, intensity_func), torch.tensor([0]))
 
     def test_riemann_given_tn_6_and_constant_func_5_expects_30(self):
         i = torch.tensor([0])
