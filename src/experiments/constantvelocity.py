@@ -38,7 +38,11 @@ if __name__ == '__main__':
     maxTime = 6
 
     # Bias values for nodes
-    beta = 0.75
+    true_beta = 0.75
+    # Simulate events from a non-homogeneous Poisson distribution
+    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
+                                                        T=maxTime, beta=true_beta, seed=seed)
+    events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
     # Define model
     beta = 0.25
@@ -49,12 +53,6 @@ if __name__ == '__main__':
 
     # Send data and model to same Pytorch device
     model = model.to(device)
-
-    # Simulate events from a non-homogeneous Poisson distribution
-    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
-                                                        T=maxTime, beta=beta, seed=seed)
-    events = event_simulator.sample_interaction_times_for_all_node_pairs()
-
 
     ### Setting up training and evaluation using pytorch-ignite framework
     metrics = {
