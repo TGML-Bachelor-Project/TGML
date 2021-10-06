@@ -56,6 +56,8 @@ if __name__ == '__main__':
     intensity_fun = CommonBias(beta)
     model = ConstantVelocityModel(n_points=num_of_nodes, non_intensity_weight=0.2, 
                         intensity_func=intensity_fun, integral_approximator=analytical_squared_euclidean)
+    print(f'Model initial node start positions')
+    print(model.z0)
 
     # Send data and model to same Pytorch device
     model = model.to(device)

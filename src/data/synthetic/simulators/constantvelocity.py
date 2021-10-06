@@ -118,6 +118,4 @@ class ConstantVelocitySimulator:
             # Add the event times
             networkEvents[i][j].extend(eventTimes)
         
-        print('Network Events Lower Triangular Matrix:')
-        print(np.asarray(networkEvents))
         return networkEvents
