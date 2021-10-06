@@ -1,14 +1,20 @@
 import torch
 from ignite.engine import Engine
 from ignite.engine import Events
+from data.builder import build_dataset
+from torch.utils.data import DataLoader
 
 class TrainTestGym:
-    def __init__(self, model, device, train_loader, val_loader,
-                        optimizer, metrics, time_column_idx) -> None:
+    def __init__(self, num_of_nodes, events, model, device, 
+                    training_portion, optimizer, metrics, time_column_idx) -> None:
+        dataset = build_dataset(num_of_nodes, events, time_column_idx)
+        last_training_idx = int(len(dataset)*training_portion)
+        train_data = dataset[:last_training_idx]
+        test_data = dataset[last_training_idx:]
+        self.train_loader = DataLoader(train_data, batch_size=len(train_data), shuffle=False)
+        self.val_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
         self.model = model
         self.device = device
-        self.train_loader = train_loader
-        self.val_loader = val_loader
         self.trainer = Engine(self.__train_step)
         self.trainer.t_start = 0.
         self.evaluator = Engine(self.__validation_step)
@@ -32,8 +38,6 @@ class TrainTestGym:
         engine.t_start = batch[-1][self.time_column_idx].to(self.device)
 
         return loss
-
-
 
     ### Evaluation setup
     def __validation_step(self, engine, batch):

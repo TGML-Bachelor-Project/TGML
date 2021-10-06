@@ -5,7 +5,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Set device as cpu or gpu for pytorch
 import torch
-from torch.utils.data import DataLoader
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
@@ -14,7 +13,6 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
-from data.builder import build_dataset
 from traintestgyms.standardgym import TrainTestGym
 from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
@@ -42,22 +40,6 @@ if __name__ == '__main__':
     # Bias values for nodes
     beta = 0.75
 
-    # Simulate events from a non-homogeneous Poisson distribution
-    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
-                                                        T=maxTime, beta=beta, seed=seed)
-    events = event_simulator.sample_interaction_times_for_all_node_pairs()
-
-    # Split in train and test set
-    time_column_idx = 2
-    dataset = build_dataset(num_of_nodes, events, time_column_idx)
-    training_portion = 0.8
-    last_training_idx = int(len(dataset)*training_portion)
-    train_data = dataset[:last_training_idx]
-    train_loader = DataLoader(train_data, batch_size=len(train_data), shuffle=False)
-    test_data = dataset[last_training_idx:]
-    val_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
-
-    
     # Define model
     beta = 0.25
     intensity_fun = CommonBias(beta)
@@ -67,6 +49,11 @@ if __name__ == '__main__':
 
     # Send data and model to same Pytorch device
     model = model.to(device)
+
+    # Simulate events from a non-homogeneous Poisson distribution
+    event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
+                                                        T=maxTime, beta=beta, seed=seed)
+    events = event_simulator.sample_interaction_times_for_all_node_pairs()
 
 
     ### Setting up training and evaluation using pytorch-ignite framework
@@ -79,8 +66,8 @@ if __name__ == '__main__':
 
 
     #Train and evaluate model
-    gym = TrainTestGym(model, device, train_loader, val_loader,
-                        optimizer, metrics, time_column_idx)
+    gym = TrainTestGym(num_of_nodes, events, model, device, training_portion=0.8,
+                        optimizer=optimizer, metrics=metrics, time_column_idx=2)
     gym.train_test_model(epochs=100)
 
     # Print model params
