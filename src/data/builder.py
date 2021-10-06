@@ -28,5 +28,6 @@ def build_dataset(num_of_nodes:int, events:list, time_column_idx:int) -> list:
     dataset = dataset[dataset[:, time_column_idx].argsort()]
     print('Training and evaluation dataset with events for node pairs')
     print(dataset)
+    print(f'Number of interactions: {len(dataset)}')
 
     return dataset

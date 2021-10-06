@@ -35,10 +35,10 @@ if __name__ == '__main__':
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 6
+    maxTime = 100
 
     # Bias values for nodes
-    true_beta = 0.75
+    true_beta = 5 
     # Simulate events from a non-homogeneous Poisson distribution
     event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
                                                         T=maxTime, beta=true_beta, seed=seed)
@@ -59,12 +59,12 @@ if __name__ == '__main__':
         'test_loss': [],
         'Bias Term - Beta': []
     }
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.25)
 
     #Train and evaluate model
-    gym = TrainTestGym(num_of_nodes, events, model, device, training_portion=0.8,
+    gym = TrainTestGym(num_of_nodes, events, model, device, batch_size=50, training_portion=0.8,
                         optimizer=optimizer, metrics=metrics, time_column_idx=2)
-    gym.train_test_model(epochs=100)
+    gym.train_test_model(epochs=10)
 
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 

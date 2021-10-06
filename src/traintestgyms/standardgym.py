@@ -3,16 +3,17 @@ from ignite.engine import Engine
 from ignite.engine import Events
 from data.builder import build_dataset
 from torch.utils.data import DataLoader
+from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
 class TrainTestGym:
-    def __init__(self, num_of_nodes, events, model, device, 
+    def __init__(self, num_of_nodes, events, model, device, batch_size,
                     training_portion, optimizer, metrics, time_column_idx) -> None:
         dataset = build_dataset(num_of_nodes, events, time_column_idx)
         last_training_idx = int(len(dataset)*training_portion)
         train_data = dataset[:last_training_idx]
         test_data = dataset[last_training_idx:]
-        self.train_loader = DataLoader(train_data, batch_size=len(train_data), shuffle=False)
-        self.val_loader = DataLoader(test_data, batch_size=len(test_data), shuffle=False)
+        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
+        self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
         self.model = model
         self.device = device
         self.trainer = Engine(self.__train_step)
@@ -23,6 +24,8 @@ class TrainTestGym:
         self.metrics = metrics
         self.time_column_idx = time_column_idx
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), lambda: self.evaluator.run(self.val_loader))
+        pbar = ProgressBar()
+        pbar.attach(self.trainer)
 
     def __train_step(self, engine, batch):
         X = batch.to(self.device)

@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
 
     #Train and evaluate model
-    gym = TrainTestGym(num_of_nodes, events, model, device, training_portion=0.8,
+    gym = TrainTestGym(num_of_nodes, events, model, device, batch_size=10, training_portion=0.8,
                         optimizer=optimizer, metrics=metrics, time_column_idx=2)
     gym.train_test_model(epochs=100)
 
