@@ -5,7 +5,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Set device as cpu or gpu for pytorch
 import torch
-from ignite.engine import Events
 from torch.utils.data import DataLoader
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Running with pytorch device: {device}')
@@ -21,9 +20,6 @@ from utils.visualize.positions import node_positions
 from models.intensityfunctions.commonbias import CommonBias
 from models.constantvelocity.base import ConstantVelocityModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
-
-from ignite.engine import Engine
-
 
 
 if __name__ == '__main__':
@@ -79,63 +75,6 @@ if __name__ == '__main__':
         'Bias Term - Beta': []
     }
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-
-    ### Training setup
-    def train_step(engine, batch):
-        X = batch.to(device)
-
-        model.train()
-        optimizer.zero_grad()
-        train_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx])
-        loss = - train_loglikelihood
-        loss.backward()
-        optimizer.step()
-        metrics['train_loss'].append(loss.item())
-        metrics['Bias Term - Beta'].append(model.intensity_function.beta.item())
-        engine.t_start = batch[-1][time_column_idx].to(device)
-
-        return loss
-
-    trainer = Engine(train_step)
-    trainer.t_start = 0.
-
-
-    ### Evaluation setup
-    def validation_step(engine, batch):
-        model.eval()
-
-        with torch.no_grad():
-            X = batch.to(device)
-            test_loglikelihood = model(X, t0=engine.t_start, tn=batch[-1][time_column_idx].item())
-            test_loss = - test_loglikelihood
-            # optimizer.step()
-            metrics['test_loss'].append(test_loss.item())
-            engine.t_start = batch[-1][time_column_idx]
-            return test_loss
-
-    evaluator = Engine(validation_step)
-    evaluator.t_start = 0.
-
-    ### Handlers
-    @trainer.on(Events.EPOCH_COMPLETED(every=5))
-    def evaluate_model():
-        evaluator.run(val_loader)
-
-
-    epochs = 100
-    print(f'Starting model training with {epochs} epochs')
-    trainer.run(train_loader, max_epochs=epochs)
-    print('Completed model training')
-
-    # Print model params
-    model_z0 = model.z0.cpu().detach().numpy() 
-    model_v0 = model.v0.cpu().detach().numpy()
-    print(f'Beta: {model.intensity_function.beta.item()}')
-    print(f'Z: {model_z0}')
-    print(f'V: {model_v0}')
-
-
 
     # Visualize logloss
     visualize.metrics(metrics)
