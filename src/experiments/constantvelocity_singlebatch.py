@@ -148,8 +148,6 @@ if __name__ == '__main__':
     print(f'Z: {model_z0}')
     print(f'V: {model_v0}')
 
-
-
     ### Visualization
     ## Visualize logloss
     visualize.metrics(metrics)

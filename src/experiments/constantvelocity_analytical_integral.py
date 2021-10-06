@@ -15,11 +15,12 @@ import numpy as np
 from utils import movement
 import utils.visualize as visualize
 from data.builder import build_dataset
-from utils.integralapproximation import analytical_squared_euclidean, riemann_sum
+from traintestgyms.standardgym import TrainTestGym
 from utils.visualize.positions import node_positions
 from models.intensityfunctions.commonbias import CommonBias
 from models.constantvelocity.base import ConstantVelocityModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
+from utils.integralapproximation import analytical_squared_euclidean, riemann_sum
 
 
 if __name__ == '__main__':
@@ -75,6 +76,18 @@ if __name__ == '__main__':
         'Bias Term - Beta': []
     }
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    #Train and evaluate model
+    gym = TrainTestGym(model, device, train_loader, val_loader,
+                        optimizer, metrics, time_column_idx)
+    gym.train_test_model(epochs=100)
+
+    # Print model params
+    model_z0 = model.z0.cpu().detach().numpy() 
+    model_v0 = model.v0.cpu().detach().numpy()
+    print(f'Beta: {model.intensity_function.beta.item()}')
+    print(f'Z: {model_z0}')
+    print(f'V: {model_v0}')
 
     # Visualize logloss
     visualize.metrics(metrics)
