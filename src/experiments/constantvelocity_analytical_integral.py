@@ -12,6 +12,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 # Imports
 import numpy as np
 from utils import movement
+from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.standardgym import TrainTestGym
 from utils.visualize.positions import node_positions
@@ -22,6 +23,12 @@ from utils.integralapproximation import analytical_squared_euclidean, riemann_su
 
 
 if __name__ == '__main__':
+    arg_parser = ArgumentParser()
+    arg_parser.add_argument('--max_time', '-T', default=100, type=int)
+    arg_parser.add_argument('--true_beta', '-B', default=0.5, type=float)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=250, type=int)
+    args = arg_parser.parse_args()
+
     # A simple example
     seed = 2
 
@@ -35,10 +42,10 @@ if __name__ == '__main__':
     dim = z0.shape[1]
 
     # Set the max time
-    maxTime = 100
+    maxTime = args.max_time
 
     # Bias values for nodes
-    true_beta = 5 
+    true_beta = args.true_beta
     # Simulate events from a non-homogeneous Poisson distribution
     event_simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, 
                                                         T=maxTime, beta=true_beta, seed=seed)
@@ -62,7 +69,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=0.25)
 
     #Train and evaluate model
-    gym = TrainTestGym(num_of_nodes, events, model, device, batch_size=50, training_portion=0.8,
+    gym = TrainTestGym(num_of_nodes, events, model, device, batch_size=args.train_batch_size, training_portion=0.8,
                         optimizer=optimizer, metrics=metrics, time_column_idx=2)
     gym.train_test_model(epochs=10)
 

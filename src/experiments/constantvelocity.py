@@ -13,6 +13,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 import numpy as np
 from utils import movement
 import utils.visualize as visualize
+from argparse import ArgumentParser
 from traintestgyms.standardgym import TrainTestGym
 from utils.integralapproximation import riemann_sum
 from utils.visualize.positions import node_positions
@@ -22,6 +23,12 @@ from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 
 if __name__ == '__main__':
+    arg_parser = ArgumentParser()
+    arg_parser.add_argument('--max_time', '-T', default=100, type=int)
+    arg_parser.add_argument('--true_beta', '-B', default=0.5, type=float)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=250, type=int)
+    args = arg_parser.parse_args()
+
     # A simple example
     seed = 2
 
@@ -64,7 +71,7 @@ if __name__ == '__main__':
 
 
     #Train and evaluate model
-    gym = TrainTestGym(num_of_nodes, events, model, device, batch_size=10, training_portion=0.8,
+    gym = TrainTestGym(num_of_nodes, events, model, device, batch_size=args.train_batch_size, training_portion=0.8,
                         optimizer=optimizer, metrics=metrics, time_column_idx=2)
     gym.train_test_model(epochs=100)
 
