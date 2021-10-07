@@ -20,7 +20,6 @@ class ConstantVelocitySimulator:
         self.v0 = np.asarray(velocities)
         self.__max_time = T
         self.__beta = beta
-        self.__seed = seed
         self.__num_of_nodes = self.z0.shape[0]
 
         self.__node_pair_indices = np.tril_indices(n=self.__num_of_nodes)
