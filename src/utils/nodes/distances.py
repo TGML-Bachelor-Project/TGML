@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def get_squared_euclidean_dist(z:torch.Tensor, i:torch.Tensor, j:torch.Tensor) -> torch.Tensor:
     '''

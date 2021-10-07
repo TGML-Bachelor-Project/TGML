@@ -1,6 +1,6 @@
 import numpy as np
-from utils.movement import get_position
-from data.synthetic.distributions.nhpp import NHPP
+from data.synthetic.nhpp import NHPP
+from utils.nodes.positions import get_current_position
 
 class ConstantVelocitySimulator:
     '''
@@ -36,7 +36,7 @@ class ConstantVelocitySimulator:
         
         :returns:   The Euclidean distance of node i and j at time t
         '''
-        xi, xj = get_position(self.z0, self.v0, i, t), get_position(self.z0, self.v0, j, t)
+        xi, xj = get_current_position(self.z0, self.v0, i, t), get_current_position(self.z0, self.v0, j, t)
 
         # Euclediean distance
         return np.linalg.norm(xi-xj)
