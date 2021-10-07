@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from utils.nodes.distances import get_squared_euclidean_dist
-from utils.integrals.analytical import constant_velocity as evaluate_integral
 
 
 class ConstantVelocityModel(nn.Module):

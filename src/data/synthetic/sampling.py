@@ -22,10 +22,10 @@ class ConstantVelocitySimulator:
         self.__beta = beta
         self.__num_of_nodes = self.z0.shape[0]
 
-        self.__node_pair_indices = np.tril_indices(n=self.__num_of_nodes)
+        self.__node_pair_indices = np.triu_indices(n=self.__num_of_nodes, k=1)
         np.random.seed(seed)
 
-    def __calculate_distance(self, i:int, j:int, t:int) -> np.float64:
+    def __squared_euclidean_distance(self, i:int, j:int, t:int) -> np.float64:
         '''
         Calculates the Eucledian distance between node i and j at time t
 
@@ -36,10 +36,10 @@ class ConstantVelocitySimulator:
         
         :returns:   The Euclidean distance of node i and j at time t
         '''
-        xi, xj = get_current_position(self.z0, self.v0, i, t), get_current_position(self.z0, self.v0, j, t)
+        p, q = get_current_position(self.z0, self.v0, i, t), get_current_position(self.z0, self.v0, j, t)
 
-        # Euclediean distance
-        return np.linalg.norm(xi-xj)
+        # Squared Euclediean distance
+        return (p[0]-q[0])**2 + (p[1]-q[1])**2
 
     def __critical_time_points(self, i:int, j:int) -> list:
         '''
@@ -84,7 +84,7 @@ class ConstantVelocitySimulator:
         :returns:   The intensity between node i and j at time t i.e.
                     a measure of the likelihood of the two nodes interacting
         '''
-        return np.exp(self.__beta - self.__calculate_distance(i,j,t))
+        return np.exp(self.__beta - self.__squared_euclidean_distance(i,j,t))
 
     def sample_interaction_times_for_all_node_pairs(self) -> list:
         '''
@@ -99,22 +99,18 @@ class ConstantVelocitySimulator:
                     and entries [i][j] being a collection of time points indicating
                     the times where node j and node i interacts.
         '''
-        # Lower triangular matrix of lists
-        networkEvents = [[[] for _ in range(i, self.__num_of_nodes)] for i in reversed(range(self.__num_of_nodes))]
-        distinct_node_pairs = [pair for pair in 
-                                zip(self.__node_pair_indices[0], self.__node_pair_indices[1])
-                                if pair[0] != pair[1]]
+        # Upper triangular matrix of lists
+        network_events = [[[] for _ in range(self.__num_of_nodes)] for _ in range(self.__num_of_nodes)]
 
-        for i, j in distinct_node_pairs:
+        for i, j in zip(self.__node_pair_indices[0], self.__node_pair_indices[1]):
             # Define the intensity function for each node pair (i,j)
-            intensityFunc = lambda t: self.intensity_function(i=i, j=j, t=t)
+            intensity_func = lambda t: self.intensity_function(i=i, j=j, t=t)
             # Get the critical points
-            criticalPoints = self.__critical_time_points(i=i, j=j)
-            print(f'Critical time points {i}-{j}: {criticalPoints}')
+            critical_points = self.__critical_time_points(i=i, j=j)
             # Simulate the models
-            nhppij = NHPP(T=self.__max_time, intensity_func=intensityFunc, time_bins=criticalPoints, seed=np.random.randint(100000))#, seed=self.__seed)
-            eventTimes = nhppij.generate_time_units()
+            nhppij = NHPP(max_time=self.__max_time, intensity_func=intensity_func, time_bins=critical_points, seed=np.random.randint(100000))
+            event_times = nhppij.generate_time_units()
             # Add the event times
-            networkEvents[i][j].extend(eventTimes)
-        
-        return networkEvents
+            network_events[i][j].extend(event_times)
+
+        return network_events

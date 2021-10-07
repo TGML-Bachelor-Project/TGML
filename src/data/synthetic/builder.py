@@ -16,12 +16,12 @@ class DatasetBuilder:
                                 holds the time of the interaction
         '''
         events = self.simulator.sample_interaction_times_for_all_node_pairs()
+        nodepair_ind = np.triu_indices(num_of_nodes, k=1)
         dataset = []
-        for i in reversed(range(num_of_nodes)):
-            for j in range(i):
-                nodepair_events = events[i][j]
-                for np_event in nodepair_events:
-                    dataset.append([i,j, np_event])
+        for i,j in zip(nodepair_ind[0], nodepair_ind[1]):
+            nodepair_events = events[i][j]
+            for np_event in nodepair_events:
+                dataset.append([i,j, np_event])
 
         # Make sure dataset is numpy array
         dataset = np.asarray(dataset)

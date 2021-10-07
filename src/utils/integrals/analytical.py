@@ -1,7 +1,7 @@
 import torch
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def constant_velocity(t0:float, tn:float, z:torch.Tensor, v:torch.Tensor, i:int, j:int, beta:torch.Tensor) -> torch.Tensor:
+def analytical_integral(t0:float, tn:float, z:torch.Tensor, v:torch.Tensor, i:int, j:int, beta:torch.Tensor) -> torch.Tensor:
     '''
     Calculates the Riemann sum for the integral from t0 to tn
     based on the nodes i and j and the given function func.

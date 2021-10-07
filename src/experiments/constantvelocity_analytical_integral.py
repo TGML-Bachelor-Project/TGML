@@ -25,12 +25,12 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
-    arg_parser.add_argument('--true_beta', '-TB', default=0.5, type=float)
+    arg_parser.add_argument('--true_beta', '-TB', default=4, type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=0.25, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.01, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=10, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=100, type=int)
     arg_parser.add_argument('--non_intensity_weight', '-NIW', default=0.2, type=float)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=250, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=400, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     args = arg_parser.parse_args()
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     ## Initialize data_builder for simulating node interactions from known Poisson Process
     z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
-    v0 = np.asarray([[0.02, 0], [-0.02, 0], [0, -0.02], [0, 0.02]])
+    v0 = np.asarray([[2, 0], [-2, 0], [0, -2], [0, 1]])
     data_builder = DatasetBuilder(starting_positions=z0, starting_velocities=v0,
                         max_time=max_time, common_bias=true_beta, seed=seed)
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         'test_loss': [],
         'Bias Term - Beta': []
     }
-    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    dataset = torch.from_numpy(data_builder.build_dataset(num_nodes, time_column_idx=2))
     gym = TrainTestGym(dataset, model, device, 
                         batch_size=train_batch_size, 
                         training_portion=training_portion,
