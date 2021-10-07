@@ -28,6 +28,7 @@ def riemann_sum(t0:float, tn:float, n_samples:int, zt, i:int, j:int, func) -> to
     
     return rsum
 
+
 def analytical_squared_euclidean(t0:float, tn:float, zt, v:torch.Tensor, i:int, j:int, func):
     '''
     Calculates the Riemann sum for the integral from t0 to tn
@@ -49,16 +50,14 @@ def analytical_squared_euclidean(t0:float, tn:float, zt, v:torch.Tensor, i:int, 
     vi, vj = v[i, :], v[j, :]
     vxi, vyi, vxj, vyj = vi[0], vi[1], vj[0], vj[1]
 
-    a = xi-xj
-    m = vxi - vxj
+    a = xi - xj
     b = yi - yj
+    m = vxi - vxj
     n = vyi - vyj
 
-    # **.5 is often faster than math.sqrt
-    return  (- ((math.pi**.5)*math.exp( ((-b**2-a+func.beta)*m**2 - n**2*(-func.beta+a)) / (m**2 + n**2) ))/(2*(m**2 + n**2)**0.5) 
-                *
-                (
-                    torch.erf(((m**2 + n**2)*t0+b*n)/((m**2+n**2)**0.5)) -
-                    torch.erf(((m**2+n**2)*tn + b*n)/((m**2+n**2)**.5))
-                )
-             )
+    # **0.5 is often faster than math.sqrt
+    return  (
+            (((math.pi**0.5) * torch.exp(((-b**2 - a + func.beta) * m**2 - n**2 * (-func.beta + a)) / (m**2 + n**2))) / (2 * (m**2 + n**2)**0.5)) 
+            *
+            (torch.erf(((m**2 + n**2) * tn + b*n) / ((m**2 + n**2)**0.5)) - torch.erf(((m**2 + n**2) * t0 + b*n) / ((m**2 + n**2)**0.5)))
+            )
