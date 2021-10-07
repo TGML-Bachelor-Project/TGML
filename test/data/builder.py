@@ -13,10 +13,11 @@ from src.data.builder import build_dataset
 from src.data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 
 class TestBuildDataset(unittest.TestCase):
+
     def test_build_dataset(self):
         seed = 2
-        max_time = 50
-        true_beta = .001
+        max_time = 10 
+        true_beta = .01
         z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
         v0 = np.asarray([[0.02, 0], [-0.02, 0], [0, -0.02], [0, 0.02]])
 
@@ -25,7 +26,7 @@ class TestBuildDataset(unittest.TestCase):
                                                     T=max_time, 
                                                     beta=true_beta, 
                                                     seed=seed)
-        event_simulator.__intensity_function = MagicMock(return_value=3)
+        event_simulator.intensity_function = MagicMock(return_value = 3)
         ## Compute events
         events = event_simulator.sample_interaction_times_for_all_node_pairs()
         

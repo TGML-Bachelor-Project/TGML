@@ -58,7 +58,7 @@ def analytical_squared_euclidean(t0:float, tn:float, zt, v:torch.Tensor, i:int, 
     return  (- ((math.pi**.5)*math.exp( ((-b**2-a+func.beta)*m**2 - n**2*(-func.beta+a)) / (m**2 + n**2) ))/(2*(m**2 + n**2)**0.5) 
                 *
                 (
-                    math.erf(((m**2 + n**2)*t0+b*n)/((m**2+n**2)**0.5)) -
-                    math.erf(((m**2+n**2)*tn + b*n)/((m**2+n**2)**.5))
+                    torch.erf(((m**2 + n**2)*t0+b*n)/((m**2+n**2)**0.5)) -
+                    torch.erf(((m**2+n**2)*tn + b*n)/((m**2+n**2)**.5))
                 )
              )

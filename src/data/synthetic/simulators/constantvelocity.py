@@ -72,7 +72,7 @@ class ConstantVelocitySimulator:
 
         return criticalPoints
 
-    def __intensity_function(self, i:int, j:int, t:int) -> np.float64:
+    def intensity_function(self, i:int, j:int, t:int) -> np.float64:
         '''
         The intensity function used to calculate the event frequencies at time t in the
         simulation of the Non-homogeneous Poisson process
@@ -107,7 +107,7 @@ class ConstantVelocitySimulator:
 
         for i, j in distinct_node_pairs:
             # Define the intensity function for each node pair (i,j)
-            intensityFunc = lambda t: self.__intensity_function(i=i, j=j, t=t)
+            intensityFunc = lambda t: self.intensity_function(i=i, j=j, t=t)
             # Get the critical points
             criticalPoints = self.__critical_time_points(i=i, j=j)
             print(f'Critical time points {i}-{j}: {criticalPoints}')
