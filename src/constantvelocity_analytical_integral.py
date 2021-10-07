@@ -7,17 +7,18 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
-from utils import movement
+import wandb
 from argparse import ArgumentParser
-import utils.visualize as visualize
-from traintestgyms.standardgym import TrainTestGym
-from utils.visualize.positions import node_positions
+
+from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 from models.intensityfunctions.commonbias import CommonBias
 from models.constantvelocity.base import ConstantVelocityModel
-from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
 from utils.integralapproximation import analytical_squared_euclidean, riemann_sum
+from traintestgyms.standardgym import TrainTestGym
+from utils.visualize.positions import node_positions
+from utils import movement
+import utils.visualize as visualize
 
-import wandb
 
 
 
