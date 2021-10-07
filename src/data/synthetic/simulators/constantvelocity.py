@@ -27,19 +27,21 @@ class ConstantVelocitySimulator:
 
     def __calculate_distance(self, i:int, j:int, t:int) -> np.float64:
         '''
-        Calculates the Eucledian distance between node i and j at time t
+        Calculates the squared Eucledian distance between node i and j at time t
 
         :param i:   Index of node i
         :param j:   Index of node j
         :param t:   The time at which the distance of node i and j
                     is calculated
         
-        :returns:   The Euclidean distance of node i and j at time t
+        :returns:   The squared Euclidean distance of node i and j at time t
         '''
-        xi, xj = get_position(self.z0, self.v0, i, t), get_position(self.z0, self.v0, j, t)
+        zi, zj = get_position(self.z0, self.v0, i, t), get_position(self.z0, self.v0, j, t)
 
-        # Euclediean distance
-        return np.linalg.norm(xi-xj)
+        # Squared Euclediean distance
+        return np.linalg.norm(zi - zj)**2
+
+    
 
     def __critical_time_points(self, i:int, j:int) -> list:
         '''
