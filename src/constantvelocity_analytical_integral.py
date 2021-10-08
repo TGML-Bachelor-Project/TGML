@@ -23,8 +23,6 @@ from data.synthetic.builder import DatasetBuilder
 from models.constantvelocity.standard import ConstantVelocityModel
 
 
-
-
 if __name__ == '__main__':
 
 
@@ -52,7 +50,6 @@ if __name__ == '__main__':
     train_batch_size = args.train_batch_size
     training_portion = args.training_portion
 
-
     ## Initialize data_builder for simulating node interactions from known Poisson Process
     z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
     v0 = np.asarray([[2, 0], [-2, 0], [0, -2], [0, 1]])
@@ -61,6 +58,22 @@ if __name__ == '__main__':
 
     ### Setup model
     num_nodes = z0.shape[0]
+
+
+    ### Set input parameters as config for Weights and Biases
+    wandb_config = {'max_time': max_time,
+                    'true_beta': true_beta,
+                    'model_beta': model_beta,
+                    'learning_rate': learning_rate,
+                    'num_epochs': num_epochs,
+                    'non_intensity_weight': non_intensity_weight,
+                    'train_batch_size': train_batch_size,
+                    'num_nodes': num_nodes}
+
+    ## Initialize WandB for logging config and metrics
+    wandb.init(project='TGML', entity='augustsemrau', config=wandb_config)
+
+
     model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
     print('Model initial node start positions\n', model.z0)
     model = model.to(device)
@@ -72,6 +85,7 @@ if __name__ == '__main__':
         'test_loss': [],
         'Bias Term - Beta': []
     }
+    
     dataset = torch.from_numpy(data_builder.build_dataset(num_nodes, time_column_idx=2))
     gym = TrainTestGym(dataset, model, device, 
                         batch_size=train_batch_size, 
