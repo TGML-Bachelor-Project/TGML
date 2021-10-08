@@ -15,7 +15,7 @@ from utils.nodes.positions import get_contant_velocity_positions
 from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.ignitegym import TrainTestGym
-from utils.visualize.positions import node_movements
+from utils.visualize.positions import node_positions
 from data.synthetic.builder import DatasetBuilder
 from models.constantvelocity.standard import ConstantVelocityModel
 
@@ -24,12 +24,12 @@ if __name__ == '__main__':
 
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--max_time', '-MT', default=50, type=int)
-    arg_parser.add_argument('--true_beta', '-TB', default=5., type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=0.25, type=float)
-    arg_parser.add_argument('--learning_rate', '-LR', default=0.01, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=10, type=int)
+    arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
+    arg_parser.add_argument('--true_beta', '-TB', default=7., type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=0.01, type=float)
+    arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
+    arg_parser.add_argument('--num_epochs', '-NE', default=700, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=450, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     args = arg_parser.parse_args()
 
@@ -85,9 +85,10 @@ if __name__ == '__main__':
 
     ## Learned Z and true Z
     latent_space_positions = [model_z0, z0]
+    visualize.node_positions(latent_space_positions, 'Actual vs Predicted')
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
     ## Animation of learned node movements
-    node_movements = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
-    visualize.node_movements(node_movements, 'Predicted Node Movements', trail=False)
+    node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
+    visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
 

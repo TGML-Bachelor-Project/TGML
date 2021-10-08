@@ -1,7 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 
-def node_movements(z:list, title:str) -> None:
+def node_positions(z:list, title:str) -> None:
     '''
     Visualizes the 2D points in a list z as
     dots in a plot.
@@ -15,7 +15,8 @@ def node_movements(z:list, title:str) -> None:
     plt.ylabel('y')
 
     for i, zi in enumerate(z):
-        plt.scatter(x=zi[0], y=zi[1], label=f'Node: {i}')
+        for j, zj in enumerate(zi):
+            plt.scatter(x=zj[0], y=zj[1], label=f'Sample {i}, Node: {j}')
 
     plt.legend()
     plt.show()
@@ -38,8 +39,8 @@ def compare_positions(zs:list, titles:list) -> None:
     for i, zi in enumerate(zs):
         ax = fig.add_subplot(rows, cols, i+1)
         ax.set_title(titles[i])
-        ax.set_xlabel('Epoch')
-        ax.set_ylabel('Log Loss')
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
 
         # Plot each node in zi in the subplot ax
         for j, val in enumerate(zi): 

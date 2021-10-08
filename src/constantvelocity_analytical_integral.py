@@ -18,7 +18,7 @@ from utils.nodes.positions import get_contant_velocity_positions
 from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.standardgym import TrainTestGym
-from utils.visualize.positions import node_movements
+from utils.visualize.positions import node_positions
 from data.synthetic.builder import DatasetBuilder
 from models.constantvelocity.standard import ConstantVelocityModel
 
@@ -119,5 +119,5 @@ if __name__ == '__main__':
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
     ## Animation of learned node movements
-    node_movements = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
-    visualize.node_movements(node_movements, 'Predicted Node Movements', trail=False)
+    node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
+    visualize.node_positions(node_positions, 'Predicted Node Movements', trail=False)

@@ -18,7 +18,7 @@ from utils import movement
 import utils.visualize as visualize
 from data.builder import build_dataset
 from utils.integralapproximation import riemann_sum
-from utils.visualize.positions import node_movements
+from utils.visualize.positions import node_positions
 from models.intensityfunctions.commonbias import CommonBias
 from models.constantvelocity.base import ConstantVelocityModel
 from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
@@ -157,5 +157,5 @@ if __name__ == '__main__':
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
     ## Animate node movements
-    node_movements = movement.contant_velocity(model_z0, model_v0, maxTime, time_steps=100)
-    visualize.node_movements(node_movements, 'Predicted Node Movements', trail=False)
+    node_positions = movement.contant_velocity(model_z0, model_v0, maxTime, time_steps=100)
+    visualize.node_positions(node_positions, 'Predicted Node Movements', trail=False)

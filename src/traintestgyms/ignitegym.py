@@ -21,14 +21,17 @@ class TrainTestGym:
         self.optimizer = optimizer
         self.metrics = metrics
         self.time_column_idx = time_column_idx
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), lambda: self.evaluator.run(self.val_loader))
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.evaluator.run(self.val_loader))
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: print(f'z0: {model.z0}  \
+                                                                                        \n v0: {model.v0} \
+                                                                                        \n beta: {model.beta}'))
         pbar = ProgressBar()
         pbar.attach(self.trainer)
 
     def __train_step(self, engine, batch):
         batch = batch.to(self.device)
         
-        print(batch)
+        engine.t_start = 0 if engine.t_start == 0 else batch[0,self.time_column_idx].item()
         self.model.train()
         self.optimizer.zero_grad()
         train_loglikelihood = self.model(batch, t0=engine.t_start, 
@@ -38,7 +41,8 @@ class TrainTestGym:
         self.optimizer.step()
         self.metrics['train_loss'].append(loss.item())
         self.metrics['Bias Term - Beta'].append(self.model.beta.item())
-        engine.t_start = batch[-1,2]
+        if engine.t_start == 0:
+            engine.t_start = 1 #change t_start to flag it for updates
 
         return loss.item()
 
@@ -48,13 +52,15 @@ class TrainTestGym:
 
         with torch.no_grad():
             X = batch.to(self.device)
+            engine.t_start = 0 if engine.t_start == 0. else batch[0,self.time_column_idx]
             test_loglikelihood = self.model(X, t0=engine.t_start, 
                                                 tn=batch[-1,self.time_column_idx].item())
             test_loss = - test_loglikelihood
             # optimizer.step()
             self.metrics['test_loss'].append(test_loss.item())
-            engine.t_start = batch[-1,2]
-            return test_loss
+            if engine.t_start == 0:
+                engine.t_start = 1  
+            return test_loss.item()
 
 
     def train_test_model(self, epochs:int):

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from utils.integrals.riemann import riemann_sum
 from utils.nodes.distances import get_squared_euclidean_dist
 from utils.integrals.analytical import analytical_integral as evaluate_integral
 
@@ -92,15 +91,6 @@ class ConstantVelocityModel(nn.Module):
             event_intensity += self.log_intensity_function(i, j, event_time)
 
         for i, j in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
-            '''
-            print(f't0: {t0}')
-            print(f'tn: {tn}')
-            print(f'beta: {self.beta}')
-            print(f'z0: {self.z0}')
-            print(f'v0: {self.v0}')
-            print(f'riemann: {riemann_sum(t0, tn, self.num_of_nodes, i ,j, self.intensity_function)}')
-            print(f'analytical: {analytical}')
-            '''
             analytical = evaluate_integral(t0, tn, self.z0, self.v0, i, j, self.beta)
             non_event_intensity += analytical
 
