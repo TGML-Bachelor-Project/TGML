@@ -44,6 +44,9 @@ class TrainTestGym:
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
 
+        print(f'z0: {self.model.z0}')
+        print(f'v0: {self.model.v0}')
+        print(f'beta: {self.model.beta}')
         return loss.item()
 
     ### Evaluation setup

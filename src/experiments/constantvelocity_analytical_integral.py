@@ -1,6 +1,8 @@
 import os
 import sys
 
+from torch.optim.optimizer import Optimizer
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Set device as cpu or gpu for pytorch
@@ -28,8 +30,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--true_beta', '-TB', default=7., type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=0.01, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=700, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=450, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     args = arg_parser.parse_args()
 
@@ -53,7 +55,7 @@ if __name__ == '__main__':
 
     ### Setup model
     num_nodes = z0.shape[0]
-    model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
+    model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     print('Model initial node start positions\n', model.z0)
     model = model.to(device)
 
@@ -71,7 +73,22 @@ if __name__ == '__main__':
                         optimizer=optimizer, 
                         metrics=metrics, 
                         time_column_idx=2)
-    gym.train_test_model(epochs=num_epochs)
+
+    
+    # Sequential model training
+    model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
+    for i in range(3):
+        if i == 0:
+            model.z0.requires_grad = True
+        elif i == 1:
+            #model.z0.requires_grad = False
+            model.v0.requires_grad = True
+        elif i == 2:
+            #model.v0.requires_grad = False
+            model.beta.requires_grad = True
+
+        gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        gym.train_test_model(epochs=num_epochs)
 
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
@@ -81,6 +98,7 @@ if __name__ == '__main__':
     print(f'V: {model_v0}')
 
     ### Visualizations
+    '''
     visualize.metrics(metrics)
 
     ## Learned Z and true Z
@@ -91,4 +109,4 @@ if __name__ == '__main__':
     ## Animation of learned node movements
     node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
     visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
-
+    '''
