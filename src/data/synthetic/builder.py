@@ -1,11 +1,13 @@
+import torch
 import numpy as np
 from data.synthetic.sampling import ConstantVelocitySimulator
 
 class DatasetBuilder:
     def __init__(self, starting_positions, starting_velocities,
-                    max_time, common_bias, seed) -> None:
+                    max_time, common_bias, seed, device) -> None:
         self.simulator = ConstantVelocitySimulator(starting_positions,
                             starting_velocities, max_time, common_bias, seed)
+        self.device = device
 
     def build_dataset(self, num_of_nodes:int, time_column_idx:int) -> list:
         '''
@@ -25,13 +27,12 @@ class DatasetBuilder:
 
         # Make sure dataset is numpy array
         dataset = np.asarray(dataset)
+        dataset = dataset[dataset[:, time_column_idx].argsort()]
         # Make sure dataset is sorted according to increasing event times in column index 2
         if len(dataset) == 0:
             raise Exception('No node interactions have happened. Try increasing the max_time')
 
-        dataset = dataset[dataset[:, time_column_idx].argsort()]
-        print('Training and evaluation dataset with events for node pairs')
-        print(dataset)
-        print(f'Number of interactions: {len(dataset)}')
+        print(f'Training set generated with number of interactions: {len(dataset)}')
+        dataset = torch.from_numpy(dataset).to(self.device)
 
         return dataset

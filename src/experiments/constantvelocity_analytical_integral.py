@@ -14,8 +14,8 @@ import numpy as np
 from utils.nodes.positions import get_contant_velocity_positions 
 from argparse import ArgumentParser
 import utils.visualize as visualize
-from traintestgyms.standardgym import TrainTestGym
-from utils.visualize.positions import node_positions
+from traintestgyms.ignitegym import TrainTestGym
+from utils.visualize.positions import node_movements
 from data.synthetic.builder import DatasetBuilder
 from models.constantvelocity.standard import ConstantVelocityModel
 
@@ -24,13 +24,12 @@ if __name__ == '__main__':
 
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
-    arg_parser.add_argument('--true_beta', '-TB', default=4., type=float)
+    arg_parser.add_argument('--max_time', '-MT', default=50, type=int)
+    arg_parser.add_argument('--true_beta', '-TB', default=5., type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=0.25, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.01, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=100, type=int)
-    arg_parser.add_argument('--non_intensity_weight', '-NIW', default=0.2, type=float)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=400, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=10, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     args = arg_parser.parse_args()
 
@@ -42,16 +41,15 @@ if __name__ == '__main__':
     model_beta = args.model_beta  # Model-initialized beta
     learning_rate = args.learning_rate
     num_epochs = args.num_epochs
-    non_intensity_weight = args.non_intensity_weight
     train_batch_size = args.train_batch_size
     training_portion = args.training_portion
 
 
     ## Initialize data_builder for simulating node interactions from known Poisson Process
-    z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
-    v0 = np.asarray([[2, 0], [-2, 0], [0, -2], [0, 1]])
+    z0 = np.asarray([[-3, 0], [3, 0]]) #, [0, 3], [0, -2]])
+    v0 = np.asarray([[1, 0], [-1, 0]]) #, [0, -2], [0, 1]])
     data_builder = DatasetBuilder(starting_positions=z0, starting_velocities=v0,
-                        max_time=max_time, common_bias=true_beta, seed=seed)
+                        max_time=max_time, common_bias=true_beta, seed=seed, device=device)
 
     ### Setup model
     num_nodes = z0.shape[0]
@@ -66,7 +64,7 @@ if __name__ == '__main__':
         'test_loss': [],
         'Bias Term - Beta': []
     }
-    dataset = torch.from_numpy(data_builder.build_dataset(num_nodes, time_column_idx=2))
+    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
     gym = TrainTestGym(dataset, model, device, 
                         batch_size=train_batch_size, 
                         training_portion=training_portion,
@@ -90,6 +88,6 @@ if __name__ == '__main__':
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
     ## Animation of learned node movements
-    node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
-    visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
+    node_movements = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
+    visualize.node_movements(node_movements, 'Predicted Node Movements', trail=False)
 

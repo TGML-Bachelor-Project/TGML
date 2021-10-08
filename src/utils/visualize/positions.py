@@ -1,7 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 
-def node_positions(z:list, title:str) -> None:
+def node_movements(z:list, title:str) -> None:
     '''
     Visualizes the 2D points in a list z as
     dots in a plot.
