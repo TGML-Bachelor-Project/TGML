@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Set device as cpu or gpu for pytorch
@@ -10,15 +11,13 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 # Imports
 import numpy as np
-from utils import movement
+from utils.nodes.positions import get_contant_velocity_positions 
 from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.standardgym import TrainTestGym
 from utils.visualize.positions import node_positions
-from models.intensityfunctions.commonbias import CommonBias
-from models.constantvelocity.base import ConstantVelocityModel
-from data.synthetic.simulators.constantvelocity import ConstantVelocitySimulator
-from utils.integralapproximation import analytical_squared_euclidean, riemann_sum
+from data.synthetic.builder import DatasetBuilder
+from models.constantvelocity.standard import ConstantVelocityModel
 
 
 if __name__ == '__main__':
@@ -26,12 +25,12 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
-    arg_parser.add_argument('--true_beta', '-TB', default=0.5, type=float)
+    arg_parser.add_argument('--true_beta', '-TB', default=4., type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=0.25, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.01, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=10, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=100, type=int)
     arg_parser.add_argument('--non_intensity_weight', '-NIW', default=0.2, type=float)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=250, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=400, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     args = arg_parser.parse_args()
 
@@ -47,46 +46,28 @@ if __name__ == '__main__':
     train_batch_size = args.train_batch_size
     training_portion = args.training_portion
 
-    ## Set the initial position and velocity
+
+    ## Initialize data_builder for simulating node interactions from known Poisson Process
     z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
-    v0 = np.asarray([[0.02, 0], [-0.02, 0], [0, -0.02], [0, 0.02]])
-    num_nodes = z0.shape[0]  # Number of nodes
-
-
-    ### Simulate events from a non-homogeneous Poisson distribution
-    ## Initialize simulator
-    event_simulator = ConstantVelocitySimulator(starting_positions=z0, 
-                                                velocities=v0, 
-                                                T=max_time, 
-                                                beta=true_beta, 
-                                                seed=seed)
-    ## Compute events
-    events = event_simulator.sample_interaction_times_for_all_node_pairs()
-
+    v0 = np.asarray([[2, 0], [-2, 0], [0, -2], [0, 1]])
+    data_builder = DatasetBuilder(starting_positions=z0, starting_velocities=v0,
+                        max_time=max_time, common_bias=true_beta, seed=seed)
 
     ### Setup model
-    intensity_fun = CommonBias(model_beta)
-    model = ConstantVelocityModel(n_points=num_nodes, 
-                                    non_intensity_weight=non_intensity_weight, 
-                                    intensity_func=intensity_fun, 
-                                    integral_approximator=analytical_squared_euclidean)
+    num_nodes = z0.shape[0]
+    model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
     print('Model initial node start positions\n', model.z0)
-
-    ## Send data and model to same Pytorch device
     model = model.to(device)
 
-    ## Setting up training and evaluation using pytorch-ignite framework
+    ### Train and evaluate model
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     metrics = {
         'train_loss': [],
         'test_loss': [],
         'Bias Term - Beta': []
     }
-
-    ## 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-    ### Train and evaluate model
-    gym = TrainTestGym(num_nodes, events, model, device, 
+    dataset = torch.from_numpy(data_builder.build_dataset(num_nodes, time_column_idx=2))
+    gym = TrainTestGym(dataset, model, device, 
                         batch_size=train_batch_size, 
                         training_portion=training_portion,
                         optimizer=optimizer, 
@@ -97,13 +78,11 @@ if __name__ == '__main__':
     # Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()
-    print(f'Beta: {model.intensity_function.beta.item()}')
+    print(f'Beta: {model.beta.item()}')
     print(f'Z: {model_z0}')
     print(f'V: {model_v0}')
 
     ### Visualizations
-
-    ## Logloss metrics and Bias term Beta
     visualize.metrics(metrics)
 
     ## Learned Z and true Z
@@ -111,6 +90,6 @@ if __name__ == '__main__':
     visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
 
     ## Animation of learned node movements
-    node_positions = movement.contant_velocity(model_z0, model_v0, max_time, time_steps=100)
+    node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
     visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
 

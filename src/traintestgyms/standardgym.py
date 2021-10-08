@@ -1,14 +1,12 @@
 import torch
 from ignite.engine import Engine
 from ignite.engine import Events
-from data.builder import build_dataset
 from torch.utils.data import DataLoader
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
 class TrainTestGym:
-    def __init__(self, num_of_nodes, events, model, device, batch_size,
+    def __init__(self, dataset, model, device, batch_size,
                     training_portion, optimizer, metrics, time_column_idx) -> None:
-        dataset = build_dataset(num_of_nodes, events, time_column_idx)
         last_training_idx = int(len(dataset)*training_portion)
         train_data = dataset[:last_training_idx]
         test_data = dataset[last_training_idx:]
@@ -37,8 +35,8 @@ class TrainTestGym:
         loss.backward()
         self.optimizer.step()
         self.metrics['train_loss'].append(loss.item())
-        self.metrics['Bias Term - Beta'].append(self.model.intensity_function.beta.item())
-        engine.t_start = batch[-1][self.time_column_idx].to(self.device)
+        self.metrics['Bias Term - Beta'].append(self.model.beta.item())
+        engine.t_start = batch[-1][self.time_column_idx]
 
         return loss
 

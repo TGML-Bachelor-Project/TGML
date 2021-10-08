@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_position(z:np.ndarray, v:np.ndarray, i:int, t:int) -> np.ndarray:
+def get_current_position(z:np.ndarray, v:np.ndarray, i:int, t:int) -> np.ndarray:
     '''
     Calculates position of node i at time t.
     With the assumption of constant velocity of node i.
@@ -15,7 +15,7 @@ def get_position(z:np.ndarray, v:np.ndarray, i:int, t:int) -> np.ndarray:
     '''
     return z[i, :] + v[i, :] * t
 
-def contant_velocity(z0:np.ndarray, v0:np.ndarray, T:int, time_steps:int) -> list:
+def get_contant_velocity_positions(z0:np.ndarray, v0:np.ndarray, T:int, time_steps:int) -> list:
     '''
     Computes the latent node positions during a time interval 
     based on initial starting positions and contant node velocities.
@@ -40,7 +40,7 @@ def contant_velocity(z0:np.ndarray, v0:np.ndarray, T:int, time_steps:int) -> lis
         z = node_positions[i]
         next_z = []
         for i, _ in enumerate(z):
-            next_z.append(get_position(z, v0, i, t))
+            next_z.append(get_current_position(z, v0, i, t))
         node_positions.append(np.asarray(next_z))
 
     return node_positions

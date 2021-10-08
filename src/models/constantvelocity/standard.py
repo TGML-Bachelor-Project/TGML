@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+from utils.integrals.riemann import riemann_sum
 from utils.nodes.distances import get_squared_euclidean_dist
+from utils.integrals.analytical import analytical_integral as evaluate_integral
 
 
 class ConstantVelocityModel(nn.Module):
@@ -18,21 +20,13 @@ class ConstantVelocityModel(nn.Module):
             super().__init__()
     
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
-            self.z0 = nn.Parameter(self.__init_vector(torch.zeros(size=(n_points,2))), requires_grad=True)
-            self.v0 = nn.Parameter(self.__init_vector(torch.zeros(size=(n_points,2))), requires_grad=True)
+            self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+            self.v0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
     
-            self.n_points = n_points
+            self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2
-            self.node_pair_idxs = torch.tril_indices(row=self.n_points, col=self.n_points, offset=-1)
+            self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
 
-
-    def __init_vector(self, tensor:torch.Tensor) -> torch.Tensor:
-        '''
-        Fills the input Tensor with values drawn from the uniform distribution from a to b
-
-        :returns:   The given tensor filled with the values from the uniform distribution from a to b
-        '''
-        return torch.nn.init.uniform_(tensor, a=-0.25, b=0.25)
 
     def step(self, t:torch.Tensor) -> torch.Tensor:
         '''
@@ -91,4 +85,26 @@ class ConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        raise Exception('Not implemented')
+        event_intensity = 0.
+        non_event_intensity = 0.
+        for i, j, event_time in data:
+            i, j = int(i), int(j) # cast to int for indexing
+            event_intensity += self.log_intensity_function(i, j, event_time)
+
+        for i, j in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
+            '''
+            print(f't0: {t0}')
+            print(f'tn: {tn}')
+            print(f'beta: {self.beta}')
+            print(f'z0: {self.z0}')
+            print(f'v0: {self.v0}')
+            print(f'riemann: {riemann_sum(t0, tn, self.num_of_nodes, i ,j, self.intensity_function)}')
+            print(f'analytical: {analytical}')
+            '''
+            analytical = evaluate_integral(t0, tn, self.z0, self.v0, i, j, self.beta)
+            non_event_intensity += analytical
+
+
+        log_likelihood = event_intensity - non_event_intensity
+
+        return log_likelihood

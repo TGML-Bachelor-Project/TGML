@@ -6,7 +6,7 @@ class NHPP:
     for node pair interactions based on a given intensity function.
 
     '''
-    def __init__(self, T:int, intensity_func, time_bins:list, seed:int=42) -> None:
+    def __init__(self, max_time:int, intensity_func, time_bins:list, seed:int=42) -> None:
         '''
         :param T:               The end time point of the simulation
         :param intensity_func:  A given function defining how the intensity between node pairs 
@@ -15,13 +15,13 @@ class NHPP:
                                 the simulation into discrete time bins
         :param seed:            The random seed for the simulation
         '''
-        self.__T = T
+        self.__max_time = max_time
         self.__intensity_func = intensity_func
         self.__time_bins = time_bins
         self.__seed = seed
 
         # Check time bin start and end
-        if self.__time_bins[0] != 0 or self.__time_bins[-1] != self.__T:
+        if self.__time_bins[0] != 0 or self.__time_bins[-1] != self.__max_time:
             raise Exception('Invalid time intervals. Must start with t=0 and end with t=T')
 
         self.__numOfTimeBins = len(self.__time_bins)

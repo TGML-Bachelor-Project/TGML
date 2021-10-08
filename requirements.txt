@@ -2,5 +2,6 @@ tqdm
 numpy
 torch
 wandb
+scipy
 matplotlib
 pytorch-ignite
