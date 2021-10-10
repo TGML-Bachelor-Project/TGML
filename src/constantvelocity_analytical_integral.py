@@ -54,7 +54,7 @@ if __name__ == '__main__':
     z0 = np.asarray([[-5, 0], [4, 0], [0, 3], [0, -2]])
     v0 = np.asarray([[2, 0], [-2, 0], [0, -2], [0, 1]])
     data_builder = DatasetBuilder(starting_positions=z0, starting_velocities=v0,
-                        max_time=max_time, common_bias=true_beta, seed=seed)
+                        max_time=max_time, common_bias=true_beta, seed=seed, device=device)
 
     ### Setup model
     num_nodes = z0.shape[0]
@@ -86,7 +86,8 @@ if __name__ == '__main__':
         'Bias Term - Beta': []
     }
     
-    dataset = torch.from_numpy(data_builder.build_dataset(num_nodes, time_column_idx=2))
+    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    # dataset = torch.from_numpy(data_builder.build_dataset(num_nodes, time_column_idx=2))
     gym = TrainTestGym(dataset, model, device, 
                         batch_size=train_batch_size, 
                         training_portion=training_portion,
