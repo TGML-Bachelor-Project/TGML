@@ -37,8 +37,8 @@ class ConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        self.z = self.z0[:,:] + self.v0[:,:]*t
-        return self.z
+        zt = self.z0[:,:] + self.v0[:,:]*t
+        return zt
 
     def log_intensity_function(self, i, j, t):
         '''
