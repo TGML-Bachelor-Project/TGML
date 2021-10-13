@@ -84,7 +84,8 @@ if __name__ == '__main__':
         z0 = np.asarray([[-0.6, 0], [0.6, 0.1], [0, 0.6], [0, -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, -0.09]])
         true_beta = 7.5
-        
+        model_beta = 7.1591
+
     num_nodes = z0.shape[0]
 
     ## Initialize data_builder for simulating node interactions from known Poisson Process
