@@ -97,7 +97,9 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     metrics = {'train_loss': [], 'test_loss': [], 'Bias Term - Beta': []}
 
-    gym = TrainTestGym(dataset, model, device, 
+    gym = TrainTestGym(dataset=dataset, 
+                        model=model, 
+                        device=device, 
                         batch_size=train_batch_size, 
                         training_portion=training_portion,
                         optimizer=optimizer, 
@@ -130,7 +132,7 @@ if __name__ == '__main__':
             gym.train_test_model(epochs=num_epochs)
 
     ### Results
-    
+
     ## Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()

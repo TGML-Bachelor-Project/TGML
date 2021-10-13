@@ -7,9 +7,11 @@ from ignite.contrib.handlers.tqdm_logger import ProgressBar
 class TrainTestGym:
     def __init__(self, dataset, model, device, batch_size,
                     training_portion, optimizer, metrics, time_column_idx) -> None:
+        
         last_training_idx = int(len(dataset)*training_portion)
         train_data = dataset[:last_training_idx]
         test_data = dataset[last_training_idx:]
+        
         self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
         self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
         self.model = model
