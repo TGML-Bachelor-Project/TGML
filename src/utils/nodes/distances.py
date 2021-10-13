@@ -1,4 +1,5 @@
 import torch
+from torch.functional import tensordot
 import torch.nn as nn
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -19,3 +20,10 @@ def get_squared_euclidean_dist(z:torch.Tensor, i:torch.Tensor, j:torch.Tensor) -
     # Squared Euclediean distance
     pdist = nn.PairwiseDistance(p=2)
     return pdist(z_i, z_j)**2
+
+def vec_squared_euclidean_dist(Z):
+    ZT = torch.transpose(Z,1,2)
+    dot_Z = torch.tensordot(Z, Z,    dims=  ([0], [0]))
+    dot_ZZT = torch.tensordot(Z, ZT, dims=  ([0], [0])) 
+    dot_ZT = torch.tensordot(ZT, ZT, dims=  ([0], [0]))
+    return dot_Z - 2 * dot_ZZT + dot_ZT

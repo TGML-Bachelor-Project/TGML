@@ -1,7 +1,7 @@
 import torch
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def analytical_integral(t0:float, tn:float, z:torch.Tensor, v:torch.Tensor, i:int, j:int, beta:torch.Tensor) -> torch.Tensor:
+def analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z:torch.Tensor, v:torch.Tensor, i:int, j:int, beta:torch.Tensor) -> torch.Tensor:
     '''
     Calculates the Riemann sum for the integral from t0 to tn
     based on the nodes i and j and the given function func.
@@ -40,3 +40,6 @@ def analytical_integral(t0:float, tn:float, z:torch.Tensor, v:torch.Tensor, i:in
                     torch.erf(((psqmn)*t0+b*n)/(sqrtmn))
                 )
              )
+
+def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, Z:torch.Tensor, beta:torch.Tensor):
+    raise Exception('Not implemented')
