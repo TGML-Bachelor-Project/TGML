@@ -26,10 +26,17 @@ def analytical_integral(t0:float, tn:float, z:torch.Tensor, v:torch.Tensor, i:in
     b = yi - yj
     n = vyi - vyj
 
-    return  (((torch.sqrt(torch.pi))*torch.exp(((-b**2-a+beta)*m**2 - n**2*(-beta+a)) / (m**2 + n**2) ))/(2*torch.sqrt(m**2 + n**2)) 
+    sqb = torch.square(b)
+    sqm = torch.square(m)
+    sqn = torch.square(n)
+    sqrtmn = torch.sqrt(sqm + sqn)
+    psqmn = sqm+sqn
+
+    return  (((torch.sqrt(torch.pi))*torch.exp(((-sqb-a+beta)*sqm-sqn*(-beta+a))/(psqmn)))
+                /(2*sqrtmn) 
                 *
                 (
-                    torch.erf(((m**2+n**2)*tn + b*n)/(torch.sqrt(m**2+n**2))) -
-                    torch.erf(((m**2 + n**2)*t0+b*n)/(torch.sqrt(m**2+n**2)))
+                    torch.erf(((psqmn)*tn + b*n)/(sqrtmn)) -
+                    torch.erf(((psqmn)*t0+b*n)/(sqrtmn))
                 )
              )
