@@ -53,7 +53,9 @@ if __name__ == '__main__':
     sequential_training = args.sequential_training
 
 
-    ## Initialize data_builder for simulating node interactions from known Poisson Process
+    ### Build dataset
+
+    ## Initial Z and V
     if data_set_test == 1:    
         z0 = np.asarray([[-3, 0], [3, 0]])
         v0 = np.asarray([[1, 0], [-1, 0]])
@@ -68,29 +70,33 @@ if __name__ == '__main__':
         v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
     elif data_set_test == 5:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-0.5, -0.5], [0, 1]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5]])
     elif data_set_test == 6:
-        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [6, 6], [3, -3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-2, -2], [-2, 1]])
+        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5], [0, 0], [0.5, 0]])
+    elif data_set_test == 7:
+        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5], [0, 0], [0.5, 0]])
+    num_nodes = z0.shape[0]
 
-
-    data_builder = DatasetBuilder(starting_positions=z0, starting_velocities=v0,
-                        max_time=max_time, common_bias=true_beta, seed=seed, device=device)
+    ## Initialize data_builder for simulating node interactions from known Poisson Process
+    data_builder = DatasetBuilder(starting_positions=z0, 
+                                    starting_velocities=v0,
+                                    max_time=max_time, 
+                                    common_bias=true_beta, 
+                                    seed=seed, 
+                                    device=device)
+    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
 
     ### Setup model
-    num_nodes = z0.shape[0]
     model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     print('Model initial node start positions\n', model.z0)
-    model = model.to(device)
+    model = model.to(device)  # Send model to torch
 
     ### Train and evaluate model
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    metrics = {
-        'train_loss': [],
-        'test_loss': [],
-        'Bias Term - Beta': []
-    }
-    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    metrics = {'train_loss': [], 'test_loss': [], 'Bias Term - Beta': []}
+
     gym = TrainTestGym(dataset, model, device, 
                         batch_size=train_batch_size, 
                         training_portion=training_portion,
@@ -124,6 +130,7 @@ if __name__ == '__main__':
             gym.train_test_model(epochs=num_epochs)
 
     ### Results
+    
     ## Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
     model_v0 = model.v0.cpu().detach().numpy()
