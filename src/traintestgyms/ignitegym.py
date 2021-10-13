@@ -11,7 +11,7 @@ class TrainTestGym:
         last_training_idx = int(len(dataset)*training_portion)
         train_data = dataset[:last_training_idx]
         test_data = dataset[last_training_idx:]
-        
+
         self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
         self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
         self.model = model
@@ -24,12 +24,14 @@ class TrainTestGym:
         self.metrics = metrics
         self.time_column_idx = time_column_idx
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.evaluator.run(self.val_loader))
+        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: self.evaluator.run(self.val_loader))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: print(f'z0: {model.z0}  \
                                                                                         \n v0: {model.v0} \
                                                                                         \n beta: {model.beta}'))
         pbar = ProgressBar()
         pbar.attach(self.trainer)
 
+    ### Training step
     def __train_step(self, engine, batch):
         batch = batch.to(self.device)
         
@@ -68,6 +70,7 @@ class TrainTestGym:
             return test_loss.item()
 
 
+    ### Train and evaluate the model for n epochs
     def train_test_model(self, epochs:int):
         print(f'Starting model training with {epochs} epochs')
         self.trainer.run(self.train_loader, max_epochs=epochs)
