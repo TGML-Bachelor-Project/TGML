@@ -9,7 +9,8 @@ print(sys.path)
 print(os.path.dirname(__file__))
 # Set device as cpu or gpu for pytorch
 import torch
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
-    arg_parser.add_argument('--data_set_test', '-DATA', default=5, type=int)
+    arg_parser.add_argument('--data_set_test', '-DATA', default=6, type=int)
     arg_parser.add_argument('--sequential_training', '-SEQ', default=0, type=int)
     args = arg_parser.parse_args()
 
@@ -112,7 +113,7 @@ if __name__ == '__main__':
     ## Non-sequential model training
     if sequential_training == 0:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        # gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         gym.train_test_model(epochs=num_epochs)
 
     ## Sequential model training
