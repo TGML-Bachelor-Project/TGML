@@ -78,6 +78,13 @@ if __name__ == '__main__':
     elif data_set_test == 7:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5], [0, 0], [0.5, 0]])
+    
+    ## Simon's synthetic constant velocity data
+    elif data_set_test == 10:
+        z0 = np.asarray([[-0.6, 0], [0.6, 0.1], [0, 0.6], [0, -0.6]])
+        v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, -0.09]])
+        true_beta = 7.5
+        
     num_nodes = z0.shape[0]
 
     ## Initialize data_builder for simulating node interactions from known Poisson Process
