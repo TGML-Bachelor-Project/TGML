@@ -33,6 +33,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
+    arg_parser.add_argument('--data_set_test', '-DATA', default=1, type=int)
     args = arg_parser.parse_args()
 
 
@@ -45,11 +46,29 @@ if __name__ == '__main__':
     num_epochs = args.num_epochs
     train_batch_size = args.train_batch_size
     training_portion = args.training_portion
-
+    data_set_test = args.data_set_test
 
     ## Initialize data_builder for simulating node interactions from known Poisson Process
-    z0 = np.asarray([[-3, 0], [3, 0]]) #, [0, 3], [0, -2]])
-    v0 = np.asarray([[1, 0], [-1, 0]]) #, [0, -2], [0, 1]])
+    if data_set_test == 1:    
+        z0 = np.asarray([[-3, 0], [3, 0]])
+        v0 = np.asarray([[1, 0], [-1, 0]])
+    elif data_set_test == 2:
+        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
+    elif data_set_test == 3:
+        z0 = np.asarray([[-1, 0], [2, 0], [0, 3], [0, -3]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
+    elif data_set_test == 4:
+        z0 = np.asarray([[-1, 0], [2, 0], [0, 3], [0, -3]])
+        v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
+    elif data_set_test == 5:
+        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-0.5, -0.5], [0, 1]])
+    elif data_set_test == 6:
+        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [6, 6], [3, -3]])
+        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-2, -2], [-2, 1]])
+
+
     data_builder = DatasetBuilder(starting_positions=z0, starting_velocities=v0,
                         max_time=max_time, common_bias=true_beta, seed=seed, device=device)
 
