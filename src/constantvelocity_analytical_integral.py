@@ -45,10 +45,10 @@ if __name__ == '__main__':
     arg_parser.add_argument('--model_beta', '-MB', default=5., type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     arg_parser.add_argument('--data_type', '-DT', default=0, type=int)
-    arg_parser.add_argument('--data_set_test', '-DS', default=6, type=int)
+    arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--sequential_training', '-SEQ', default=0, type=int)
     args = arg_parser.parse_args()
 

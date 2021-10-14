@@ -40,6 +40,8 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z:torch.Tensor, v:torc
                     torch.erf(((psqmn)*t0+b*n)/(sqrtmn))
                 )
              )
+    # Simons
+    # return -torch.sqrt(torch.pi)*torch.exp(((-b**2 + beta)*m**2 + 2*a*b*m*n - n**2*(a**2 - beta))/(m**2 + n**2))*(torch.erf(((m**2 + n**2)*t0 + a*m + b*n)/torch.sqrt(m**2 + n**2)) - torch.erf(((m**2 + n**2)*tn + a*m + b*n)/torch.sqrt(m**2 + n**2)))/(2*torch.sqrt(m**2 + n**2))
 
 def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, Z:torch.Tensor, V:torch.Tensor, beta:torch.Tensor):
     a = xi-xj

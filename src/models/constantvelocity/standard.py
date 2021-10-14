@@ -68,16 +68,20 @@ class ConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         event_intensity = 0.
-        non_event_intensity = 0.
         for i, j, event_time in data:
             i, j = int(i), int(j) # cast to int for indexing
             event_intensity += self.log_intensity_function(i, j, event_time)
 
+        non_event_intensity = 0.
         for i, j in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
-            analytical = evaluate_integral(t0, tn, self.z0, self.v0, i, j, self.beta)
+            analytical = evaluate_integral(t0=t0, tn=tn, 
+                                            z=self.z0, v=self.v0, 
+                                            i=i, j=j, 
+                                            beta=self.beta)
             non_event_intensity += analytical
 
 
         log_likelihood = event_intensity - non_event_intensity
+        ratio = event_intensity / non_event_intensity
 
-        return log_likelihood
+        return log_likelihood#, ratio
