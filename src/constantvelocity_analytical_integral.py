@@ -32,6 +32,7 @@ from data.simon_synthetic.nhpp_simon import root_matrix, monotonicity_mat, nhpp_
 
 if __name__ == '__main__':
 
+    ## Seeding of model run
     seed = 1
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -63,11 +64,10 @@ if __name__ == '__main__':
     data_type = args.data_type
     data_set_test = args.data_set_test
     sequential_training = args.sequential_training
+    time_col_index = 2  # Not logged with wandb
 
 
-    ### Build dataset
-
-    ## Initial Z and V
+    ## Defining Z and V for synthetic data generation
     if data_set_test == 1:    
         z0 = np.asarray([[-3, 0], [3, 0]])
         v0 = np.asarray([[1, 0], [-1, 0]])
@@ -89,7 +89,6 @@ if __name__ == '__main__':
     elif data_set_test == 7:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
-    
     ## Simon's synthetic constant velocity data
     elif data_set_test == 10:
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
@@ -118,7 +117,7 @@ if __name__ == '__main__':
     ## Initialize WandB for logging config and metrics
     wandb.init(project='TGML1', entity='augustsemrau', config=wandb_config)
 
-    time_col_index = 2
+    
 
     ### Initialize data_builder for simulating node interactions from known Poisson Process
     ## Our data generation
@@ -131,6 +130,13 @@ if __name__ == '__main__':
                                         device=device)
         dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
         interaction_count = len(dataset)
+        
+        # Verify time ordering
+        prev_t = 0.
+        for row in dataset:
+            cur_t = row[time_col_index]
+            assert cur_t > prev_t
+            prev_t = cur_t
 
     ## Simon's data generation
     elif data_type == 1:
@@ -185,7 +191,6 @@ if __name__ == '__main__':
 
     
     ### Model training starts
-
     ## Non-sequential model training
     if sequential_training == 0:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
