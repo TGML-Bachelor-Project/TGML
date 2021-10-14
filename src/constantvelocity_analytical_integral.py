@@ -1,6 +1,6 @@
 import os
 import sys
-
+import wandb
 from torch.optim.optimizer import Optimizer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
 
     ### Set all input arguments
-    seed = 2
+    seed = 1
     max_time = args.max_time
     true_beta = args.true_beta
     model_beta = args.model_beta  # Model-initialized beta
@@ -89,6 +89,23 @@ if __name__ == '__main__':
     num_nodes = z0.shape[0]
 
 
+    ### Set input parameters as config for Weights and Biases
+    wandb_config = {'seed': seed,
+                    'max_time': max_time,
+                    'true_beta': true_beta,
+                    'model_beta': model_beta,
+                    'learning_rate': learning_rate,
+                    'num_epochs': num_epochs,
+                    # 'non_intensity_weight': non_intensity_weight,
+                    'train_batch_size': train_batch_size,
+                    'num_nodes': num_nodes,
+                    'training_portion': training_portion,
+                    'sequential_training': sequential_training}
+
+    ## Initialize WandB for logging config and metrics
+    wandb.init(project='TGML1', entity='augustsemrau', config=wandb_config)
+
+
     ## Initialize data_builder for simulating node interactions from known Poisson Process
     data_builder = DatasetBuilder(starting_positions=z0, 
                                     starting_velocities=v0,
@@ -97,6 +114,7 @@ if __name__ == '__main__':
                                     seed=seed, 
                                     device=device)
     dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    interaction_count = len(dataset)
 
     ### Setup model
     model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
@@ -150,6 +168,17 @@ if __name__ == '__main__':
     print(f'Beta: {model.beta.item()}')
     print(f'Z: {model_z0}')
     print(f'V: {model_v0}')
+
+
+    ### Log metrics to Weights and Biases
+    wandb_metrics = {'number_of_interactions': interaction_count,
+                    'metric_final_beta': metrics['Bias Term - Beta'][-1],
+                    'metric_final_testloss': metrics['test_loss'][-1],
+                    'metric_final_trainloss': metrics['train_loss'][-1],
+                    'beta': metrics['Bias Term - Beta'],
+                    'test_loss': metrics['test_loss'],
+                    'train_loss': metrics['train_loss']}
+    wandb.log(wandb_metrics)
 
     ### Visualizations
     '''
