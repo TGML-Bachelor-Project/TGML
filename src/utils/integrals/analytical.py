@@ -41,5 +41,23 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z:torch.Tensor, v:torc
                 )
              )
 
-def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, Z:torch.Tensor, beta:torch.Tensor):
-    raise Exception('Not implemented')
+def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, Z:torch.Tensor, V:torch.Tensor, beta:torch.Tensor):
+    a = xi-xj
+    m = vxi - vxj
+    b = yi - yj
+    n = vyi - vyj
+
+    sqb = torch.square(b)
+    sqm = torch.square(m)
+    sqn = torch.square(n)
+    sqrtmn = torch.sqrt(sqm + sqn)
+    psqmn = sqm+sqn
+
+    return  (((torch.sqrt(torch.pi))*torch.exp(((-sqb-a+beta)*sqm-sqn*(-beta+a))/(psqmn)))
+                /(2*sqrtmn) 
+                *
+                (
+                    torch.erf(((psqmn)*tn + b*n)/(sqrtmn)) -
+                    torch.erf(((psqmn)*t0+b*n)/(sqrtmn))
+                )
+             )
