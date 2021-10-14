@@ -21,11 +21,21 @@ from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.ignitegym import TrainTestGym
 from utils.visualize.positions import node_positions
-from data.synthetic.builder import DatasetBuilder
+
 from models.constantvelocity.standard import ConstantVelocityModel
+
+## Data import
+from data.synthetic.builder import DatasetBuilder  # Type 0, ours
+from data.simon_synthetic.nhpp_simon import NodeSpace  # Type 1, Simon's
+from data.simon_synthetic.nhpp_simon import root_matrix, monotonicity_mat, nhpp_mat, get_entry
 
 
 if __name__ == '__main__':
+
+    seed = 1
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    np.seterr(all='raise')
 
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
@@ -36,13 +46,13 @@ if __name__ == '__main__':
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
-    arg_parser.add_argument('--data_set_test', '-DATA', default=6, type=int)
+    arg_parser.add_argument('--data_type', '-DT', default=0, type=int)
+    arg_parser.add_argument('--data_set_test', '-DS', default=6, type=int)
     arg_parser.add_argument('--sequential_training', '-SEQ', default=0, type=int)
     args = arg_parser.parse_args()
 
 
     ### Set all input arguments
-    seed = 1
     max_time = args.max_time
     true_beta = args.true_beta
     model_beta = args.model_beta  # Model-initialized beta
@@ -50,6 +60,7 @@ if __name__ == '__main__':
     num_epochs = args.num_epochs
     train_batch_size = args.train_batch_size
     training_portion = args.training_portion
+    data_type = args.data_type
     data_set_test = args.data_set_test
     sequential_training = args.sequential_training
 
@@ -81,8 +92,9 @@ if __name__ == '__main__':
     
     ## Simon's synthetic constant velocity data
     elif data_set_test == 10:
-        z0 = np.asarray([[-0.6, 0], [0.6, 0.1], [0, 0.6], [0, -0.6]])
-        v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, -0.09]])
+        z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
+        v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
+        a0 = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])  # Negligble
         true_beta = 7.5
         model_beta = 7.1591
 
@@ -100,21 +112,58 @@ if __name__ == '__main__':
                     'train_batch_size': train_batch_size,
                     'num_nodes': num_nodes,
                     'training_portion': training_portion,
-                    'sequential_training': sequential_training}
+                    'sequential_training': sequential_training,
+                    'data_type': data_type}
 
     ## Initialize WandB for logging config and metrics
     wandb.init(project='TGML1', entity='augustsemrau', config=wandb_config)
 
+    time_col_index = 2
 
-    ## Initialize data_builder for simulating node interactions from known Poisson Process
-    data_builder = DatasetBuilder(starting_positions=z0, 
-                                    starting_velocities=v0,
-                                    max_time=max_time, 
-                                    common_bias=true_beta, 
-                                    seed=seed, 
-                                    device=device)
-    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
-    interaction_count = len(dataset)
+    ### Initialize data_builder for simulating node interactions from known Poisson Process
+    ## Our data generation
+    if data_type == 0:
+        data_builder = DatasetBuilder(starting_positions=z0, 
+                                        starting_velocities=v0,
+                                        max_time=max_time, 
+                                        common_bias=true_beta, 
+                                        seed=seed, 
+                                        device=device)
+        dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+        interaction_count = len(dataset)
+
+    ## Simon's data generation
+    elif data_type == 1:
+        ns_gt = NodeSpace()
+        ns_gt.beta = true_beta
+        ns_gt.init_conditions(z0, v0, a0)
+        
+        t = np.linspace(0, max_time)
+        rmat = root_matrix(ns_gt) 
+        mmat = monotonicity_mat(ns_gt, rmat)
+        nhppmat = nhpp_mat(ns=ns_gt, time=t, root_matrix=rmat, monotonicity_matrix=mmat)
+
+        # create data set and sort by time
+        ind = np.triu_indices(num_nodes, k=1)
+        dataset = []
+        for u,v in zip(ind[0], ind[1]):
+            event_times = get_entry(nhppmat, u=u, v=v)
+            for e in event_times:
+                dataset.append([u, v, e])
+
+        dataset = np.array(dataset)
+        dataset = dataset[dataset[:,time_col_index].argsort()]
+
+        # verify time ordering
+        prev_t = 0.
+        for row in dataset:
+            cur_t = row[time_col_index]
+            assert cur_t > prev_t
+            prev_t = cur_t
+        
+        interaction_count = len(dataset)
+        dataset = torch.from_numpy(dataset).to(device)
+
 
     ### Setup model
     model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
@@ -132,7 +181,7 @@ if __name__ == '__main__':
                         training_portion=training_portion,
                         optimizer=optimizer, 
                         metrics=metrics, 
-                        time_column_idx=2)
+                        time_column_idx=time_col_index)
 
     
     ### Model training starts
