@@ -43,11 +43,15 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z:torch.Tensor, v:torc
     # Simons
     # return -torch.sqrt(torch.pi)*torch.exp(((-b**2 + beta)*m**2 + 2*a*b*m*n - n**2*(a**2 - beta))/(m**2 + n**2))*(torch.erf(((m**2 + n**2)*t0 + a*m + b*n)/torch.sqrt(m**2 + n**2)) - torch.erf(((m**2 + n**2)*tn + a*m + b*n)/torch.sqrt(m**2 + n**2)))/(2*torch.sqrt(m**2 + n**2))
 
-def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, Z:torch.Tensor, V:torch.Tensor, beta:torch.Tensor):
-    a = xi-xj
-    m = vxi - vxj
-    b = yi - yj
-    n = vyi - vyj
+def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z0:torch.Tensor, v0:torch.Tensor, beta:torch.Tensor):
+    a = (z0[:,0].unsqueeze(1) - z0[:,0].unsqueeze(0)).triu(diagonal=1)
+    a = a[torch.nonzero(a)]
+    m = (v0[:,0].unsqueeze(1) - v0[:,0].unsqueeze(0)).triu(diagonal=1)
+    m = m[torch.nonzero(m)]
+    b = (z0[:,1].unsqueeze(1) - z0[:,1].unsqueeze(0)).triu(diagonal=1)
+    b = b[torch.nonzero(b)]
+    n = (v0[:,1].unsqueeze(1) - v0[:,1].unsqueeze(0)).triu(diagonal=1)
+    n = n[torch.nonzero(n)]
 
     sqb = torch.square(b)
     sqm = torch.square(m)
