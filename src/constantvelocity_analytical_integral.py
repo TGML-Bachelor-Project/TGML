@@ -31,7 +31,7 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7., type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=0.01, type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=5., type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5], [0, 0], [0.5, 0]])
     elif data_set_test == 7:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5], [0, 0], [0.5, 0]])
+        v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
     
     ## Simon's synthetic constant velocity data
     elif data_set_test == 10:
@@ -87,6 +87,7 @@ if __name__ == '__main__':
         model_beta = 7.1591
 
     num_nodes = z0.shape[0]
+
 
     ## Initialize data_builder for simulating node interactions from known Poisson Process
     data_builder = DatasetBuilder(starting_positions=z0, 
@@ -134,6 +135,7 @@ if __name__ == '__main__':
                 #model.z0.requires_grad = False
                 model.v0.requires_grad = True
             elif i == 2:
+                #model.z0.requires_grad = False
                 #model.v0.requires_grad = False
                 model.beta.requires_grad = True
 
