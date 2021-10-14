@@ -41,11 +41,15 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z:torch.Tensor, v:torc
                 )
              )
 
-def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, Z:torch.Tensor, V:torch.Tensor, beta:torch.Tensor):
-    a = xi-xj
-    m = vxi - vxj
-    b = yi - yj
-    n = vyi - vyj
+def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, z0:torch.Tensor, v0:torch.Tensor, beta:torch.Tensor):
+    a = (z0[:,0].unsqueeze(1) - z0[:,0].unsqueeze(0)).triu(diagonal=1)
+    a = a[torch.nonzero(a)]
+    m = (v0[:,0].unsqueeze(1) - v0[:,0].unsqueeze(0)).triu(diagonal=1)
+    m = m[torch.nonzero(m)]
+    b = (z0[:,1].unsqueeze(1) - z0[:,1].unsqueeze(0)).triu(diagonal=1)
+    b = b[torch.nonzero(b)]
+    n = (v0[:,1].unsqueeze(1) - v0[:,1].unsqueeze(0)).triu(diagonal=1)
+    n = n[torch.nonzero(n)]
 
     sqb = torch.square(b)
     sqm = torch.square(m)

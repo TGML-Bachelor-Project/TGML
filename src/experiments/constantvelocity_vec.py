@@ -35,7 +35,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
-    arg_parser.add_argument('--data_set_test', '-DATA', default=1, type=int)
+    arg_parser.add_argument('--data_set_test', '-DATA', default=4, type=int)
     arg_parser.add_argument('--sequential_training', '-SEQ', default=0, type=int)
     args = arg_parser.parse_args()
 
