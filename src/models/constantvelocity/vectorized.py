@@ -27,7 +27,7 @@ class ConstantVelocityModel(nn.Module):
             self.node_pair_idxs = torch.tril_indices(row=self.n_points, col=self.n_points, offset=-1)
 
 
-    def step(self, times:torch.Tensor) -> torch.Tensor:
+    def steps(self, times:torch.Tensor) -> torch.Tensor:
         '''
         Increments the model's time by t by
         updating the latent node position vector z
@@ -37,8 +37,8 @@ class ConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        self.z = self.z0 + self.v0*times.unsqueeze(1).unsqueeze(1)
-        return self.z
+        Z = self.z0 + self.v0*times.unsqueeze(1).unsqueeze(1)
+        return Z
 
     def log_intensity_function(self, z):
         '''
@@ -54,7 +54,8 @@ class ConstantVelocityModel(nn.Module):
                     the two nodes' log-likelihood of interacting.
         '''
         d = vec_squared_euclidean_dist(z)
-        return self.beta - d
+        #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
+        return torch.triu(self.beta - d.triu(), diagonal=1)
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
         '''
@@ -66,9 +67,9 @@ class ConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        Z = self.step(data[:,2])
+        Z = self.steps(data[:,2])
         event_intensity = torch.sum(self.log_intensity_function(Z))
-        non_event_intensity = torch.sum(evaluate_integral(t0, tn, Z, self.beta))
+        non_event_intensity = torch.sum(evaluate_integral(t0, tn, self.z0, self.v0, self.beta))
 
         # Logliklihood
         return event_intensity - non_event_intensity
