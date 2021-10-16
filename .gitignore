@@ -163,3 +163,8 @@ cython_debug/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode
+
+# DTU HPC submit file
+submit.sh
+error.err
+output.out
