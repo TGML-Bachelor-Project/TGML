@@ -30,8 +30,8 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7., type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=0.01, type=float)
-    arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=0.5, type=float)
+    arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=1000, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
 
     ### Setup model
-    model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+    model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     print('Model initial node start positions\n', model.z0)
     model = model.to(device)  # Send model to torch
 
@@ -111,8 +111,6 @@ if __name__ == '__main__':
 
     ## Non-sequential model training
     if sequential_training == 0:
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        # gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         gym.train_test_model(epochs=num_epochs)
 
     ## Sequential model training

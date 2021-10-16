@@ -10,7 +10,7 @@ class ConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:int):
+    def __init__(self, n_points:int, beta:int, device):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -18,13 +18,14 @@ class ConstantVelocityModel(nn.Module):
             '''
             super().__init__()
     
-            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
+            self.device = device
+            self.beta = nn.Parameter(torch.tensor(beta), requires_grad=True)
             self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
             self.v0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
     
             self.n_points = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2
-            self.node_pair_idxs = torch.tril_indices(row=self.n_points, col=self.n_points, offset=-1)
+            self.node_pair_idxs = torch.triu_indices(row=self.n_points, col=self.n_points, offset=1)
 
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
@@ -69,7 +70,8 @@ class ConstantVelocityModel(nn.Module):
         '''
         Z = self.steps(data[:,2])
         event_intensity = torch.sum(self.log_intensity_function(Z))
-        non_event_intensity = torch.sum(evaluate_integral(t0, tn, self.z0, self.v0, self.beta))
+        non_event_intensity = torch.sum(evaluate_integral(t0, tn, self.z0, self.v0, 
+                                                            self.beta, self.device).triu(diagonal=1))
 
         # Logliklihood
         return event_intensity - non_event_intensity

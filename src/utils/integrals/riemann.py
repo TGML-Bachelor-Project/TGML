@@ -1,7 +1,6 @@
 import torch
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def riemann_sum(t0:float, tn:float, n_samples:int, i:int, j:int, func) -> torch.Tensor:
+def riemann_sum(t0:float, tn:float, n_samples:int, i:int, j:int, func, device) -> torch.Tensor:
     '''
     Calculates the Riemann sum for the integral from t0 to tn
     based on the nodes i and j and the given function func.
