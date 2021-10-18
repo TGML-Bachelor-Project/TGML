@@ -6,7 +6,7 @@ from ignite.engine import Events
 from torch.utils.data import DataLoader
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
-class StandardTrainTestGym:
+class SimonTrainTestGym:
     def __init__(self, dataset, 
                         model, 
                         device, 
