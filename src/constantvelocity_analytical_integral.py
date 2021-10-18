@@ -1,6 +1,8 @@
+### Packages
 import os
 import sys
 import wandb
+import numpy as np
 from torch.optim.optimizer import Optimizer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -14,15 +16,15 @@ device = 'cpu'
 print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
-# Imports
-import numpy as np
+# Code imports
 from utils.nodes.positions import get_contant_velocity_positions 
 from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.ignitegym import TrainTestGym
+from traintestgyms.standardgym import StandardTrainTestGym
 from utils.visualize.positions import node_positions
-
 from models.constantvelocity.standard import ConstantVelocityModel
+from utils.report_plots.training_tracking import plotres, plotgrad
 
 ## Data import
 from data.synthetic.builder import DatasetBuilder  # Type 0, ours
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     arg_parser.add_argument('--data_type', '-DT', default=0, type=int)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
-    arg_parser.add_argument('--sequential_training', '-SEQ', default=0, type=int)
+    arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     args = arg_parser.parse_args()
 
 
@@ -63,7 +65,7 @@ if __name__ == '__main__':
     training_portion = args.training_portion
     data_type = args.data_type
     data_set_test = args.data_set_test
-    sequential_training = args.sequential_training
+    training_type = args.training_type
     time_col_index = 2  # Not logged with wandb
 
 
@@ -99,8 +101,8 @@ if __name__ == '__main__':
 
     num_nodes = z0.shape[0]
 
-
-    ### Set input parameters as config for Weights and Biases
+    ### WandB initialization
+    ## Set input parameters as config for Weights and Biases
     wandb_config = {'seed': seed,
                     'max_time': max_time,
                     'true_beta': true_beta,
@@ -111,15 +113,16 @@ if __name__ == '__main__':
                     'train_batch_size': train_batch_size,
                     'num_nodes': num_nodes,
                     'training_portion': training_portion,
-                    'sequential_training': sequential_training,
+                    'training_type': training_type,
                     'data_type': data_type}
-
+    
     ## Initialize WandB for logging config and metrics
-    wandb.init(project='TGML1', entity='augustsemrau', config=wandb_config)
+    wandb.init(project='TGML2', entity='augustsemrau', config=wandb_config)
+
 
     
 
-    ### Initialize data_builder for simulating node interactions from known Poisson Process
+    ### Initialize data builder for simulating node interactions from known Poisson Process
     ## Our data generation
     if data_type == 0:
         data_builder = DatasetBuilder(starting_positions=z0, 
@@ -130,13 +133,6 @@ if __name__ == '__main__':
                                         device=device)
         dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
         interaction_count = len(dataset)
-        
-        # Verify time ordering
-        prev_t = 0.
-        for row in dataset:
-            cur_t = row[time_col_index]
-            assert cur_t > prev_t
-            prev_t = cur_t
 
     ## Simon's data generation
     elif data_type == 1:
@@ -171,6 +167,7 @@ if __name__ == '__main__':
         dataset = torch.from_numpy(dataset).to(device)
 
 
+
     ### Setup model
     model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     print('Model initial node start positions\n', model.z0)
@@ -192,13 +189,13 @@ if __name__ == '__main__':
     
     ### Model training starts
     ## Non-sequential model training
-    if sequential_training == 0:
+    if training_type == 0:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
         # gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         gym.train_test_model(epochs=num_epochs)
-
+        
     ## Sequential model training
-    elif sequential_training == 1:
+    elif training_type == 1:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
         for i in range(3):
             if i == 0:
@@ -213,6 +210,68 @@ if __name__ == '__main__':
 
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             gym.train_test_model(epochs=num_epochs)
+
+
+    ## Simons model training. This redo's some of the previous steps
+    elif training_type == 2:
+        
+        num_train_samples = int(len(dataset)*training_portion)
+        training_data = dataset[0:num_train_samples]
+        test_data = dataset[num_train_samples:]
+        n_train = len(training_data)
+        training_batches = np.array_split(training_data, 450)
+        batch_size = len(training_batches[0])
+
+        gt_model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
+        gt_dict = gt_model.state_dict()
+        gt_z = torch.from_numpy(z0)
+        gt_v = torch.from_numpy(v0)
+        gt_dict["z0"] = gt_z
+        gt_dict["v0"] = gt_v
+        gt_model.load_state_dict(gt_dict)
+        gt_nt = gt_model.eval()
+
+        track_nodes = [0,3]
+        tn_train = training_batches[-1][-1][2]
+        tn_test = test_data[-1][2]
+
+        def getres(t0, tn, f_model, track_nodes):
+            time = np.linspace(t0, tn)
+            res=[]
+            for ti in time:
+                res.append(torch.exp(f_model.log_intensity_function(track_nodes[0], track_nodes[1], ti)))
+            return torch.tensor(res)
+
+        res_gt = [getres(0, tn_train, gt_model, track_nodes), getres(tn_train, tn_test, gt_model, track_nodes)]
+        print("Res_gt:")
+        print(res_gt)
+        
+        gym_standard = StandardTrainTestGym(dataset=dataset, 
+                    model=model, 
+                    device=device, 
+                    batch_size=train_batch_size, 
+                    training_portion=training_portion,
+                    optimizer=optimizer, 
+                    metrics=metrics, 
+                    time_column_idx=time_col_index,
+                    num_epochs=num_epochs)
+
+        
+        model, training_losses, test_losses, track_dict = gym_standard.batch_train_track_mse(res_gt=res_gt,
+                                            track_nodes=track_nodes,
+                                            n_train=n_train,
+                                            train_batches=training_batches,
+                                            test_data=test_data)
+
+        plotres(num_epochs, training_losses, test_losses, "LL Loss")
+        plotres(num_epochs, track_dict["mse_train_losses"], track_dict["mse_test_losses"], "MSE Loss")
+        plotgrad(num_epochs, track_dict["bgrad"], track_dict["zgrad"], track_dict["vgrad"])
+
+
+
+
+
+
 
     ### Results
 
@@ -229,9 +288,10 @@ if __name__ == '__main__':
                     'metric_final_beta': metrics['Bias Term - Beta'][-1],
                     'metric_final_testloss': metrics['test_loss'][-1],
                     'metric_final_trainloss': metrics['train_loss'][-1],
-                    'beta': metrics['Bias Term - Beta'],
-                    'test_loss': metrics['test_loss'],
-                    'train_loss': metrics['train_loss']}
+                    # 'beta': metrics['Bias Term - Beta'],
+                    # 'test_loss': metrics['test_loss'],
+                    # 'train_loss': metrics['train_loss'],
+                    }
     wandb.log(wandb_metrics)
 
     ### Visualizations
