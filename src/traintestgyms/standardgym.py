@@ -56,7 +56,7 @@ class StandardTrainTestGym:
         for epoch in range(self.num_epochs):
             start_time = time.time()
             running_loss = 0.
-            sum_ratio = 0.
+            # sum_ratio = 0.
             start_t = torch.tensor([0.0])
             
             epoch_bgrad=[]
@@ -66,7 +66,7 @@ class StandardTrainTestGym:
             for idx, batch in enumerate(train_batches):
                 self.model.train()
                 self.optimizer.zero_grad()
-                output, ratio = self.model(batch, t0=start_t, tn=batch[-1][2])
+                output = self.model(batch, t0=start_t, tn=batch[-1][2])
                 loss = - output
                 loss.backward()
 
@@ -86,7 +86,7 @@ class StandardTrainTestGym:
                 self.optimizer.step()
 
                 running_loss += loss.item()
-                sum_ratio += ratio
+                # sum_ratio += ratio
                 start_t = batch[-1][2]
 
             self.model.eval()
@@ -94,10 +94,10 @@ class StandardTrainTestGym:
                 res_train = []
                 res_test = []
                 for ti in np.linspace(0, tn_train):
-                    res_train.append(self.model.lambda_sq_fun(ti, track_nodes[0], track_nodes[1]))
+                    res_train.append(torch.exp(self.model.log_intensity_function(track_nodes[0], track_nodes[1], ti)))
                 
                 for ti in np.linspace(tn_train, tn_test):
-                    res_test.append(self.model.lambda_sq_fun(ti, track_nodes[0], track_nodes[1]))
+                    res_test.append(torch.exp(self.model.log_intensity_function(track_nodes[0], track_nodes[1], ti)))
                 
                 res_train = torch.tensor(res_train)
                 res_test = torch.tensor(res_test)
@@ -105,11 +105,11 @@ class StandardTrainTestGym:
                 mse_train = torch.mean((res_gt[0]-res_train)**2)
                 mse_test = torch.mean((res_gt[1]-res_test)**2)
                 
-                test_output, test_ratio = self.model(test_data, t0=tn_train, tn=tn_test)
-                test_loss = self.model(test_output).item()
+                test_output = self.model(test_data, t0=tn_train, tn=tn_test)
+                test_loss = - test_output.item()
                     
             avg_train_loss = running_loss / n_train
-            avg_train_ratio = sum_ratio / len(train_batches)
+            # avg_train_ratio = sum_ratio / len(train_batches)
             avg_test_loss = test_loss / n_test
             current_time = time.time()
 
