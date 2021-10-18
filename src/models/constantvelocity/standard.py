@@ -10,7 +10,7 @@ class ConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:int):
+    def __init__(self, n_points:int, beta:float):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
