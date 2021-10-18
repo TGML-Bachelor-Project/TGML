@@ -25,7 +25,7 @@ class TrainTestGym:
         self.time_column_idx = time_column_idx
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.evaluator.run(self.val_loader))
         # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: self.evaluator.run(self.val_loader))
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: print(f'z0: {model.z0}  \
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: print(f'z0: {model.z0}  \
                                                                                         \n v0: {model.v0} \
                                                                                         \n beta: {model.beta}'))
         pbar = ProgressBar()
@@ -48,9 +48,6 @@ class TrainTestGym:
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
 
-        # print(f'z0: {self.model.z0}')
-        # print(f'v0: {self.model.v0}')
-        # print(f'beta: {self.model.beta}')
         return loss.item()
 
     ### Evaluation setup
