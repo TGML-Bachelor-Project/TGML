@@ -35,4 +35,11 @@ class DatasetBuilder:
         print(f'Training set generated with number of interactions: {len(dataset)}')
         dataset = torch.from_numpy(dataset).to(self.device)
 
+        # Verify time ordering
+        prev_t = 0.
+        for row in dataset:
+            cur_t = row[time_column_idx]
+            assert cur_t > prev_t
+            prev_t = cur_t
+
         return dataset
