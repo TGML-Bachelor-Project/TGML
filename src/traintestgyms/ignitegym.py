@@ -12,8 +12,8 @@ class TrainTestGym:
         train_data = dataset[:last_training_idx]
         test_data = dataset[last_training_idx:]
 
-        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= True)
-        self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle= True)
+        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False)
+        self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle= False)
         self.model = model
         self.device = device
         self.trainer = Engine(self.__train_step)
@@ -27,7 +27,11 @@ class TrainTestGym:
         # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: self.evaluator.run(self.val_loader))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: print(f'z0: {model.z0}  \
                                                                                         \n v0: {model.v0} \
-                                                                                        \n beta: {model.beta}'))
+                                                                                       \n beta: {model.beta}'))
+        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['train_loss'].append(test_loss.item()))
+        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['test_loss'].append(test_loss.item()))
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.item()))
+
         pbar = ProgressBar()
         pbar.attach(self.trainer)
 
@@ -43,8 +47,8 @@ class TrainTestGym:
         loss = -train_loglikelihood
         loss.backward()
         self.optimizer.step()
-        self.metrics['train_loss'].append(loss.item())
-        self.metrics['Bias Term - Beta'].append(self.model.beta.item())
+        # self.metrics['train_loss'].append(loss.item())
+        # self.metrics['Bias Term - Beta'].append(self.model.beta.item())
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
 
@@ -61,7 +65,7 @@ class TrainTestGym:
                                                 tn=batch[-1,self.time_column_idx].item())
             test_loss = - test_loglikelihood
             # optimizer.step()
-            self.metrics['test_loss'].append(test_loss.item())
+            # self.metrics['test_loss'].append(test_loss.item())
             if engine.t_start == 0:
                 engine.t_start = 1  
             return test_loss.item()
