@@ -23,7 +23,7 @@ import utils.visualize as visualize
 from traintestgyms.ignitegym import TrainTestGym
 from traintestgyms.standardgym import StandardTrainTestGym
 from utils.visualize.positions import node_positions
-from models.constantvelocity.standard import ConstantVelocityModel
+from models.constantvelocity.vectorized import ConstantVelocityModel
 from utils.report_plots.training_tracking import plotres, plotgrad
 
 ## Data import
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
 
     ### Setup model
-    model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+    model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     print('Model initial node start positions\n', model.z0)
     model = model.to(device)  # Send model to torch
 
