@@ -117,7 +117,7 @@ if __name__ == '__main__':
                     'data_type': data_type}
     
     ## Initialize WandB for logging config and metrics
-    wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
+    #wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
 
 
     
@@ -292,7 +292,7 @@ if __name__ == '__main__':
                     # 'test_loss': metrics['test_loss'],
                     # 'train_loss': metrics['train_loss'],
                     }
-    wandb.log(wandb_metrics)
+    #wandb.log(wandb_metrics)
 
     ### Visualizations
     '''
