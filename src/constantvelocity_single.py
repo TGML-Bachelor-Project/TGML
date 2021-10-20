@@ -50,7 +50,7 @@ if __name__ == '__main__':
     np.seterr(all='raise')
 
     # Run this: 
-    # python3 constantvelocity_analytical_integral.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DT 0 -DS 10 -TT 0 -WAB 0
+    # python3 constantvelocity_single.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DT 0 -DS 10 -TT 0 -WAB 0 -VEC 0
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
@@ -186,13 +186,17 @@ if __name__ == '__main__':
         dataset = torch.from_numpy(dataset).to(device)
     wandb.log({'number_of_interactions': interaction_count})
     
+
     ### Model training starts
     ## Non-sequential model training
     if training_type == 0:
         
         ### Setup model
-        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        # model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
+        if vectorized == 0:
+            # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+            model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
+        elif vectorized == 1:
+            model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
         print('Model initial node start positions\n', model.z0)
         model = model.to(device)  # Send model to torch
 
