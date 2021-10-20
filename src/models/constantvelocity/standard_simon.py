@@ -37,6 +37,22 @@ class SimonConstantVelocityModel(nn.Module):
         n = v[i,1] - v[j,1]
         return -torch.sqrt(torch.pi)*torch.exp(((-b**2 + beta)*m**2 + 2*a*b*m*n - n**2*(a**2 - beta))/(m**2 + n**2))*(torch.erf(((m**2 + n**2)*t0 + a*m + b*n)/torch.sqrt(m**2 + n**2)) - torch.erf(((m**2 + n**2)*tn + a*m + b*n)/torch.sqrt(m**2 + n**2)))/(2*torch.sqrt(m**2 + n**2))
 
+    def log_intensity_function(self, i, j, t):
+        '''
+        The log version of the  model intensity function between node i and j at time t.
+        The intensity function measures the likelihood of node i and j
+        interacting at time t using a common bias term beta
+
+        :param i:   Index of node i
+        :param j:   Index of node j
+        :param t:   The time to update the latent position vector z with
+
+        :returns:   The log of the intensity between i and j at time t as a measure of
+                    the two nodes' log-likelihood of interacting.
+        '''
+        z = self.step(t)
+        d = get_squared_euclidean_dist(z, i, j)
+        return self.beta - d
 
     def forward(self, data, t0, tn):
 
