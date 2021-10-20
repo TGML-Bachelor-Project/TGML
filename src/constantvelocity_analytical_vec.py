@@ -19,14 +19,11 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 # Code imports
 from utils.nodes.positions import get_contant_velocity_positions 
 from argparse import ArgumentParser
-
-from traintestgyms.ignitegym import TrainTestGym
-from traintestgyms.standardgym import SimonTrainTestGym
-from models.constantvelocity.standard import ConstantVelocityModel
-from models.constantvelocity.standard_simon import SimonConstantVelocityModel
-
 import utils.visualize as visualize
+from traintestgyms.ignitegym import TrainTestGym
+from traintestgyms.standardgym import StandardTrainTestGym
 from utils.visualize.positions import node_positions
+from models.constantvelocity.vectorized import ConstantVelocityModel
 from utils.report_plots.training_tracking import plotres, plotgrad
 
 ## Data import
@@ -46,7 +43,7 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
-    arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
+    arg_parser.add_argument('--true_beta', '-TB', default=7., type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=5., type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
@@ -99,8 +96,8 @@ if __name__ == '__main__':
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
         a0 = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])  # Negligble
-        # true_beta = 7.5
-        # model_beta = 7.1591
+        true_beta = 7.5
+        model_beta = 7.1591
 
     num_nodes = z0.shape[0]
 
@@ -120,7 +117,7 @@ if __name__ == '__main__':
                     'data_type': data_type}
     
     ## Initialize WandB for logging config and metrics
-    wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
+    #wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
 
 
     
@@ -169,34 +166,32 @@ if __name__ == '__main__':
         interaction_count = len(dataset)
         dataset = torch.from_numpy(dataset).to(device)
 
+
+
+    ### Setup model
+    model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
+    print('Model initial node start positions\n', model.z0)
+    model = model.to(device)  # Send model to torch
+
+    ### Train and evaluate model
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    metrics = {'train_loss': [], 'test_loss': [], 'Bias Term - Beta': []}
+
+    gym = TrainTestGym(dataset=dataset, 
+                        model=model, 
+                        device=device, 
+                        batch_size=train_batch_size, 
+                        training_portion=training_portion,
+                        optimizer=optimizer, 
+                        metrics=metrics, 
+                        time_column_idx=time_col_index)
+
     
     ### Model training starts
     ## Non-sequential model training
     if training_type == 0:
-        
-        ### Setup model
-        # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
-        print('Model initial node start positions\n', model.z0)
-        model = model.to(device)  # Send model to torch
-
-        
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        metrics = {'train_loss': [], 'test_loss': [], 'beta_est': []}
-        
-        
-        ### Train and evaluate model
-        
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        # model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
-        gym = TrainTestGym(dataset=dataset, 
-                            model=model, 
-                            device=device, 
-                            batch_size=train_batch_size, 
-                            training_portion=training_portion,
-                            optimizer=optimizer, 
-                            metrics=metrics, 
-                            time_column_idx=time_col_index)
+        # gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         gym.train_test_model(epochs=num_epochs)
         
     ## Sequential model training
@@ -219,17 +214,7 @@ if __name__ == '__main__':
 
     ## Simons model training. This redo's some of the previous steps
     elif training_type == 2:
-
-        ### Setup model
-        # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
-        print('Model initial node start positions\n', model.z0)
-        model = model.to(device)  # Send model to torch   
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        metrics = {'train_loss': [], 'test_loss': [], 'beta_est': []}
-
         
-
         num_train_samples = int(len(dataset)*training_portion)
         training_data = dataset[0:num_train_samples]
         test_data = dataset[num_train_samples:]
@@ -237,8 +222,7 @@ if __name__ == '__main__':
         training_batches = np.array_split(training_data, 450)
         batch_size = len(training_batches[0])
 
-        # gt_model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
-        gt_model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta, non_intensity_weight=1)
+        gt_model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
         gt_dict = gt_model.state_dict()
         gt_z = torch.from_numpy(z0)
         gt_v = torch.from_numpy(v0)
@@ -261,10 +245,8 @@ if __name__ == '__main__':
         res_gt = [getres(0, tn_train, gt_model, track_nodes), getres(tn_train, tn_test, gt_model, track_nodes)]
         print("Res_gt:")
         print(res_gt)
-
-
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        gym_standard = SimonTrainTestGym(dataset=dataset, 
+        
+        gym_standard = StandardTrainTestGym(dataset=dataset, 
                     model=model, 
                     device=device, 
                     batch_size=train_batch_size, 
@@ -288,6 +270,9 @@ if __name__ == '__main__':
 
 
 
+
+
+
     ### Results
 
     ## Print model params
@@ -300,14 +285,14 @@ if __name__ == '__main__':
 
     ### Log metrics to Weights and Biases
     wandb_metrics = {'number_of_interactions': interaction_count,
-                    'metric_final_beta': metrics['beta_est'][-1],
-                    # 'metric_final_testloss': metrics['test_loss'][-1],
-                    # 'metric_final_trainloss': metrics['train_loss'][-1],
-                    'beta': metrics['beta_est'],
+                    'metric_final_beta': metrics['Bias Term - Beta'][-1],
+                    'metric_final_testloss': metrics['test_loss'][-1],
+                    'metric_final_trainloss': metrics['train_loss'][-1],
+                    # 'beta': metrics['Bias Term - Beta'],
                     # 'test_loss': metrics['test_loss'],
                     # 'train_loss': metrics['train_loss'],
                     }
-    wandb.log(wandb_metrics)
+    #wandb.log(wandb_metrics)
 
     ### Visualizations
     '''
