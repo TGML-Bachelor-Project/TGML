@@ -29,6 +29,7 @@ from data.simon_synthetic.nhpp_simon import NodeSpace
 from data.simon_synthetic.nhpp_simon import root_matrix, monotonicity_mat, nhpp_mat, get_entry
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel
+from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
 from models.constantvelocity.standard_simon import SimonConstantVelocityModel
 ## Training Gym's
 from traintestgyms.ignitegym import TrainTestGym
@@ -48,6 +49,8 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     np.seterr(all='raise')
 
+    # Run this: 
+    # python3 constantvelocity_analytical_integral.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DT 0 -DS 10 -TT 0 -WAB 0
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
@@ -61,9 +64,9 @@ if __name__ == '__main__':
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
+    arg_parser.add_argument('--vectorized', '-VEC', default=0, type=int)
     args = arg_parser.parse_args()
-    # Run this: 
-    # python3 constantvelocity_analytical_integral.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DT 0 -DS 10 -TT 0 -WAB 0
+
 
     ### Set all input arguments
     max_time = args.max_time
@@ -78,6 +81,7 @@ if __name__ == '__main__':
     training_type = args.training_type
     time_col_index = 2  # Not logged with wandb
     wandb_entity = args.wandb_entity
+    vectorized = args.vectorized
 
 
     ## Defining Z and V for synthetic data generation
@@ -124,8 +128,10 @@ if __name__ == '__main__':
                     'train_batch_size': train_batch_size,
                     'num_nodes': num_nodes,
                     'training_portion': training_portion,
-                    'training_type': training_type,
-                    'data_type': data_type}
+                    'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
+                    'data_type': data_type,  # 0 = our databuilder, 1 = simons databuilder
+                    'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
+                    }
 
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
