@@ -30,12 +30,13 @@ class TrainTestGym:
                                                                                        \n beta: {model.beta}'))
 
         self.wandb_handler = wandb_handler
-        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['train_loss'].append(test_loss.item()))
-        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['test_loss'].append(test_loss.item()))
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.item()))
         self.epoch_count = []
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.epoch_count.append(0))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count), 'beta': model.beta.item()}))
+
+        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['train_loss'].append(test_loss.item()))
+        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['test_loss'].append(test_loss.item()))
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.item()))
         
 
         pbar = ProgressBar()
