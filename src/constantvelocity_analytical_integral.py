@@ -63,7 +63,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     args = arg_parser.parse_args()
     # Run this: 
-    # python3 constantvelocity_analytical_integral.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS^C41 -DT 0 -DS 10 -TT 0 -WAB 0
+    # python3 constantvelocity_analytical_integral.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DT 0 -DS 10 -TT 0 -WAB 0
 
     ### Set all input arguments
     max_time = args.max_time
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         wandb.init(project='TGML2', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
-
+    wandb.log({'beta': model_beta})
     
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         
         interaction_count = len(dataset)
         dataset = torch.from_numpy(dataset).to(device)
-
+    wandb.log({'number_of_interactions': interaction_count})
     
     ### Model training starts
     ## Non-sequential model training
@@ -198,7 +198,6 @@ if __name__ == '__main__':
         ### Train and evaluate model
         
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        # model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
         gym = TrainTestGym(dataset=dataset, 
                             model=model, 
                             device=device, 
@@ -206,7 +205,8 @@ if __name__ == '__main__':
                             training_portion=training_portion,
                             optimizer=optimizer, 
                             metrics=metrics, 
-                            time_column_idx=time_col_index)
+                            time_column_idx=time_col_index,
+                            wandb_handler = wandb)
         gym.train_test_model(epochs=num_epochs)
         
     
@@ -232,8 +232,8 @@ if __name__ == '__main__':
     elif training_type == 2:
 
         ### Setup model
-        # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
+        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+        # model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
         print('Model initial node start positions\n', model.z0)
         model = model.to(device)  # Send model to torch   
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -248,8 +248,8 @@ if __name__ == '__main__':
         training_batches = np.array_split(training_data, 450)
         batch_size = len(training_batches[0])
 
-        # gt_model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
-        gt_model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta, non_intensity_weight=1)
+        gt_model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
+        # gt_model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
         gt_dict = gt_model.state_dict()
         gt_z = torch.from_numpy(z0)
         gt_v = torch.from_numpy(v0)
@@ -308,17 +308,20 @@ if __name__ == '__main__':
     print(f'Z: {model_z0}')
     print(f'V: {model_v0}')
 
+    print(metrics['beta_est'])
 
     ### Log metrics to Weights and Biases
-    wandb_metrics = {'number_of_interactions': interaction_count,
-                    'metric_final_beta': metrics['beta_est'][-1],
+    wandb_metrics = {'metric_final_beta': metrics['beta_est'][-1],
                     # 'metric_final_testloss': metrics['test_loss'][-1],
                     # 'metric_final_trainloss': metrics['train_loss'][-1],
-                    'beta': metrics['beta_est'],
+                    # 'beta': metrics['beta_est'],
                     # 'test_loss': metrics['test_loss'],
                     # 'train_loss': metrics['train_loss'],
                     }
     wandb.log(wandb_metrics)
+
+
+
 
     ### Visualizations
     '''
