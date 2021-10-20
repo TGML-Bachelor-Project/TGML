@@ -176,7 +176,7 @@ if __name__ == '__main__':
         
         ### Setup model
         # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta, non_intensity_weight=1)
+        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
         print('Model initial node start positions\n', model.z0)
         model = model.to(device)  # Send model to torch
 
@@ -186,8 +186,9 @@ if __name__ == '__main__':
         
         
         ### Train and evaluate model
-
+        
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
+        # model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
         gym = TrainTestGym(dataset=dataset, 
                             model=model, 
                             device=device, 
@@ -221,7 +222,7 @@ if __name__ == '__main__':
 
         ### Setup model
         # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta, non_intensity_weight=1)
+        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
         print('Model initial node start positions\n', model.z0)
         model = model.to(device)  # Send model to torch   
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -300,8 +301,8 @@ if __name__ == '__main__':
     ### Log metrics to Weights and Biases
     wandb_metrics = {'number_of_interactions': interaction_count,
                     'metric_final_beta': metrics['beta_est'][-1],
-                    'metric_final_testloss': metrics['test_loss'][-1],
-                    'metric_final_trainloss': metrics['train_loss'][-1],
+                    # 'metric_final_testloss': metrics['test_loss'][-1],
+                    # 'metric_final_trainloss': metrics['train_loss'][-1],
                     'beta': metrics['beta_est'],
                     # 'test_loss': metrics['test_loss'],
                     # 'train_loss': metrics['train_loss'],

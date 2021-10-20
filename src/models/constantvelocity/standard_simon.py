@@ -7,19 +7,20 @@ from utils.integrals.analytical import analytical_integral as evaluate_integral
 
 
 class SimonConstantVelocityModel(nn.Module):
-    def __init__(self, n_points, init_beta, non_intensity_weight):
+
+    def __init__(self, n_points, init_beta):
         super().__init__()
-        self.beta = nn.Parameter(torch.tensor([[init_beta]]))
-        self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5) 
-        self.v0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5) 
-        # self.a0 = torch.zeros(size=(n_points,2))
+
+        self.beta = nn.Parameter(torch.tensor([[init_beta]]), requires_grad=True)
+        self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+        self.v0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True)
+
         self.n_points = n_points
         self.ind = torch.triu_indices(row=self.n_points, col=self.n_points, offset=1)
         self.pdist = nn.PairwiseDistance(p=2) # euclidean
-        self.weight = non_intensity_weight
 
     def step(self, t):
-        self.z = self.z0[:,:] + self.v0[:,:]*t #+ 0.5*self.a0[:,:]*t**2
+        self.z = self.z0[:,:] + self.v0[:,:]*t 
         return self.z
 
     def get_sq_dist(self, t, u, v):
@@ -28,11 +29,6 @@ class SimonConstantVelocityModel(nn.Module):
         z_v = torch.reshape(z[v], shape=(1,2))
         d = self.pdist(z_u, z_v)
         return d**2
-
-    def lambda_sq_fun(self, t, u, v):
-        z = self.step(t)
-        d = self.get_sq_dist(t, u, v)
-        return torch.exp(self.beta - d)
 
     def evaluate_integral(self, i, j, t0, tn, z, v, beta):
         a = z[i,0] - z[j,0]
@@ -43,16 +39,17 @@ class SimonConstantVelocityModel(nn.Module):
 
 
     def forward(self, data, t0, tn):
+
         event_intensity = 0.
-        non_event_intensity = 0.
         for u, v, event_time in data:
             u, v = int(u), int(v) # cast to int for indexing
             event_intensity += self.beta - self.get_sq_dist(event_time, u, v)
-
+        
+        non_event_intensity = 0.
         for u, v in zip(self.ind[0], self.ind[1]):
             non_event_intensity += self.evaluate_integral(u, v, t0, tn, self.z0, self.v0, beta=self.beta)
 
-        log_likelihood = event_intensity - self.weight*non_event_intensity
-        ratio = event_intensity / (self.weight*non_event_intensity)
+        log_likelihood = event_intensity - non_event_intensity
+        ratio = event_intensity / non_event_intensity
 
         return log_likelihood#, ratio
