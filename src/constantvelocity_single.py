@@ -193,8 +193,7 @@ if __name__ == '__main__':
         
         ### Setup model
         if vectorized == 0:
-            # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-            model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
+            model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
         elif vectorized == 1:
             model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
         print('Model initial node start positions\n', model.z0)
