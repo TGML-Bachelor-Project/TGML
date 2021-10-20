@@ -3,36 +3,41 @@ import os
 import sys
 import wandb
 import numpy as np
+from argparse import ArgumentParser
 from torch.optim.optimizer import Optimizer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
 print(sys.path)
 print(os.path.dirname(__file__))
-# Set device as cpu or gpu for pytorch
+
+
+## Set device as cpu or gpu for pytorch
 import torch
 device = 'cpu'
 # device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Running with pytorch device: {device}')
 torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
-# Code imports
-from utils.nodes.positions import get_contant_velocity_positions 
-from argparse import ArgumentParser
 
-from traintestgyms.ignitegym import TrainTestGym
-from traintestgyms.standardgym import SimonTrainTestGym
+### Code imports
+## Data
+# Type 0, ours
+from data.synthetic.builder import DatasetBuilder  
+# Type 1, Simon's
+from data.simon_synthetic.nhpp_simon import NodeSpace  
+from data.simon_synthetic.nhpp_simon import root_matrix, monotonicity_mat, nhpp_mat, get_entry
+## Models
 from models.constantvelocity.standard import ConstantVelocityModel
 from models.constantvelocity.standard_simon import SimonConstantVelocityModel
-
+## Training Gym's
+from traintestgyms.ignitegym import TrainTestGym
+from traintestgyms.standardgym import SimonTrainTestGym
+## Utils
+from utils.nodes.positions import get_contant_velocity_positions 
 import utils.visualize as visualize
 from utils.visualize.positions import node_positions
 from utils.report_plots.training_tracking import plotres, plotgrad
-
-## Data import
-from data.synthetic.builder import DatasetBuilder  # Type 0, ours
-from data.simon_synthetic.nhpp_simon import NodeSpace  # Type 1, Simon's
-from data.simon_synthetic.nhpp_simon import root_matrix, monotonicity_mat, nhpp_mat, get_entry
 
 
 if __name__ == '__main__':
@@ -48,15 +53,17 @@ if __name__ == '__main__':
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=5., type=float)
-    arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
+    arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     arg_parser.add_argument('--data_type', '-DT', default=0, type=int)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
+    arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     args = arg_parser.parse_args()
-
+    # Run this: 
+    # python3 constantvelocity_analytical_integral.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS^C41 -DT 0 -DS 10 -TT 0 -WAB 0
 
     ### Set all input arguments
     max_time = args.max_time
@@ -70,6 +77,7 @@ if __name__ == '__main__':
     data_set_test = args.data_set_test
     training_type = args.training_type
     time_col_index = 2  # Not logged with wandb
+    wandb_entity = args.wandb_entity
 
 
     ## Defining Z and V for synthetic data generation
@@ -104,6 +112,7 @@ if __name__ == '__main__':
 
     num_nodes = z0.shape[0]
 
+
     ### WandB initialization
     ## Set input parameters as config for Weights and Biases
     wandb_config = {'seed': seed,
@@ -112,16 +121,17 @@ if __name__ == '__main__':
                     'model_beta': model_beta,
                     'learning_rate': learning_rate,
                     'num_epochs': num_epochs,
-                    # 'non_intensity_weight': non_intensity_weight,
                     'train_batch_size': train_batch_size,
                     'num_nodes': num_nodes,
                     'training_portion': training_portion,
                     'training_type': training_type,
                     'data_type': data_type}
-    
-    ## Initialize WandB for logging config and metrics
-    wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
 
+    ## Initialize WandB for logging config and metrics
+    if wandb_entity == 0:
+        wandb.init(project='TGML2', entity='augustsemrau', config=wandb_config)
+    elif wandb_entity == 1:
+        wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
 
     
 
@@ -175,8 +185,8 @@ if __name__ == '__main__':
     if training_type == 0:
         
         ### Setup model
-        # model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
+        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+        # model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
         print('Model initial node start positions\n', model.z0)
         model = model.to(device)  # Send model to torch
 
@@ -199,6 +209,7 @@ if __name__ == '__main__':
                             time_column_idx=time_col_index)
         gym.train_test_model(epochs=num_epochs)
         
+    
     ## Sequential model training
     elif training_type == 1:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
