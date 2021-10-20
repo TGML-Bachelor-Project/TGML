@@ -6,7 +6,8 @@ from ignite.contrib.handlers.tqdm_logger import ProgressBar
 
 class TrainTestGym:
     def __init__(self, dataset, model, device, batch_size,
-                    training_portion, optimizer, metrics, time_column_idx) -> None:
+                    training_portion, optimizer, metrics, 
+                    time_column_idx, wandb_handler) -> None:
         
         last_training_idx = int(len(dataset)*training_portion)
         train_data = dataset[:last_training_idx]
@@ -24,13 +25,18 @@ class TrainTestGym:
         self.metrics = metrics
         self.time_column_idx = time_column_idx
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.evaluator.run(self.val_loader))
-        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=10), lambda: self.evaluator.run(self.val_loader))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: print(f'z0: {model.z0}  \
                                                                                         \n v0: {model.v0} \
                                                                                        \n beta: {model.beta}'))
+
+        self.wandb_handler = wandb_handler
         # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['train_loss'].append(test_loss.item()))
         # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['test_loss'].append(test_loss.item()))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.item()))
+        self.epoch_count = []
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.epoch_count.append(0))
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count), 'beta': model.beta.item()}))
+        
 
         pbar = ProgressBar()
         pbar.attach(self.trainer)
@@ -44,7 +50,7 @@ class TrainTestGym:
         self.optimizer.zero_grad()
         train_loglikelihood = self.model(batch, t0=engine.t_start, 
                                             tn=batch[-1,self.time_column_idx].item())
-        loss = -train_loglikelihood
+        loss = - train_loglikelihood
         loss.backward()
         self.optimizer.step()
         # self.metrics['train_loss'].append(loss.item())
