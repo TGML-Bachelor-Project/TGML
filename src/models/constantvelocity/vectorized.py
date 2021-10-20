@@ -4,7 +4,7 @@ from utils.nodes.distances import vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
 
 
-class ConstantVelocityModel(nn.Module):
+class VectorizedConstantVelocityModel(nn.Module):
     '''
     Model for predicting initial conditions of a temporal dynamic graph network.
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
