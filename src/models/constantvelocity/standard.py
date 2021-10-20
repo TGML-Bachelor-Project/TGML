@@ -57,6 +57,16 @@ class ConstantVelocityModel(nn.Module):
         d = get_squared_euclidean_dist(z, i, j)
         return self.beta - d
 
+
+    ## Change 1 function
+    def evaluate_integral(self, i, j, t0, tn, z, v, beta):
+        a = z[i,0] - z[j,0]
+        b = z[i,1] - z[j,1]
+        m = v[i,0] - v[j,0]
+        n = v[i,1] - v[j,1]
+        return -torch.sqrt(torch.pi)*torch.exp(((-b**2 + beta)*m**2 + 2*a*b*m*n - n**2*(a**2 - beta))/(m**2 + n**2))*(torch.erf(((m**2 + n**2)*t0 + a*m + b*n)/torch.sqrt(m**2 + n**2)) - torch.erf(((m**2 + n**2)*tn + a*m + b*n)/torch.sqrt(m**2 + n**2)))/(2*torch.sqrt(m**2 + n**2))
+
+
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
         '''
         Standard torch method for training of the model.
@@ -72,14 +82,17 @@ class ConstantVelocityModel(nn.Module):
             i, j = int(i), int(j) # cast to int for indexing
             event_intensity += self.log_intensity_function(i, j, event_time)
 
+
         non_event_intensity = 0.
         for i, j in zip(self.node_pair_idxs[0], self.node_pair_idxs[1]):
-            analytical = evaluate_integral(t0=t0, tn=tn, 
-                                            z=self.z0, v=self.v0, 
-                                            i=i, j=j, 
-                                            beta=self.beta)
-            non_event_intensity += analytical
 
+            ## Change 1
+            # non_event_intensity += evaluate_integral(t0=t0, tn=tn, 
+            #                                 z=self.z0, v=self.v0, 
+            #                                 i=i, j=j, 
+            #                                 beta=self.beta)
+            non_event_intensity += self.evaluate_integral(i=i, j=j, t0=t0, tn=tn, z=self.z0, v=self.v0, beta=self.beta)
+            ## Change 1
 
         log_likelihood = event_intensity - non_event_intensity
         ratio = event_intensity / non_event_intensity
