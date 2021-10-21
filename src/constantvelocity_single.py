@@ -22,13 +22,10 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 ### Code imports
 ## Data
-from data.synthetic.builder import DatasetBuilder  # -DT 0
-from data.simon_synthetic.nhpp_simon import NodeSpace  # -DT 1
-from data.simon_synthetic.nhpp_simon import root_matrix, monotonicity_mat, nhpp_mat, get_entry
+from data.synthetic.builder import DatasetBuilder
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
-from models.constantvelocity.standard_simon import SimonConstantVelocityModel
 ## Training Gym's
 from traintestgyms.ignitegym import TrainTestGym  # -TT 0, 1 is sequential
 from traintestgyms.standardgym import SimonTrainTestGym  # -TT 2
