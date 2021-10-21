@@ -26,13 +26,9 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
 
     ## Simons integral
     return (    -   
-                (
-                torch.sqrt(torch.pi) / (2*torch.sqrt(m**2 + n**2))
-                )
+                (torch.sqrt(torch.pi) / (2*torch.sqrt(m**2 + n**2)))
                 *
-                ( 
-                torch.exp(((-b**2 + beta) * m**2 + 2*a*b*m*n - n**2 * (a**2 - beta)) / (m**2 + n**2))
-                ) 
+                (torch.exp(((-b**2 + beta) * m**2 + 2*a*b*m*n - n**2 * (a**2 - beta)) / (m**2 + n**2))) 
                 * 
                 (torch.erf(((m**2 + n**2)*t0 + a*m + b*n) / torch.sqrt(m**2 + n**2)) - 
                 torch.erf(((m**2 + n**2)*tn + a*m + b*n) / torch.sqrt(m**2 + n**2))) 
@@ -72,16 +68,12 @@ def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
     psqmn = sqm+sqn
 
     return (    -   
-                (
-                torch.sqrt(torch.pi) / (2*sqrtmn)
-                )
+                (torch.sqrt(torch.pi) / (2*torch.sqrt(m**2 + n**2)))
                 *
-                ( 
-                torch.exp(((-b**2 + beta) * sqm + 2*a*b*m*n - sqn * (a**2 - beta)) / psqmn)
-                ) 
+                (torch.exp(((-b**2 + beta) * m**2 + 2*a*b*m*n - n**2 * (a**2 - beta)) / (m**2 + n**2))) 
                 * 
-                (torch.erf((psqmn*t0 + am + bn) / sqrtmn) - 
-                torch.erf((psqmn*tn + am + bn) / sqrtmn)) 
+                (torch.erf(((m**2 + n**2)*t0 + a*m + b*n) / torch.sqrt(m**2 + n**2)) - 
+                torch.erf(((m**2 + n**2)*tn + a*m + b*n) / torch.sqrt(m**2 + n**2))) 
             )
 
     ''' Simon's
