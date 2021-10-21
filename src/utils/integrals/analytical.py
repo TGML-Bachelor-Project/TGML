@@ -19,13 +19,10 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
     :returns:           The closed form solution of the squared euclidean intensity function
     '''
 
-    xi, xj, yi, yj      = z[i,0], z[j,0], z[i,1], z[j,1]
-    vxi, vxj, vyi, vyj  = v[i,0], v[j,0], v[i,1], v[j,1]
-
-    a = xi - xj
-    b = yi - yj
-    m = vxi - vxj
-    n = vyi - vyj
+    a = z[i,0] - z[j,0]
+    b = z[i,1] - z[j,1]
+    m = v[i,0] - v[j,0]
+    n = v[i,1] - v[j,1]
 
     ## Simons integral
     return (    -   
