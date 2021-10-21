@@ -10,7 +10,7 @@ class VectorizedConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:int, device):
+    def __init__(self, n_points:int, beta:float, device):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -19,13 +19,13 @@ class VectorizedConstantVelocityModel(nn.Module):
             super().__init__()
     
             self.device = device
-            self.beta = nn.Parameter(torch.tensor(beta), requires_grad=True)
+            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
             self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
             self.v0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
     
-            self.n_points = n_points
+            self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2
-            self.node_pair_idxs = torch.triu_indices(row=self.n_points, col=self.n_points, offset=1)
+            self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
 
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
@@ -38,25 +38,27 @@ class VectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        Z = self.z0 + self.v0*times.unsqueeze(1).unsqueeze(1)
-        return Z
+        Zt = self.z0 + self.v0 * times.unsqueeze(1).unsqueeze(1)
+        return Zt
 
-    def log_intensity_function(self, z):
+
+    def log_intensity_function(self, times:torch.Tensor):
         '''
         The log version of the  model intensity function between node i and j at time t.
         The intensity function measures the likelihood of node i and j
         interacting at time t using a common bias term beta
 
-        :param i:   Index of node i
-        :param j:   Index of node j
+
         :param t:   The time to update the latent position vector z with
 
         :returns:   The log of the intensity between i and j at time t as a measure of
                     the two nodes' log-likelihood of interacting.
         '''
+        z = self.steps(times)
         d = vec_squared_euclidean_dist(z)
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
         return torch.triu(self.beta - d.triu(), diagonal=1)
+
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
         '''
@@ -68,8 +70,8 @@ class VectorizedConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        Z = self.steps(data[:,2])
-        event_intensity = torch.sum(self.log_intensity_function(Z))
+        # Z = self.steps(data[:,2])
+        event_intensity = torch.sum(self.log_intensity_function(times=data[:,2]))
         non_event_intensity = torch.sum(evaluate_integral(t0, tn, self.z0, self.v0, 
                                                             self.beta, self.device).triu(diagonal=1))
 
