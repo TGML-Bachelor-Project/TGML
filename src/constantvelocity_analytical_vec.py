@@ -21,9 +21,8 @@ from utils.nodes.positions import get_contant_velocity_positions
 from argparse import ArgumentParser
 import utils.visualize as visualize
 from traintestgyms.ignitegym import TrainTestGym
-from traintestgyms.standardgym import StandardTrainTestGym
 from utils.visualize.positions import node_positions
-from models.constantvelocity.vectorized import ConstantVelocityModel
+from models.constantvelocity.vectorized import VectorizedConstantVelocityModel as ConstantVelocityModel
 from utils.report_plots.training_tracking import plotres, plotgrad
 
 ## Data import
