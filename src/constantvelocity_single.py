@@ -47,15 +47,15 @@ if __name__ == '__main__':
     np.seterr(all='raise')
 
     # Run this: 
-    # python3 constantvelocity_single.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DT 0 -DS 10 -TT 0 -WAB 0 -VEC 0
+    # python3 constantvelocity_single.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DS 10 -TT 0 -WAB 0 -VEC 0
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=5., type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=250, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=250, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
@@ -126,14 +126,14 @@ if __name__ == '__main__':
                     'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
                     'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
                     }
-
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML2', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML3', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     wandb.log({'beta': model_beta})
     
+
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
     data_builder = DatasetBuilder(starting_positions=z0, 
@@ -147,26 +147,28 @@ if __name__ == '__main__':
     wandb.log({'number_of_interactions': interaction_count})
     
 
+
+    ### Setup model and Optimizer
+    ## Model is either vectoriezed or not
+    if vectorized == 0:
+        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+    elif vectorized == 1:
+        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
+    print('Model initial node start positions\n', model.z0)
+    model = model.to(device)  # Send model to torch
+
+    ## Optimizer is initialized here, Adam is used
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    metrics = {'avg_train_loss': [], 'avg_test_loss': [], 'beta_est': []}
+
+
     ### Model training starts
     ## Non-sequential model training
     if training_type == 0:
         
-        ### Setup model
-        if vectorized == 0:
-            model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        elif vectorized == 1:
-            model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
-        print('Model initial node start positions\n', model.z0)
-        model = model.to(device)  # Send model to torch
-
-        
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        metrics = {'avg_train_loss': [], 'avg_test_loss': [], 'beta_est': []}
-        
-        
-        ### Train and evaluate model
-        
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
+
         gym = TrainTestGym(dataset=dataset, 
                             model=model, 
                             device=device, 
@@ -176,6 +178,7 @@ if __name__ == '__main__':
                             metrics=metrics, 
                             time_column_idx=time_col_index,
                             wandb_handler = wandb)
+
         gym.train_test_model(epochs=num_epochs)
         
     
@@ -280,14 +283,14 @@ if __name__ == '__main__':
     print(metrics['beta_est'])
 
     ### Log metrics to Weights and Biases
-    wandb_metrics = {'metric_final_beta': metrics['beta_est'][-1],
-                    # 'metric_final_testloss': metrics['test_loss'][-1],
-                    # 'metric_final_trainloss': metrics['train_loss'][-1],
-                    # 'beta': metrics['beta_est'],
-                    # 'test_loss': metrics['test_loss'],
-                    # 'train_loss': metrics['train_loss'],
-                    }
-    wandb.log(wandb_metrics)
+    # wandb_metrics = {'metric_final_beta': metrics['beta_est'][-1],
+    #                 # 'metric_final_testloss': metrics['test_loss'][-1],
+    #                 # 'metric_final_trainloss': metrics['train_loss'][-1],
+    #                 # 'beta': metrics['beta_est'],
+    #                 # 'test_loss': metrics['test_loss'],
+    #                 # 'train_loss': metrics['train_loss'],
+    #                 }
+    # wandb.log(wandb_metrics)
 
 
 
