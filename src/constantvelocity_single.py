@@ -60,7 +60,6 @@ if __name__ == '__main__':
     arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
-    arg_parser.add_argument('--data_type', '-DT', default=0, type=int)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
@@ -76,7 +75,6 @@ if __name__ == '__main__':
     num_epochs = args.num_epochs
     train_batch_size = args.train_batch_size
     training_portion = args.training_portion
-    data_type = args.data_type
     data_set_test = args.data_set_test
     training_type = args.training_type
     time_col_index = 2  # Not logged with wandb
@@ -129,7 +127,6 @@ if __name__ == '__main__':
                     'num_nodes': num_nodes,
                     'training_portion': training_portion,
                     'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
-                    'data_type': data_type,  # 0 = our databuilder, 1 = simons databuilder
                     'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
                     }
 
@@ -142,48 +139,14 @@ if __name__ == '__main__':
     
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
-    ## Our data generation
-    if data_type == 0:
-        data_builder = DatasetBuilder(starting_positions=z0, 
-                                        starting_velocities=v0,
-                                        max_time=max_time, 
-                                        common_bias=true_beta, 
-                                        seed=seed, 
-                                        device=device)
-        dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
-        interaction_count = len(dataset)
-
-    ## Simon's data generation
-    elif data_type == 1:
-        ns_gt = NodeSpace()
-        ns_gt.beta = true_beta
-        ns_gt.init_conditions(z0, v0, a0)
-        
-        t = np.linspace(0, max_time)
-        rmat = root_matrix(ns_gt) 
-        mmat = monotonicity_mat(ns_gt, rmat)
-        nhppmat = nhpp_mat(ns=ns_gt, time=t, root_matrix=rmat, monotonicity_matrix=mmat)
-
-        # create data set and sort by time
-        ind = np.triu_indices(num_nodes, k=1)
-        dataset = []
-        for u,v in zip(ind[0], ind[1]):
-            event_times = get_entry(nhppmat, u=u, v=v)
-            for e in event_times:
-                dataset.append([u, v, e])
-
-        dataset = np.array(dataset)
-        dataset = dataset[dataset[:,time_col_index].argsort()]
-
-        # verify time ordering
-        prev_t = 0.
-        for row in dataset:
-            cur_t = row[time_col_index]
-            assert cur_t > prev_t
-            prev_t = cur_t
-        
-        interaction_count = len(dataset)
-        dataset = torch.from_numpy(dataset).to(device)
+    data_builder = DatasetBuilder(starting_positions=z0, 
+                                    starting_velocities=v0,
+                                    max_time=max_time, 
+                                    common_bias=true_beta, 
+                                    seed=seed, 
+                                    device=device)
+    dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+    interaction_count = len(dataset)
     wandb.log({'number_of_interactions': interaction_count})
     
 
@@ -201,7 +164,7 @@ if __name__ == '__main__':
 
         
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        metrics = {'train_loss': [], 'test_loss': [], 'beta_est': []}
+        metrics = {'avg_train_loss': [], 'avg_test_loss': [], 'beta_est': []}
         
         
         ### Train and evaluate model
