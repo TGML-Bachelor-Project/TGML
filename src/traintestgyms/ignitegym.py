@@ -10,13 +10,15 @@ class TrainTestGym:
                     training_portion, optimizer, metrics, 
                     time_column_idx, wandb_handler) -> None:
         
+        ## Split dataset and intiate dataloder
         len_training_set = int(len(dataset)*training_portion)
         len_test_set = int(len(dataset) - len_training_set)
         train_data = dataset[:len_training_set]
         test_data = dataset[len_training_set:]
-
         self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False)
         self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle= False)
+        
+        
         self.model = model
         self.device = device
         self.trainer = Engine(self.__train_step)
@@ -24,10 +26,8 @@ class TrainTestGym:
         self.evaluator = Engine(self.__validation_step)
         self.evaluator.t_start = 0.0
         self.optimizer = optimizer
-        self.metrics = metrics
-        self.temp_metrics = {'train_loss': [], 'test_loss': [], 'beta_est': []}  # Used for computing average of losses
+        
         self.time_column_idx = time_column_idx
-        self.wandb_handler = wandb_handler
 
         
         ## Every Epoch run evaluator
@@ -37,24 +37,26 @@ class TrainTestGym:
                                                                                         \n v0: {model.v0} \
                                                                                        \n beta: {model.beta}'))
 
+        ### Metrics of training
+        self.wandb_handler = wandb_handler
+        self.metrics = metrics
+        self.temp_metrics = {'train_loss': [], 'test_loss': [], 'beta_est': []}  # Used for computing average of losses
         
         ## Keep count of epoch
         self.epoch_count = []
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.epoch_count.append(0))
+        
         ## Every Epoch compute mean of training and test losses for loggin
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['avg_train_loss'].append(np.sum(self.temp_metrics['train_loss']) / len_training_set))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['avg_test_loss'].append(np.sum(self.temp_metrics['test_loss']) / len_test_set))
-        # self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: metrics['beta_est'].append(torch.mean(self.temp_metrics['beta_est'])))
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.item()))
-
+        
         ## Clear temp_metrics for next epoch
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.temp_metrics['train_loss'].clear())
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.temp_metrics['test_loss'].clear())
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.temp_metrics['beta_est'].clear())
-
-
         
-        
+        ## Log metrics using WandB
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count), 
                                                                                                     'beta': model.beta.item(), 
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1],
