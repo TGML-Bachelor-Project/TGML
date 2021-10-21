@@ -24,7 +24,6 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
     m = v[i,0] - v[j,0]
     n = v[i,1] - v[j,1]
 
-    ## Simons integral
     return (    -   
                 (torch.sqrt(torch.pi) / (2*torch.sqrt(m**2 + n**2)))
                 *
@@ -33,21 +32,6 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
                 (torch.erf(((m**2 + n**2)*t0 + a*m + b*n) / torch.sqrt(m**2 + n**2)) - 
                 torch.erf(((m**2 + n**2)*tn + a*m + b*n) / torch.sqrt(m**2 + n**2))) 
             )
-
-    # ## Our integral
-    # return (    -   
-    #             (
-    #             torch.sqrt(torch.pi) / (2*torch.sqrt(m**2 + n**2))
-    #             )
-    #             *
-    #             ( 
-    #             torch.exp(((-b**2 - a + beta) * m**2 - n**2 * (a - beta)) / (m**2 + n**2))
-    #             ) 
-    #             * 
-    #             (torch.erf(((m**2 + n**2)*t0 + b*n) / torch.sqrt(m**2 + n**2)) - 
-    #             torch.erf(((m**2 + n**2)*tn + b*n) / torch.sqrt(m**2 + n**2))) 
-    #         )
-
 
 
 def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, 
