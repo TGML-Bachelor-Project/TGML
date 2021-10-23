@@ -1,12 +1,9 @@
 import torch
 import numpy as np
-from data.synthetic.sampling import ConstantVelocitySimulator
 
 class DatasetBuilder:
-    def __init__(self, starting_positions, starting_velocities,
-                    max_time, common_bias, seed, device) -> None:
-        self.simulator = ConstantVelocitySimulator(starting_positions,
-                            starting_velocities, max_time, common_bias, seed)
+    def __init__(self, simulator, device) -> None:
+        self.simulator = simulator
         self.device = device
 
     def build_dataset(self, num_of_nodes:int, time_column_idx:int) -> list:

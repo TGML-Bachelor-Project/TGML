@@ -1,9 +1,7 @@
 import torch
 import torch.nn as nn
-from models.constantvelocity.standard_simon import SimonConstantVelocityModel
 from utils.nodes.distances import vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
-from utils.integrals.analytical import analytical_integral as sim_evaluate_integral
 
 
 class VectorizedConstantVelocityModel(nn.Module):
@@ -28,7 +26,6 @@ class VectorizedConstantVelocityModel(nn.Module):
             self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
-            self.sim_model = SimonConstantVelocityModel(n_points, beta)
 
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
@@ -60,7 +57,7 @@ class VectorizedConstantVelocityModel(nn.Module):
         z = self.steps(times)
         d = vec_squared_euclidean_dist(z)
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return (self.beta - d).triu(diagonal=1)
+        return self.beta - d
 
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
@@ -81,5 +78,6 @@ class VectorizedConstantVelocityModel(nn.Module):
         non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
                                                         z0=self.z0, v0=self.v0, 
                                                         beta=self.beta, device=self.device).triu(diagonal=1))
-        # Logliklihood
+
+        # Log likelihood
         return event_intensity - non_event_intensity
