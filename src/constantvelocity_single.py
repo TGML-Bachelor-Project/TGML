@@ -168,9 +168,27 @@ if __name__ == '__main__':
     ### Model training starts
     ## Non-sequential model training
     if training_type == 0:
-        
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
 
+        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
+        
+        gym = TrainTestGym(dataset=dataset, 
+                            model=model, 
+                            device=device, 
+                            batch_size=train_batch_size, 
+                            training_portion=training_portion,
+                            optimizer=optimizer, 
+                            metrics=metrics, 
+                            time_column_idx=time_col_index,
+                            wandb_handler = wandb)
+        
+        gym.train_test_model(epochs=num_epochs)
+        
+    
+    ## Sequential model training
+    elif training_type == 1:
+        
+        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
+        
         gym = TrainTestGym(dataset=dataset, 
                             model=model, 
                             device=device, 
@@ -181,25 +199,17 @@ if __name__ == '__main__':
                             time_column_idx=time_col_index,
                             wandb_handler = wandb)
 
-        gym.train_test_model(epochs=num_epochs)
-        
-    
-    ## Sequential model training
-    elif training_type == 1:
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
         for i in range(3):
             if i == 0:
-                model.z0.requires_grad = True
+                model.beta.requires_grad = True  # Learn beta first
             elif i == 1:
-                #model.z0.requires_grad = False
-                model.v0.requires_grad = True
+                model.z0.requires_grad = True  # Learn Z next
             elif i == 2:
-                #model.z0.requires_grad = False
-                #model.v0.requires_grad = False
-                model.beta.requires_grad = True
+                model.v0.requires_grad = True  # Learn V last
+                
 
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-            gym.train_test_model(epochs=num_epochs)
+            gym.train_test_model(epochs=int(num_epochs/3))
 
 
     ## Simons model training. This redo's some of the previous steps
@@ -275,10 +285,7 @@ if __name__ == '__main__':
     ### Results generation
 
     ## Build non-vectorized final model and ground truth model
-    learned_z = model.z0
-    learned_v = model.v0
-    learned_beta = model.beta
-    result_model = GTConstantVelocityModel(n_points=num_nodes, z=learned_z, v=learned_v, beta=learned_beta)
+    result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0, v=model.v0, beta=model.beta)
     gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
 
     ## Compare intensity rates
@@ -286,6 +293,10 @@ if __name__ == '__main__':
     train_t = np.linspace(0, dataset[len_training_set][2])
     test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,3])
+
+
 
     ## Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
