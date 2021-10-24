@@ -23,6 +23,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 ### Code imports
 ## Data
 from data.synthetic.builder import DatasetBuilder
+from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
@@ -136,12 +137,10 @@ if __name__ == '__main__':
 
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
-    data_builder = DatasetBuilder(starting_positions=z0, 
-                                    starting_velocities=v0,
-                                    max_time=max_time, 
-                                    common_bias=true_beta, 
-                                    seed=seed, 
-                                    device=device)
+    simulator = ConstantVelocitySimulator(starting_positions=z0,
+                                velocities=v0, T=max_time, 
+                                beta=true_beta, seed=seed)
+    data_builder = DatasetBuilder(simulator, device=device)
     dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     interaction_count = len(dataset)
     wandb.log({'number_of_interactions': interaction_count})
