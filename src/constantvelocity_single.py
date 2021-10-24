@@ -59,7 +59,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=7.1, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=5, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
@@ -110,7 +110,6 @@ if __name__ == '__main__':
     elif data_set_test == 10:
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
-        a0 = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])  # Negligble
         # true_beta = 7.5
         # model_beta = 7.1591
 
@@ -286,7 +285,7 @@ if __name__ == '__main__':
     len_training_set = int(len(dataset)*training_portion)
     train_t = np.linspace(0, dataset[len_training_set][2])
     test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
-    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model)
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
 
     ## Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
