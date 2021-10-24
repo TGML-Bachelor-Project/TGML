@@ -3,7 +3,6 @@ import torch.nn as nn
 from models.constantvelocity.standard_simon import SimonConstantVelocityModel
 from utils.nodes.distances import vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
-from utils.integrals.analytical import analytical_integral as sim_evaluate_integral
 
 
 class VectorizedConstantVelocityModel(nn.Module):
