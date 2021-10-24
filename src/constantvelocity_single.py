@@ -27,14 +27,18 @@ from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
+from models.constantvelocity.standard_gt import GTConstantVelocityModel  # Ground Truth model for results
 ## Training Gym's
 from traintestgyms.ignitegym import TrainTestGym  # -TT 0, 1 is sequential
 from traintestgyms.standardgym import SimonTrainTestGym  # -TT 2
+## Plots
+from utils.report_plots.training_tracking import plotres, plotgrad
+from utils.report_plots.compare_intensity_rates import compare_intensity_rates_plot
 ## Utils
 from utils.nodes.positions import get_contant_velocity_positions 
 import utils.visualize as visualize
 from utils.visualize.positions import node_positions
-from utils.report_plots.training_tracking import plotres, plotgrad
+
 
 
 
@@ -51,17 +55,17 @@ if __name__ == '__main__':
     # python3 constantvelocity_single.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DS 10 -TT 0 -WAB 0 -VEC 0
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--max_time', '-MT', default=100, type=int)
+    arg_parser.add_argument('--max_time', '-MT', default=10, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=5., type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=7.1, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=250, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=250, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=5, type=int)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
     arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
-    arg_parser.add_argument('--vectorized', '-VEC', default=0, type=int)
+    arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
     args = arg_parser.parse_args()
 
 
@@ -129,7 +133,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML3', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML4', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     wandb.log({'beta': model_beta})
@@ -270,27 +274,19 @@ if __name__ == '__main__':
 
 
     ### Results generation
+
+    ## Build non-vectorized final model and ground truth model
+    learned_z = model.z0
+    learned_v = model.v0
+    learned_beta = model.beta
+    result_model = GTConstantVelocityModel(n_points=num_nodes, z=learned_z, v=learned_v, beta=learned_beta)
+    gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+
     ## Compare intensity rates
     len_training_set = int(len(dataset)*training_portion)
     train_t = np.linspace(0, dataset[len_training_set][2])
     test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
-    plot_t = [train_t, test_t]
-    gttrain = []
-    restrain = []
-
-    print("Plot train")
-    for ti in plot_t[0]:
-        gttrain.append(nodespace.lambda_sq_fun(ti, node_u, node_v))
-        restrain.append(model.lambda_fun(ti, node_u, node_v))
-    
-    gttest = []
-    restest = []
-    print("Plot test")
-    for ti in plot_t[1]:
-        gttest.append(nodespace.lambda_sq_fun(ti, node_u, node_v))
-        restest.append(model.lambda_fun(ti, node_u, node_v))
-
-
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model)
 
     ## Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
