@@ -270,8 +270,28 @@ if __name__ == '__main__':
 
 
 
+    ### Results generation
+    ## Compare intensity rates
+    len_training_set = int(len(dataset)*training_portion)
+    train_t = np.linspace(0, dataset[len_training_set][2])
+    test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
+    plot_t = [train_t, test_t]
+    gttrain = []
+    restrain = []
 
-    ### Results
+    print("Plot train")
+    for ti in plot_t[0]:
+        gttrain.append(nodespace.lambda_sq_fun(ti, node_u, node_v))
+        restrain.append(model.lambda_fun(ti, node_u, node_v))
+    
+    gttest = []
+    restest = []
+    print("Plot test")
+    for ti in plot_t[1]:
+        gttest.append(nodespace.lambda_sq_fun(ti, node_u, node_v))
+        restest.append(model.lambda_fun(ti, node_u, node_v))
+
+
 
     ## Print model params
     model_z0 = model.z0.cpu().detach().numpy() 
