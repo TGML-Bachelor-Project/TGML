@@ -65,13 +65,8 @@ class ConstantVelocitySimulator:
 
         # For the model containing only position and velocity
         # Find the point in which the derivative equal to 0
-<<<<<<< HEAD
-        t = - np.dot(deltaX, deltaV) / (np.dot(deltaV, deltaV) + self.eps)
-        if t <= self.__max_time:
-=======
         t = - np.dot(deltaX, deltaV) / np.dot(deltaV, deltaV)
         if self.__t_start <= t <= self.__max_time:
->>>>>>> 567d0a50f076e8c5887730eba2b398e9667762a8
             criticalPoints.append(t)
 
         # Add the last time point
