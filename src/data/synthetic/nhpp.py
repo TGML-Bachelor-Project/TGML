@@ -6,7 +6,7 @@ class NHPP:
     for node pair interactions based on a given intensity function.
 
     '''
-    def __init__(self, max_time:int, intensity_func, time_bins:list, seed:int=42) -> None:
+    def __init__(self, max_time:int, intensity_func, time_bins:list, seed:int=42, t_start:int=0) -> None:
         '''
         :param T:               The end time point of the simulation
         :param intensity_func:  A given function defining how the intensity between node pairs 
@@ -15,14 +15,11 @@ class NHPP:
                                 the simulation into discrete time bins
         :param seed:            The random seed for the simulation
         '''
+        self.__t_start = t_start
         self.__max_time = max_time
         self.__intensity_func = intensity_func
         self.__time_bins = time_bins
         self.__seed = seed
-
-        # Check time bin start and end
-        if self.__time_bins[0] != 0 or self.__time_bins[-1] != self.__max_time:
-            raise Exception('Invalid time intervals. Must start with t=0 and end with t=T')
 
         self.__numOfTimeBins = len(self.__time_bins)
         # Find the max lambda values for each interval, add [0] to start the indexing from 1
@@ -40,11 +37,13 @@ class NHPP:
         The function generates Non-homogeneously distributed time points for 
         node interactions.
 
+        :param t:   The start time to simulate node interactions from
+
         :returns:   A list of floating point numbers representing the time points
                     of interaction for a given pair of nodes based on the given 
                     intensity function
         '''
-        t, J, S = 0, 1, []
+        t, J, S = self.__t_start, 1, []
 
         # Step 2
         U = np.random.uniform(low=0, high=1) # Random number

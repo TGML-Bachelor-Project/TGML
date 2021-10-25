@@ -84,7 +84,12 @@ if __name__ == '__main__':
     #TODO Make multiple velocity vectors
     if data_set_test == 1:    
         z0 = np.asarray([[-3, 0], [3, 0]])
-        v0 = np.asarray([[1, 0], [-1, 0]])
+        v0 = np.asarray([
+                            [[1,    0], [-1, 0]],
+                            [[1.5, 0.5], [-1.5, 0]],
+                            [[2,    1], [-2, 0]],
+                            [[2.5, 1.5], [-2.5, 0]],
+                        ])
     elif data_set_test == 2:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
         v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
@@ -94,6 +99,7 @@ if __name__ == '__main__':
     elif data_set_test == 4:
         z0 = np.asarray([[-1, 0], [2, 0], [0, 3], [0, -3]])
         v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
+    '''
     elif data_set_test == 5:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3]])
         v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5]])
@@ -110,6 +116,7 @@ if __name__ == '__main__':
         a0 = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])  # Negligble
         # true_beta = 7.5
         # model_beta = 7.1591
+    '''
 
     num_nodes = z0.shape[0]
 
@@ -139,7 +146,7 @@ if __name__ == '__main__':
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
     simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
-                                velocities=v0, T=max_time, 
+                                velocities=v0, max_time=max_time, 
                                 beta=true_beta, seed=seed)
     data_builder = DatasetBuilder(simulator, device=device)
     dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)

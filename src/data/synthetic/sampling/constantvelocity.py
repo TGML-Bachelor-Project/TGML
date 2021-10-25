@@ -7,7 +7,7 @@ class ConstantVelocitySimulator:
     Model using Newtonian dynamics in the form of constant velocities
     to model node pair interactions based on Euclidean distance in a latent space.
     '''
-    def __init__(self, starting_positions:list, velocities:list, T:int, beta:list, seed:int=42):
+    def __init__(self, starting_positions:list, velocities:list, T:int, beta:list, seed:int=42, t_start=0):
         '''
         :param starting_positions:     The 2d coordinates of each node starting position in the latent space
         :param velocities:             Velocities for each node. The velocities are constant over time
@@ -18,6 +18,7 @@ class ConstantVelocitySimulator:
         # Model parameters
         self.z0 = np.asarray(starting_positions)
         self.v0 = np.asarray(velocities)
+        self.__t_start = t_start
         self.__max_time = T
         self.__beta = beta
         self.__num_of_nodes = self.z0.shape[0]
@@ -60,18 +61,26 @@ class ConstantVelocitySimulator:
         deltaV = self.v0[i, :] - self.v0[j, :]
 
         # Add the initial time point
-        criticalPoints = [0]
+        criticalPoints = [self.__t_start]
 
         # For the model containing only position and velocity
         # Find the point in which the derivative equal to 0
+<<<<<<< HEAD
         t = - np.dot(deltaX, deltaV) / (np.dot(deltaV, deltaV) + self.eps)
         if t <= self.__max_time:
+=======
+        t = - np.dot(deltaX, deltaV) / np.dot(deltaV, deltaV)
+        if self.__t_start <= t <= self.__max_time:
+>>>>>>> 567d0a50f076e8c5887730eba2b398e9667762a8
             criticalPoints.append(t)
 
         # Add the last time point
         criticalPoints.append(self.__max_time)
 
         return criticalPoints
+
+    def get_end_positions(self):
+        return self.z0 + self.v0*self.__max_time
 
     def intensity_function(self, i:int, j:int, t:int) -> np.float64:
         '''
@@ -85,7 +94,8 @@ class ConstantVelocitySimulator:
         :returns:   The intensity between node i and j at time t i.e.
                     a measure of the likelihood of the two nodes interacting
         '''
-        return np.exp(self.__beta - self.__squared_euclidean_distance(i,j,t))
+        dist = self.__squared_euclidean_distance(i,j,t)
+        return np.exp(self.__beta - dist)
 
     def sample_interaction_times_for_all_node_pairs(self) -> list:
         '''
@@ -109,7 +119,8 @@ class ConstantVelocitySimulator:
             # Get the critical points
             critical_points = self.__critical_time_points(i=i, j=j)
             # Simulate the models
-            nhppij = NHPP(max_time=self.__max_time, intensity_func=intensity_func, time_bins=critical_points, seed=np.random.randint(100000))
+            nhppij = NHPP(max_time=self.__max_time, intensity_func=intensity_func, time_bins=critical_points, 
+                            seed=np.random.randint(100000), t_start=self.__t_start)
             event_times = nhppij.generate_time_units()
             # Add the event times
             network_events[i][j].extend(event_times)
