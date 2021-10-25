@@ -106,6 +106,30 @@ if __name__ == '__main__':
     elif data_set_test == 7:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
+    elif data_set_test == 8:
+        # z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
+        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3], [-6, 0], [6, 0], [0, 6], [0, -6], [6, 6], [6, -6], [-6, -6], [-6, 6]])
+        # z0 = np.append(z0, z0*2, axis=0)
+        # z0 = np.append(z0, z0*3, axis=0)
+        # z0 = np.append(z0, z0*4, axis=0)
+        # z0 = np.append(z0, z0*5, axis=0)
+        # z0 = np.append(z0, z0*6, axis=0)
+        # z0 = np.append(z0, z0*7, axis=0)
+        # z0 = np.append(z0, z0*8, axis=0)
+        # z0 = np.append(z0, z0*9, axis=0)
+        # z0 = np.append(z0, z0*10, axis=0)
+        # v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
+        v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0], [0.22, 0], [-0.2, 0], [0, -0.22], [0, 0.2], [-0.22, -0.18], [0, 0.1], [0, 0], [0.12, 0]])
+        # v0 = np.append(v0, v0*2, axis=0)
+        # v0 = np.append(v0, v0*3, axis=0)
+        # v0 = np.append(v0, v0*4, axis=0)
+        # v0 = np.append(v0, v0*5, axis=0)
+        # v0 = np.append(v0, v0*6, axis=0)
+        # v0 = np.append(v0, v0*7, axis=0)
+        # v0 = np.append(v0, v0*8, axis=0)
+        # v0 = np.append(v0, v0*9, axis=0)
+        # v0 = np.append(v0, v0*10, axis=0)
+    
     ## Simon's synthetic constant velocity data
     elif data_set_test == 10:
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
