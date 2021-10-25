@@ -24,6 +24,7 @@ class ConstantVelocitySimulator:
 
         self.__node_pair_indices = np.triu_indices(n=self.__num_of_nodes, k=1)
         np.random.seed(seed)
+        self.eps = np.finfo(float).eps
 
     def __squared_euclidean_distance(self, i:int, j:int, t:int) -> np.float64:
         '''
@@ -63,7 +64,7 @@ class ConstantVelocitySimulator:
 
         # For the model containing only position and velocity
         # Find the point in which the derivative equal to 0
-        t = - np.dot(deltaX, deltaV) / np.dot(deltaV, deltaV)
+        t = - np.dot(deltaX, deltaV) / (np.dot(deltaV, deltaV) + self.eps)
         if t <= self.__max_time:
             criticalPoints.append(t)
 
