@@ -114,6 +114,7 @@ class ConstantVelocitySimulator:
         network_events = [[[] for _ in range(self.__num_of_nodes)] for _ in range(self.__num_of_nodes)]
 
         for i, j in zip(self.__node_pair_indices[0], self.__node_pair_indices[1]):
+            print("Generating data for node", i,j)
             # Define the intensity function for each node pair (i,j)
             intensity_func = lambda t: self.intensity_function(i=i, j=j, t=t)
             # Get the critical points
