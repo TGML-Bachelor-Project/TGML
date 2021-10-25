@@ -6,7 +6,7 @@ class NHPP:
     for node pair interactions based on a given intensity function.
 
     '''
-    def __init__(self, max_time:int, intensity_func, time_bins:list, seed:int=42, t_start:int=0) -> None:
+    def __init__(self, max_time:int, intensity_func, time_bins:list, seed:int=0, t_start:int=0) -> None:
         '''
         :param T:               The end time point of the simulation
         :param intensity_func:  A given function defining how the intensity between node pairs 
@@ -23,7 +23,9 @@ class NHPP:
 
         self.__numOfTimeBins = len(self.__time_bins)
         # Find the max lambda values for each interval, add [0] to start the indexing from 1
-        self.__lambdaValues = [0] + [max(intensity_func(t=self.__time_bins[inx - 1]), intensity_func(t=self.__time_bins[inx])) 
+        print(time_bins)
+        self.__lambdaValues = [0] + [max(intensity_func(t=self.__time_bins[inx - 1]), 
+                                        intensity_func(t=self.__time_bins[inx])) 
                                         for inx in range(1, self.__numOfTimeBins)]
 
         # Set seed
