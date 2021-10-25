@@ -91,8 +91,11 @@ class ConstantVelocitySimulator:
         :returns:   The intensity between node i and j at time t i.e.
                     a measure of the likelihood of the two nodes interacting
         '''
-        dist = self.__squared_euclidean_distance(i,j,t)
-        return np.exp(self.__beta - dist)
+        log_intensity = self.__beta - self.__squared_euclidean_distance(i,j,t)
+        if log_intensity > -700:
+            return np.exp(log_intensity)
+        else:
+            return 0. + self.eps
 
     def sample_interaction_times_for_all_node_pairs(self) -> list:
         '''

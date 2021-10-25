@@ -23,7 +23,6 @@ class NHPP:
 
         self.__numOfTimeBins = len(self.__time_bins)
         # Find the max lambda values for each interval, add [0] to start the indexing from 1
-        print(time_bins)
         self.__lambdaValues = [0] + [max(intensity_func(t=self.__time_bins[inx - 1]), 
                                         intensity_func(t=self.__time_bins[inx])) 
                                         for inx in range(1, self.__numOfTimeBins)]
