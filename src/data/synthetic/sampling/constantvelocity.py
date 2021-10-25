@@ -57,7 +57,7 @@ class ConstantVelocitySimulator:
         :returns:   A list of critical time points as floating point values
         '''
         # Get the differences
-        deltaX = self.z0[i, :] - self.z0[j, :]
+        deltaZ = self.z0[i, :] - self.z0[j, :]
         deltaV = self.v0[i, :] - self.v0[j, :]
 
         # Add the initial time point
@@ -65,9 +65,11 @@ class ConstantVelocitySimulator:
 
         # For the model containing only position and velocity
         # Find the point in which the derivative equal to 0
-        t = - np.dot(deltaX, deltaV) / (np.dot(deltaV, deltaV) + self.eps)
+        t = - np.dot(deltaZ, deltaV) / (np.dot(deltaV, deltaV) + self.eps)
         if self.__t_start <= t <= self.__max_time:
             criticalPoints.append(t)
+            # print(i, j)
+            # print(t)
 
         # Add the last time point
         criticalPoints.append(self.__max_time)
@@ -77,7 +79,7 @@ class ConstantVelocitySimulator:
     def get_end_positions(self):
         return self.z0 + self.v0*self.__max_time
 
-    def intensity_function(self, i:int, j:int, t:int) -> np.float64:
+    def intensity_function(self, i:int, j:int, t:float) -> np.float64:
         '''
         The intensity function used to calculate the event frequencies at time t in the
         simulation of the Non-homogeneous Poisson process
