@@ -38,7 +38,7 @@ class StepwiseConstantVelocitySimulator:
                     the times where node j and node i interacts.
         '''
         # Upper triangular matrix of lists
-        network_events = [[[] for _ in range(self.__num_of_nodes)] for _ in range(self.__num_of_nodes)]
+        network_events = []
         
         # Divide time into the same number of intervals as there are velocity vectors
         time_bins = np.linspace(0, self.__max_time, len(self.velocities)+1)

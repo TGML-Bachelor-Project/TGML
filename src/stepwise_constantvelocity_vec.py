@@ -4,7 +4,6 @@ import sys
 import wandb
 import numpy as np
 from argparse import ArgumentParser
-from torch.optim.optimizer import Optimizer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
@@ -22,7 +21,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 ### Code imports
 ## Data
-from data.synthetic.builder import DatasetBuilder
+from data.synthetic.stepwisebuilder import StepwiseDatasetBuilder as DatasetBuilder
 from data.synthetic.sampling.stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
@@ -81,7 +80,6 @@ if __name__ == '__main__':
 
 
     ## Defining Z and V for synthetic data generation
-    #TODO Make multiple velocity vectors
     if data_set_test == 1:    
         z0 = np.asarray([[-3, 0], [3, 0]])
         v0 = np.asarray([
