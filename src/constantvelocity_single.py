@@ -107,28 +107,13 @@ if __name__ == '__main__':
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
     elif data_set_test == 8:
-        # z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3], [-6, 0], [6, 0], [0, 6], [0, -6], [6, 6], [6, -6], [-6, -6], [-6, 6]])
         zbase = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
-        z0 = np.append(zbase, zbase*2, axis=0)
-        # z0 = np.append(z0, zbase*3, axis=0)
-        # z0 = np.append(z0, zbase*4, axis=0)
-        # z0 = np.append(z0, zbase*5, axis=0)
-        # z0 = np.append(z0, zbase*6, axis=0)
-        # z0 = np.append(z0, zbase*7, axis=0)
-        # z0 = np.append(z0, zbase*8, axis=0)
-        # z0 = np.append(z0, zbase*9, axis=0)
-        # z0 = np.append(z0, zbase*10, axis=0)
-        # v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0], [0.22, 0], [-0.2, 0], [0, -0.22], [0, 0.2], [-0.22, -0.18], [0, 0.1], [0, 0], [0.12, 0]])
         vbase = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
+        z0 = np.append(zbase, zbase*2, axis=0)
         v0 = np.append(vbase, vbase*2, axis=0)
-        # v0 = np.append(v0, vbase*3, axis=0)
-        # v0 = np.append(v0, vbase*4, axis=0)
-        # v0 = np.append(v0, vbase*5, axis=0)
-        # v0 = np.append(v0, vbase*6, axis=0)
-        # v0 = np.append(v0, vbase*7, axis=0)
-        # v0 = np.append(v0, vbase*8, axis=0)
-        # v0 = np.append(v0, vbase*9, axis=0)
-        # v0 = np.append(v0, vbase*10, axis=0)
+        for i in range(3,20):
+            z0 = np.append(z0, zbase*i, axis=0)
+            v0 = np.append(v0, vbase*i, axis=0)
     
     ## Simon's synthetic constant velocity data
     elif data_set_test == 10:
@@ -309,7 +294,7 @@ if __name__ == '__main__':
     ### Results generation
 
     ## Build non-vectorized final model and ground truth model
-    result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0, v=model.v0, beta=model.beta)
+    result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.item())
     gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
 
     ## Compare intensity rates
