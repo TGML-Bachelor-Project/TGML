@@ -156,7 +156,7 @@ if __name__ == '__main__':
     dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     interaction_count = len(dataset)
     wandb.log({'number_of_interactions': interaction_count})
-    
+
 
 
     ### Setup model and Optimizer
@@ -294,11 +294,22 @@ if __name__ == '__main__':
     ### Results generation
 
     ## Build non-vectorized final model and ground truth model
-    result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.item())
+    if device == 'cuda':
+        result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
+    else:
+        result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
+
     gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
 
-    ## Compare intensity rates
     len_training_set = int(len(dataset)*training_portion)
+    len_test_set = int(len(dataset) - len_training_set)
+
+    ## Compute groundt truth LL's for result model and gt model
+    gt_train_NLL = - (gt_model.forward(data=dataset[:len_training_set], t0=dataset[:len_training_set][0,time_col_index].item(), tn=dataset[:len_training_set][-1,time_col_index].item()) / len_training_set)   
+    gt_test_NLL = - (gt_model.forward(data=dataset[len_training_set:], t0=dataset[len_training_set:][0,time_col_index].item(), tn=dataset[len_training_set:][-1,time_col_index].item()) / len_test_set)
+    wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
+
+    ## Compare intensity rates
     train_t = np.linspace(0, dataset[len_training_set][2])
     test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
