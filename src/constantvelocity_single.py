@@ -80,7 +80,7 @@ if __name__ == '__main__':
     data_set_test = args.data_set_test
     training_type = args.training_type
     time_col_index = 2  # Not logged with wandb
-    wandb_entity = args.wandb_entity
+    wandb_entity = args.wandb_entity  # Not logged with wandb
     vectorized = args.vectorized
 
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML4', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML3', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     wandb.log({'beta': model_beta})
@@ -210,11 +210,11 @@ if __name__ == '__main__':
 
         for i in range(3):
             if i == 0:
-                model.beta.requires_grad = True  # Learn beta first
-            elif i == 1:
                 model.z0.requires_grad = True  # Learn Z next
-            elif i == 2:
+            elif i == 1:
                 model.v0.requires_grad = True  # Learn V last
+            elif i == 2:
+                model.beta.requires_grad = True  # Learn beta first
                 
 
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
