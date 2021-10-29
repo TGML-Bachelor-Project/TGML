@@ -29,7 +29,7 @@ class DatasetBuilder:
         if len(dataset) == 0:
             raise Exception('No node interactions have happened. Try increasing the max_time')
 
-        print(f'Training set generated with number of interactions: {len(dataset)}')
+        print(f'Dataset generated with number of interactions: {len(dataset)}')
         dataset = torch.from_numpy(dataset).to(self.device)
 
         # # Verify time ordering
