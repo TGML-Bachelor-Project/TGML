@@ -24,6 +24,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 ## Data
 from data.synthetic.builder import DatasetBuilder
 from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
+from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
@@ -57,11 +58,11 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=10, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=7.1, type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=10, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
-    arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=150, type=int)
+    arg_parser.add_argument('--training_portion', '-TP', default=0.9, type=float)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
@@ -114,13 +115,11 @@ if __name__ == '__main__':
         for i in range(3,20):
             z0 = np.append(z0, zbase*i, axis=0)
             v0 = np.append(v0, vbase*i, axis=0)
-    
-    ## Simon's synthetic constant velocity data
+
     elif data_set_test == 10:
+    ## Simon's synthetic constant velocity data
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
-        # true_beta = 7.5
-        # model_beta = 7.1591
 
     num_nodes = z0.shape[0]
 
@@ -141,7 +140,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML3', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML5', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     wandb.log({'beta': model_beta})
@@ -153,9 +152,13 @@ if __name__ == '__main__':
                                 velocities=v0, T=max_time, 
                                 beta=true_beta, seed=seed)
     data_builder = DatasetBuilder(simulator, device=device)
-    dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+    dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+    
+    ## Take out node pairs on which mdoel will be evaluated
+    # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
+    dataset, removed_node_pairs = dataset_full, None
     interaction_count = len(dataset)
-    wandb.log({'number_of_interactions': interaction_count})
+    wandb.log({'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs})
 
 
 
@@ -301,12 +304,12 @@ if __name__ == '__main__':
 
     gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
 
-    len_training_set = int(len(dataset)*training_portion)
-    len_test_set = int(len(dataset) - len_training_set)
+    len_training_set = int(len(dataset_full)*training_portion)
+    len_test_set = int(len(dataset_full) - len_training_set)
 
     ## Compute groundt truth LL's for result model and gt model
-    gt_train_NLL = - (gt_model.forward(data=dataset[:len_training_set], t0=dataset[:len_training_set][0,time_col_index].item(), tn=dataset[:len_training_set][-1,time_col_index].item()) / len_training_set)   
-    gt_test_NLL = - (gt_model.forward(data=dataset[len_training_set:], t0=dataset[len_training_set:][0,time_col_index].item(), tn=dataset[len_training_set:][-1,time_col_index].item()) / len_test_set)
+    gt_train_NLL = - (gt_model.forward(data=dataset_full[:len_training_set], t0=dataset_full[:len_training_set][0,time_col_index].item(), tn=dataset_full[:len_training_set][-1,time_col_index].item()) / len_training_set)   
+    gt_test_NLL = - (gt_model.forward(data=dataset_full[len_training_set:], t0=dataset_full[len_training_set:][0,time_col_index].item(), tn=dataset_full[len_training_set:][-1,time_col_index].item()) / len_test_set)
     wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
 
     ## Compare intensity rates
