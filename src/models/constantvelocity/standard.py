@@ -10,7 +10,7 @@ class ConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:float):
+    def __init__(self, n_points:int, beta:float, z0=None, v0=None):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -19,8 +19,8 @@ class ConstantVelocityModel(nn.Module):
             super().__init__()
     
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
-            self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
-            self.v0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+            self.z0 = z0 if z0 else nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+            self.v0 = v0 if v0 else nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
     
             self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2

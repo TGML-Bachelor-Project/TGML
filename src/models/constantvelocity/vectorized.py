@@ -38,7 +38,9 @@ class VectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        Zt = self.z0 + self.v0 * times.unsqueeze(1).unsqueeze(1)
+        # Zt = self.z0 + self.v0 * times.unsqueeze(1).unsqueeze(1)
+        # Broadcasting Z positions over time
+        Zt = self.z0.unsqueeze(2) + self.v0.unsqueeze(2)*times
         return Zt
 
 
@@ -74,7 +76,7 @@ class VectorizedConstantVelocityModel(nn.Module):
         t = list(range(data.size()[0]))
         i = [int(d) for d in data[:,0].tolist()]
         j = [int(d) for d in data[:,1].tolist()]
-        event_intensity = torch.sum(log_intensities[t, i, j])
+        event_intensity = torch.sum(log_intensities[i,j], dim=2)
         non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
                                                         z0=self.z0, v0=self.v0, 
                                                         beta=self.beta, device=self.device).triu(diagonal=1))
