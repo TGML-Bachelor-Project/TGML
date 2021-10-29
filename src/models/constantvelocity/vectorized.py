@@ -38,9 +38,7 @@ class VectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        # Zt = self.z0 + self.v0 * times.unsqueeze(1).unsqueeze(1)
-        # Broadcasting Z positions over time
-        Zt = self.z0.unsqueeze(2) + self.v0.unsqueeze(2)*times
+        Zt = self.z0 + self.v0 * times.unsqueeze(1).unsqueeze(1)
         return Zt
 
 

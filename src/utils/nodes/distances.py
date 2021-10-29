@@ -20,5 +20,4 @@ def get_squared_euclidean_dist(z:torch.Tensor, i:torch.Tensor, j:torch.Tensor) -
     return pdist(z_i, z_j)**2
 
 def vec_squared_euclidean_dist(Z):
-    pdist = nn.PairwiseDistance(p=2)
-    return torch.square(Z-torch.transpose(Z, dim0=0, dim1=1))
+    return torch.cdist(Z,Z,2)**2
