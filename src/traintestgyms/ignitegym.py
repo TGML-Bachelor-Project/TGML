@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.model_selection import train_test_split
 import torch
 from ignite.engine import Engine
 from ignite.engine import Events
@@ -13,8 +14,11 @@ class TrainTestGym:
         ## Split dataset and intiate dataloder
         len_training_set = int(len(dataset)*training_portion)
         len_test_set = int(len(dataset) - len_training_set)
-        train_data = dataset[:len_training_set]
-        test_data = dataset[len_training_set:]
+
+        # train_data = dataset[:len_training_set]
+        # test_data = dataset[len_training_set:]
+        train_data, test_data = train_test_split(dataset, test_size=1-training_portion, random_state=1)
+
         self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False)
         self.val_loader = DataLoader(test_data, batch_size=batch_size, shuffle= False)
         
