@@ -23,12 +23,10 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 ### Code imports
 ## Data
 from data.synthetic.builder import DatasetBuilder
-from data.synthetic.stepwisebuilder import StepwiseDatasetBuilder
 from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
-from data.synthetic.sampling.stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
+from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
-from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
 from models.constantvelocity.standard_gt import GTConstantVelocityModel  # Ground Truth model for results
 ## Training Gym's
@@ -60,16 +58,15 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=10, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=7.1, type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=10, type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
-    arg_parser.add_argument('--train_batch_size', '-TBS', default=141, type=int)
-    arg_parser.add_argument('--training_portion', '-TP', default=0.8, type=float)
+    arg_parser.add_argument('--train_batch_size', '-TBS', default=150, type=int)
+    arg_parser.add_argument('--training_portion', '-TP', default=0.9, type=float)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
-    arg_parser.add_argument('--stepwise', '-STEP', default=1, type=int)
     args = arg_parser.parse_args()
 
 
@@ -84,9 +81,8 @@ if __name__ == '__main__':
     data_set_test = args.data_set_test
     training_type = args.training_type
     time_col_index = 2  # Not logged with wandb
-    wandb_entity = args.wandb_entity
+    wandb_entity = args.wandb_entity  # Not logged with wandb
     vectorized = args.vectorized
-    stepwise = args.stepwise
 
 
     ## Defining Z and V for synthetic data generation
@@ -117,7 +113,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML4', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML5', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     wandb.log({'beta': model_beta})
@@ -125,29 +121,23 @@ if __name__ == '__main__':
 
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
-    if stepwise == 0:
-        simulator = ConstantVelocitySimulator(starting_positions=z0,
-                                    velocities=v0, T=max_time, 
-                                    beta=true_beta, seed=seed)
-        data_builder = DatasetBuilder(simulator, device=device)
-        dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
-    elif stepwise == 1:
-        simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
-                                    velocities=v0, max_time=max_time, 
-                                    beta=true_beta, seed=seed)
-        data_builder = StepwiseDatasetBuilder(simulator, device=device)
-        dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
-    interaction_count = len(dataset)
-    wandb.log({'number_of_interactions': interaction_count})
+    simulator = ConstantVelocitySimulator(starting_positions=z0,
+                                velocities=v0, T=max_time, 
+                                beta=true_beta, seed=seed)
+    data_builder = DatasetBuilder(simulator, device=device)
+    dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     
+    ## Take out node pairs on which mdoel will be evaluated
+    # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
+    dataset, removed_node_pairs = dataset_full, None
+    interaction_count = len(dataset)
+    wandb.log({'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs})
+
 
 
     ### Setup model and Optimizer
     ## Model is either vectoriezed or not
-    if stepwise == 1:
-        last_time_point = dataset[:,2][-1].item()
-        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=10, max_time=last_time_point, device=device)
-    elif vectorized == 0:
+    if vectorized == 0:
         model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     elif vectorized == 1:
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
@@ -163,6 +153,9 @@ if __name__ == '__main__':
     ### Model training starts
     ## Non-sequential model training
     if training_type == 0:
+
+        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
+        
         gym = TrainTestGym(dataset=dataset, 
                             model=model, 
                             device=device, 
@@ -193,11 +186,11 @@ if __name__ == '__main__':
 
         for i in range(3):
             if i == 0:
-                model.beta.requires_grad = True  # Learn beta first
-            elif i == 1:
                 model.z0.requires_grad = True  # Learn Z next
-            elif i == 2:
+            elif i == 1:
                 model.v0.requires_grad = True  # Learn V last
+            elif i == 2:
+                model.beta.requires_grad = True  # Learn beta first
                 
 
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -277,11 +270,22 @@ if __name__ == '__main__':
     ### Results generation
 
     ## Build non-vectorized final model and ground truth model
-    result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.item())
+    if device == 'cuda':
+        result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
+    else:
+        result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
+
     gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
 
+    len_training_set = int(len(dataset_full)*training_portion)
+    len_test_set = int(len(dataset_full) - len_training_set)
+
+    ## Compute groundt truth LL's for result model and gt model
+    gt_train_NLL = - (gt_model.forward(data=dataset_full[:len_training_set], t0=dataset_full[:len_training_set][0,time_col_index].item(), tn=dataset_full[:len_training_set][-1,time_col_index].item()) / len_training_set)   
+    gt_test_NLL = - (gt_model.forward(data=dataset_full[len_training_set:], t0=dataset_full[len_training_set:][0,time_col_index].item(), tn=dataset_full[len_training_set:][-1,time_col_index].item()) / len_test_set)
+    wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
+
     ## Compare intensity rates
-    len_training_set = int(len(dataset)*training_portion)
     train_t = np.linspace(0, dataset[len_training_set][2])
     test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])

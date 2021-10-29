@@ -63,34 +63,3 @@ def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
                 (torch.erf((psqmn*t0 + am + bn) / sqrtmn) - 
                 torch.erf((psqmn*tn + am + bn) / sqrtmn)) 
             )
-
-
-def stepwise_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, 
-                            z0:torch.Tensor, v0:torch.Tensor, beta:torch.Tensor, device):
-
-    eps = torch.tensor(np.finfo(float).eps).to(device) #Adding eps to avoid devision by 0 
-
-    a = (z0[:,:,0].unsqueeze(1) - z0[:,:,0].unsqueeze(0)) + eps
-    b = (z0[:,:,1].unsqueeze(1) - z0[:,:,1].unsqueeze(0)) + eps
-    m = (v0[:,:,0].unsqueeze(1) - v0[:,:,0].unsqueeze(0)) + eps
-    n = (v0[:,:,1].unsqueeze(1) - v0[:,:,1].unsqueeze(0)) + eps
-
-    am = a*m
-    bn = b*n
-    sqm = torch.square(m)
-    sqn = torch.square(n)
-    sqrtmn = torch.sqrt(sqm + sqn)
-    psqmn = sqm+sqn
-
-    return (    -   
-                (
-                torch.sqrt(torch.pi) / (2*sqrtmn)
-                )
-                *
-                ( 
-                torch.exp(((-b**2 + beta) * sqm + 2*a*b*m*n - sqn * (a**2 - beta)) / psqmn)
-                ) 
-                * 
-                (torch.erf((psqmn*t0 + am + bn) / sqrtmn) - 
-                torch.erf((psqmn*tn + am + bn) / sqrtmn)) 
-            )
