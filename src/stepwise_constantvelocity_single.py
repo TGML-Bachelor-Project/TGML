@@ -29,6 +29,7 @@ from data.synthetic.sampling.stepwiseconstantvelocity import StepwiseConstantVel
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
 from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel  # -VEC 0
+from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
 from models.constantvelocity.standard_gt import GTConstantVelocityModel  # Ground Truth model for results
 ## Training Gym's
@@ -37,10 +38,6 @@ from traintestgyms.standardgym import SimonTrainTestGym  # -TT 2
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
 from utils.report_plots.compare_intensity_rates import compare_intensity_rates_plot
-## Utils
-from utils.nodes.positions import get_contant_velocity_positions 
-import utils.visualize as visualize
-from utils.visualize.positions import node_positions
 
 
 
@@ -91,12 +88,108 @@ if __name__ == '__main__':
 
     ## Defining Z and V for synthetic data generation
     if data_set_test == 1:    
-        z0 = np.asarray([[-5, 0], [5, 0]])
+        z0 = np.asarray([[5, 0], [-5, 0], [0, 5], [0, -5]])
         v0 = np.asarray([
-                        [[1, 0], [-1, 0]],
-                        [[1.5,0], [-1.2, 0]],
-                        [[2.5,0], [-2.2, 0]]
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]],
+                        [[-0.25, 0],[0.25, 0],[0, -0.25],[0, 0.25]],
+                        [[0.25, 0], [-0.25,0],[0, 0.25], [0,  -0.25]]
                         ])
+
+        v0_tensor = torch.tensor([
+            [
+                [-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25], #Vx node 0
+                [0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,] #Vy node 0
+             ],
+            [
+                [0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25], 
+                [0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,] #Vy node 1
+            ],
+            [
+                [0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,], #Vy node 2
+                [-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,-0.25, 0.25, -0.25, 0.25,]
+            ],
+            [
+                [0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,0    , 0   , 0    ,  0,], #Vy node 3
+                [0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,0.25, -0.25, 0.25, -0.25,]
+            ]
+        ])
 
     num_nodes = z0.shape[0]
 
@@ -130,23 +223,28 @@ if __name__ == '__main__':
                                     velocities=v0, T=max_time, 
                                     beta=true_beta, seed=seed)
         data_builder = DatasetBuilder(simulator, device=device)
-        dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+        dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     elif stepwise == 1:
         simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
                                     velocities=v0, max_time=max_time, 
                                     beta=true_beta, seed=seed)
         data_builder = StepwiseDatasetBuilder(simulator, device=device)
-        dataset = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+        dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+
+    ## Take out node pairs on which model will be evaluated
+    # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
+    dataset, removed_node_pairs = dataset_full, None
     interaction_count = len(dataset)
-    wandb.log({'number_of_interactions': interaction_count})
+    wandb.log({'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs})
     
 
 
     ### Setup model and Optimizer
     ## Model is either vectoriezed or not
     if stepwise == 1:
-        last_time_point = dataset[:,2][-1].item()
-        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=10, max_time=last_time_point, device=device)
+        last_time_point = dataset_full[:,2][-1].item()
+        steps = 100 
+        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     elif vectorized == 0:
         model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     elif vectorized == 1:
@@ -163,7 +261,7 @@ if __name__ == '__main__':
     ### Model training starts
     ## Non-sequential model training
     if training_type == 0:
-        gym = TrainTestGym(dataset=dataset, 
+        gym = TrainTestGym(dataset=dataset_full, 
                             model=model, 
                             device=device, 
                             batch_size=train_batch_size, 
@@ -181,7 +279,7 @@ if __name__ == '__main__':
         
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
         
-        gym = TrainTestGym(dataset=dataset, 
+        gym = TrainTestGym(dataset=dataset_full, 
                             model=model, 
                             device=device, 
                             batch_size=train_batch_size, 
@@ -217,9 +315,9 @@ if __name__ == '__main__':
 
         
 
-        num_train_samples = int(len(dataset)*training_portion)
-        training_data = dataset[0:num_train_samples]
-        test_data = dataset[num_train_samples:]
+        num_train_samples = int(len(dataset_full)*training_portion)
+        training_data = dataset_full[0:num_train_samples]
+        test_data = dataset_full[num_train_samples:]
         n_train = len(training_data)
         training_batches = np.array_split(training_data, 450)
         batch_size = len(training_batches[0])
@@ -251,7 +349,7 @@ if __name__ == '__main__':
 
 
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        gym_standard = SimonTrainTestGym(dataset=dataset, 
+        gym_standard = SimonTrainTestGym(dataset=dataset_full, 
                     model=model, 
                     device=device, 
                     batch_size=train_batch_size, 
@@ -277,16 +375,37 @@ if __name__ == '__main__':
     ### Results generation
 
     ## Build non-vectorized final model and ground truth model
-    result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.item())
-    gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+    if stepwise == 1:
+        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach(), 
+                                                        v=model.v0.cpu().detach(), beta=model.beta.cpu().detach(),
+                                                        steps=steps, max_time=max_time, device=device)
+        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0_tensor, 
+                                                beta=true_beta, steps=len(v0), max_time=max_time, device=device)
+    else:
+        if device == 'cuda':
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
+        else:
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
+
+        gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+
+    len_training_set = int(len(dataset_full)*training_portion)
+    len_test_set = int(len(dataset_full) - len_training_set)
+
+    ## Compute groundt truth LL's for result model and gt model
+    gt_train_NLL = - (gt_model.forward(data=dataset_full[:len_training_set], t0=dataset_full[:len_training_set][0,time_col_index].item(), tn=dataset_full[:len_training_set][-1,time_col_index].item()) / len_training_set)   
+    gt_test_NLL = - (gt_model.forward(data=dataset_full[len_training_set:], t0=dataset_full[len_training_set:][0,time_col_index].item(), tn=dataset_full[len_training_set:][-1,time_col_index].item()) / len_test_set)
+    wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
 
     ## Compare intensity rates
-    len_training_set = int(len(dataset)*training_portion)
-    train_t = np.linspace(0, dataset[len_training_set][2])
-    test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
+    train_t = np.linspace(0, dataset_full[len_training_set][2])
+    test_t = np.linspace(dataset_full[len_training_set][2], dataset_full[-1][2])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,3])
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[1,2])
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[1,3])
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[2,3])
 
 
 
@@ -298,30 +417,3 @@ if __name__ == '__main__':
     print(f'V: {model_v0}')
 
     print(metrics['beta_est'])
-
-    ### Log metrics to Weights and Biases
-    # wandb_metrics = {'metric_final_beta': metrics['beta_est'][-1],
-    #                 # 'metric_final_testloss': metrics['test_loss'][-1],
-    #                 # 'metric_final_trainloss': metrics['train_loss'][-1],
-    #                 # 'beta': metrics['beta_est'],
-    #                 # 'test_loss': metrics['test_loss'],
-    #                 # 'train_loss': metrics['train_loss'],
-    #                 }
-    # wandb.log(wandb_metrics)
-
-
-
-
-    ### Visualizations
-    '''
-    visualize.metrics(metrics)
-
-    ## Learned Z and true Z
-    latent_space_positions = [model_z0, z0]
-    visualize.node_positions(latent_space_positions, 'Actual vs Predicted')
-    visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
-
-    ## Animation of learned node movements
-    node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
-    visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
-    '''

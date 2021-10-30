@@ -154,7 +154,7 @@ if __name__ == '__main__':
     data_builder = DatasetBuilder(simulator, device=device)
     dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     
-    ## Take out node pairs on which mdoel will be evaluated
+    ## Take out node pairs on which model will be evaluated
     # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
     dataset, removed_node_pairs = dataset_full, None
     interaction_count = len(dataset)
