@@ -23,15 +23,18 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 ### Code imports
 ## Data
 from data.synthetic.builder import DatasetBuilder
+from data.synthetic.stepwisebuilder import StepwiseDatasetBuilder
 from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
+from data.synthetic.sampling.stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
 from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
+from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel  # -VEC 2
 from models.constantvelocity.standard_gt import GTConstantVelocityModel  # Ground Truth model for results
+from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 ## Training Gym's
 from traintestgyms.ignitegym import TrainTestGym  # -TT 0, 1 is sequential
-from traintestgyms.standardgym import SimonTrainTestGym  # -TT 2
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
 from utils.report_plots.compare_intensity_rates import compare_intensity_rates_plot
@@ -148,11 +151,18 @@ if __name__ == '__main__':
 
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
-    simulator = ConstantVelocitySimulator(starting_positions=z0,
-                                velocities=v0, T=max_time, 
-                                beta=true_beta, seed=seed)
-    data_builder = DatasetBuilder(simulator, device=device)
-    dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+    if vectorized != 2:
+        simulator = ConstantVelocitySimulator(starting_positions=z0,
+                                    velocities=v0, T=max_time, 
+                                    beta=true_beta, seed=seed)
+        data_builder = DatasetBuilder(simulator, device=device)
+        dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
+    elif vectorized == 2:
+        simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
+                                    velocities=v0, max_time=max_time, 
+                                    beta=true_beta, seed=seed)
+        data_builder = StepwiseDatasetBuilder(simulator, device=device)
+        dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     
     ## Take out node pairs on which model will be evaluated
     # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
@@ -163,11 +173,15 @@ if __name__ == '__main__':
 
 
     ### Setup model and Optimizer
-    ## Model is either vectoriezed or not
+    ## Model is either non-vectorized, vectorized or stepwise
     if vectorized == 0:
         model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     elif vectorized == 1:
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
+    elif vectorized == 2:
+        last_time_point = dataset_full[:,2][-1].item()
+        steps = 100 
+        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     print('Model initial node start positions\n', model.z0)
     model = model.to(device)  # Send model to torch
 
@@ -224,86 +238,25 @@ if __name__ == '__main__':
             gym.train_test_model(epochs=int(num_epochs/3))
 
 
-    ## Simons model training. This redo's some of the previous steps
-    elif training_type == 2:
-
-        ### Setup model
-        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
-        # model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
-        print('Model initial node start positions\n', model.z0)
-        model = model.to(device)  # Send model to torch   
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        metrics = {'train_loss': [], 'test_loss': [], 'beta_est': []}
-
-        
-
-        num_train_samples = int(len(dataset)*training_portion)
-        training_data = dataset[0:num_train_samples]
-        test_data = dataset[num_train_samples:]
-        n_train = len(training_data)
-        training_batches = np.array_split(training_data, 450)
-        batch_size = len(training_batches[0])
-
-        gt_model = ConstantVelocityModel(n_points=num_nodes, beta=true_beta)
-        # gt_model = SimonConstantVelocityModel(n_points=num_nodes, init_beta=model_beta)
-        gt_dict = gt_model.state_dict()
-        gt_z = torch.from_numpy(z0)
-        gt_v = torch.from_numpy(v0)
-        gt_dict["z0"] = gt_z
-        gt_dict["v0"] = gt_v
-        gt_model.load_state_dict(gt_dict)
-        gt_nt = gt_model.eval()
-
-        track_nodes = [0,3]
-        tn_train = training_batches[-1][-1][2]
-        tn_test = test_data[-1][2]
-
-        def getres(t0, tn, f_model, track_nodes):
-            time = np.linspace(t0, tn)
-            res=[]
-            for ti in time:
-                res.append(torch.exp(f_model.log_intensity_function(track_nodes[0], track_nodes[1], ti)))
-            return torch.tensor(res)
-
-        res_gt = [getres(0, tn_train, gt_model, track_nodes), getres(tn_train, tn_test, gt_model, track_nodes)]
-        print("Res_gt:")
-        print(res_gt)
-
-
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
-        gym_standard = SimonTrainTestGym(dataset=dataset, 
-                    model=model, 
-                    device=device, 
-                    batch_size=train_batch_size, 
-                    training_portion=training_portion,
-                    optimizer=optimizer, 
-                    metrics=metrics, 
-                    time_column_idx=time_col_index,
-                    num_epochs=num_epochs)
-
-        
-        model, training_losses, test_losses, track_dict = gym_standard.batch_train_track_mse(res_gt=res_gt,
-                                            track_nodes=track_nodes,
-                                            n_train=n_train,
-                                            train_batches=training_batches,
-                                            test_data=test_data)
-
-        plotres(num_epochs, training_losses, test_losses, "LL Loss")
-        plotres(num_epochs, track_dict["mse_train_losses"], track_dict["mse_test_losses"], "MSE Loss")
-        plotgrad(num_epochs, track_dict["bgrad"], track_dict["zgrad"], track_dict["vgrad"])
-
-
+    
 
     ### Results generation
 
     ## Build non-vectorized final model and ground truth model
-    if device == 'cuda':
-        result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
-    else:
-        result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
+    if vectorized != 2:
+            
+        if device == 'cuda':
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
+        else:
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
 
-    gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
-
+        gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+    elif vectorized == 2:
+        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach(), 
+                                                        v=model.v0.cpu().detach(), beta=model.beta.cpu().detach(),
+                                                        steps=steps, max_time=max_time, device=device)
+        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0_tensor, 
+                                                beta=true_beta, steps=len(v0), max_time=max_time, device=device)
     len_training_set = int(len(dataset_full)*training_portion)
     len_test_set = int(len(dataset_full) - len_training_set)
 
