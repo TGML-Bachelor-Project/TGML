@@ -99,25 +99,19 @@ class VectorizedConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         log_intensities = self.log_intensity_function(times=data[:,2])
-        node_pairs = torch.unique(data[:,0:2], dim=0)
-        # i = [int(n) for n in node_pairs[:,0]]
-        # j = [int(n) for n in node_pairs[:,1]]
-        i = [int(d) for d in data[:,0].tolist()]
-        j = [int(d) for d in data[:,1].tolist()]
-
         t = list(range(data.size()[0]))
-        event_intensity = torch.sum(log_intensities[i,j])
+        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
+        j = torch.floor(data[:,1]).tolist()
+
+        event_intensity = torch.sum(log_intensities[i,j,t])
         non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
                                                         z0=self.z0, v0=self.v0, 
                                                         beta=self.beta, device=self.device).triu(diagonal=1))
 
 
         # old_log_intensities = self.old_log_intensity_function(times=data[:,2])
-        # t = list(range(data.size()[0]))
-        # i = [int(d) for d in data[:,0].tolist()]
-        # j = [int(d) for d in data[:,1].tolist()]
-        # event_intensity = torch.sum(old_log_intensities[t, i, j])
-        # non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
+        # old_event_intensity = torch.sum(old_log_intensities[t, i, j])
+        # old_non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
         #                                                 z0=self.z0, v0=self.v0, 
         #                                                 beta=self.beta, device=self.device).triu(diagonal=1))
 
