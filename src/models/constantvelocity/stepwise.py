@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from utils.nodes.distances import vec_squared_euclidean_dist, old_vec_squared_euclidean_dist
-from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
+from utils.integrals.analytical import stepwise_analytical_integral as evaluate_integral
+from utils.integrals.analytical import vec_analytical_integral as old_evaluate_integral
 
 
 class StepwiseVectorizedConstantVelocityModel(nn.Module):
@@ -29,7 +30,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
             # Creating the time step deltas
             #Equally distributed
-            time_intervals = torch.linspace(0, max_time, steps)
+            time_intervals = torch.linspace(0, max_time+1, steps+1)
             shifted_time_intervals = time_intervals[:-1]
             time_intervals = time_intervals[1:]
             time_deltas = time_intervals-shifted_time_intervals
@@ -48,7 +49,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        Zt = self.z0 + self.v0 * times.unsqueeze(1).unsqueeze(1)
+        Zt = self.z0 + self.v0[:,:,0] * times.unsqueeze(1).unsqueeze(1)
         return Zt
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
@@ -69,7 +70,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         Z_step_starting_positions = Z_steps[:,:,time_step_indices]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*time_step_delta_difs
 
-        return Zt, Z_steps
+        return Zt, Z_steps[:,:,:-1] #We don't use last Z0 step in integral calculations
 
     def old_log_intensity_function(self, times:torch.Tensor):
         '''
@@ -121,18 +122,18 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
         j = torch.floor(data[:,1]).tolist()
         event_intensity = torch.sum(log_intensities[i,j,t])
-        non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
-                                                        z0=Z0, v0=self.v0, 
-                                                        beta=self.beta, device=self.device).triu(diagonal=1))
+        all_integrals = evaluate_integral(t0, tn, 
+                                    z0=Z0, v0=self.v0, 
+                                    beta=self.beta, device=self.device)
+        #Sum over time dimension, dim 2, and then sum upper triangular
+        integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
+        non_event_intensity = torch.sum(integral)
 
 
         # old_log_intensities = self.old_log_intensity_function(times=data[:,2])
-        # node_pairs = torch.unique(data[:,0:2], dim=0)
-        # i = [int(n) for n in node_pairs[:,0]]
-        # j = [int(n) for n in node_pairs[:,1]]
-        # old_event_intensity = torch.sum(old_log_intensities[:,i,j])
-        # old_non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
-        #                                                 z0=self.z0, v0=self.v0, 
+        # old_event_intensity = torch.sum(old_log_intensities[t,i,j])
+        # old_non_event_intensity = torch.sum(old_evaluate_integral(t0, tn, 
+        #                                                 z0=self.z0, v0=self.v0[:,:,0], 
         #                                                 beta=self.beta, device=self.device).triu(diagonal=1))
 
         # Log likelihood
