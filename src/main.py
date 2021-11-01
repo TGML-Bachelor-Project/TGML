@@ -89,25 +89,7 @@ if __name__ == '__main__':
 
 
     ## Defining Z and V for synthetic data generation
-    if data_set_test == 1:    
-        z0 = np.asarray([[-3, 0], [3, 0]])
-        v0 = np.asarray([[1, 0], [-1, 0]])
-    elif data_set_test == 2:
-        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
-    elif data_set_test == 3:
-        z0 = np.asarray([[-1, 0], [2, 0], [0, 3], [0, -3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1]])
-    elif data_set_test == 4:
-        z0 = np.asarray([[-1, 0], [2, 0], [0, 3], [0, -3]])
-        v0 = np.asarray([[0.2, 0], [-0.2, 0], [0, -0.2], [0, 0.2]])
-    elif data_set_test == 5:
-        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5]])
-    elif data_set_test == 6:
-        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
-        v0 = np.asarray([[1, 0], [-1, 0], [0, -1], [0, 1], [-1, -1], [0, 0.5], [0, 0], [0.5, 0]])
-    elif data_set_test == 7:
+    if data_set_test == 7:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
     elif data_set_test == 8:
@@ -118,7 +100,6 @@ if __name__ == '__main__':
         for i in range(3,20):
             z0 = np.append(z0, zbase*i, axis=0)
             v0 = np.append(v0, vbase*i, axis=0)
-
     elif data_set_test == 10:
     ## Simon's synthetic constant velocity data
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
@@ -167,6 +148,8 @@ if __name__ == '__main__':
     ## Take out node pairs on which model will be evaluated
     # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
     dataset, removed_node_pairs = dataset_full, None
+
+
     interaction_count = len(dataset)
     wandb.log({'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs})
 
@@ -179,9 +162,11 @@ if __name__ == '__main__':
     elif vectorized == 1:
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
-        last_time_point = dataset_full[:,2][-1].item()
+        last_time_point = dataset[:,2][-1].item()
         steps = 100 
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
+    
+    
     print('Model initial node start positions\n', model.z0)
     model = model.to(device)  # Send model to torch
 
@@ -238,7 +223,16 @@ if __name__ == '__main__':
             gym.train_test_model(epochs=int(num_epochs/3))
 
 
-    
+
+
+
+
+
+
+
+
+
+
 
     ### Results generation
 
