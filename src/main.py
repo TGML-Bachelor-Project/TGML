@@ -105,6 +105,11 @@ if __name__ == '__main__':
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
 
+    elif data_set_test == 20:
+        z0 = np.asarray([[-1., 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
+        v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
+
+
     num_nodes = z0.shape[0]
 
 
@@ -163,7 +168,7 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        steps = 100 
+        steps = 2
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     
     
