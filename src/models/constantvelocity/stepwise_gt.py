@@ -29,14 +29,12 @@ class GTStepwiseConstantVelocityModel(nn.Module):
 
             # Creating the time step deltas
             #Equally distributed
-            time_intervals = torch.linspace(0, max_time+1, steps+1)
+            time_intervals = torch.linspace(0, max_time, steps+1)
             shifted_time_intervals = time_intervals[:-1]
             time_intervals = time_intervals[1:]
-            time_deltas = time_intervals-shifted_time_intervals
+            self.time_deltas = time_intervals-shifted_time_intervals
             # All deltas should be equal do to linspace, so we can take the first
-            self.time_delta_size = time_deltas[0].item()
-            # Adding 0 to get self.z0 as first step position
-            self.time_deltas = torch.cat((torch.tensor([0]), time_deltas), dim=0)
+            self.time_delta_size = self.time_deltas[0].item()
 
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
@@ -50,14 +48,16 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         :returns:   The updated latent position vector z
         '''
         Z_steps = self.z0.unsqueeze(2) + self.v0*self.time_deltas
+        Z_steps = torch.cat((self.z0.unsqueeze(2), Z_steps), dim=2)
         time_step_values = times/self.time_delta_size
         time_step_floored = torch.floor(time_step_values)
-        time_step_delta_difs = time_step_values-time_step_floored
-        time_step_indices = time_step_floored.tolist()
+        time_step_delta_difs = (times-time_step_floored*self.time_delta_size)[:-1] #Don't take last delta, as we do not step from last
+        time_step_indices = time_step_floored.tolist()[:-1] #Don't take last step
         Z_step_starting_positions = Z_steps[:,:,time_step_indices]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*time_step_delta_difs
-
-        return Zt, Z_steps[:,:,:-1]
+        
+        #We don't use first and last Z0 because first is always z0 and not zt0 and last Z_steps is not a starting step
+        return Zt, Z_steps[1:,:,:-1] 
 
     def step(self, t:torch.Tensor) -> torch.Tensor:
         '''
@@ -72,7 +72,7 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         Z_steps = self.z0.unsqueeze(2) + self.v0*self.time_deltas
         time_step_value = torch.tensor([t/self.time_delta_size])
         time_step_floored = torch.floor(time_step_value)
-        time_step_delta_dif = time_step_value-time_step_floored
+        time_step_delta_dif = t-(time_step_floored*self.time_delta_size)
         time_step_index = time_step_floored.tolist()
         Z_step_starting_positions = Z_steps[:,:,time_step_index]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_index]*time_step_delta_dif
@@ -124,10 +124,7 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         Z0, log_intensities = self.vec_log_intensity_function(times=data[:,2])
-        t = list(range(data.size()[0]))
-        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
-        j = torch.floor(data[:,1]).tolist()
-        event_intensity = torch.sum(log_intensities[i,j,t])
+        event_intensity = torch.sum(torch.sum(log_intensities, dim=2).triu(diagonal=1))
         all_integrals = evaluate_integral(t0, tn, 
                                     z0=Z0, v0=self.v0, 
                                     beta=self.beta, device=self.device)

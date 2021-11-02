@@ -89,6 +89,23 @@ if __name__ == '__main__':
 
 
     ## Defining Z and V for synthetic data generation
+    if data_set_test == 2:
+        z0 = np.asarray([[-0.6, 0.], [0.6, 0]])
+        if vectorized != 2:
+            v0 = np.asarray([[0.09, 0], [-0.09, -0.1]])
+        elif vectorized == 2:
+            v0 = torch.tensor([
+            [
+                [-0.09, 0, 0.09], #Vx node 0
+                [0, 0, 0] #Vy node 0
+            ],
+            [
+                [0.09, 0, -0.09], #Vx node 1
+                [0, 0, 0] #Vy node 1
+            ]
+            ])
+            
+
     if data_set_test == 7:
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
@@ -123,7 +140,6 @@ if __name__ == '__main__':
                 [0.09]  #Vy node 3
             ]
         ])
-    
     elif data_set_test == 20:
         z0 = np.asarray([[-1., 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
@@ -187,7 +203,7 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        steps = v0.shape[2]
+        steps = 3
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     
     
@@ -274,7 +290,7 @@ if __name__ == '__main__':
                                                         v=model.v0.cpu().detach(), beta=model.beta.cpu().detach(),
                                                         steps=steps, max_time=max_time, device=device)
         gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0, 
-                                                beta=true_beta, steps=len(v0), max_time=max_time, device=device)
+                                                beta=true_beta, steps=v0.shape[2], max_time=max_time, device=device)
 
     len_training_set = int(len(dataset_full)*training_portion)
     len_test_set = int(len(dataset_full) - len_training_set)
