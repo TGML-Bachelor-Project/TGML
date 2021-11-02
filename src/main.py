@@ -260,25 +260,26 @@ if __name__ == '__main__':
 
     ### Results generation
 
-    ## Build non-vectorized final model and ground truth model
-    if vectorized != 2:
-            
+    ## Build non-vectorized final and ground truth models
+    if vectorized != 2: 
         if device == 'cuda':
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
         else:
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
 
         gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+
     elif vectorized == 2:
         result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach(), 
                                                         v=model.v0.cpu().detach(), beta=model.beta.cpu().detach(),
                                                         steps=steps, max_time=max_time, device=device)
-        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0_tensor, 
+        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0, 
                                                 beta=true_beta, steps=len(v0), max_time=max_time, device=device)
+
     len_training_set = int(len(dataset_full)*training_portion)
     len_test_set = int(len(dataset_full) - len_training_set)
 
-    ## Compute groundt truth LL's for result model and gt model
+    ## Compute ground truth LL's for result model and gt model
     gt_train_NLL = - (gt_model.forward(data=dataset_full[:len_training_set], t0=dataset_full[:len_training_set][0,time_col_index].item(), tn=dataset_full[:len_training_set][-1,time_col_index].item()) / len_training_set)   
     gt_test_NLL = - (gt_model.forward(data=dataset_full[len_training_set:], t0=dataset_full[len_training_set:][0,time_col_index].item(), tn=dataset_full[len_training_set:][-1,time_col_index].item()) / len_test_set)
     wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
@@ -289,6 +290,12 @@ if __name__ == '__main__':
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,3])
+
+    ## Compare intensity rates for removed node pairs
+    for removed_node_pair in removed_node_pairs:
+        compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=removed_node_pair)
+    
+
 
 
 
