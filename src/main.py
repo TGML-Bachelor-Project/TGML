@@ -25,7 +25,7 @@ torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 from data.synthetic.builder import DatasetBuilder
 from data.synthetic.stepwisebuilder import StepwiseDatasetBuilder
 from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
-from data.synthetic.sampling.stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
+from data.synthetic.sampling.tensor_stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
 from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--max_time', '-MT', default=10, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
-    arg_parser.add_argument('--model_beta', '-MB', default=10, type=float)
+    arg_parser.add_argument('--model_beta', '-MB', default=10., type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=150, type=int)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
-    arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
+    arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     args = arg_parser.parse_args()
 
 
@@ -101,10 +101,29 @@ if __name__ == '__main__':
             z0 = np.append(z0, zbase*i, axis=0)
             v0 = np.append(v0, vbase*i, axis=0)
     elif data_set_test == 10:
-    ## Simon's synthetic constant velocity data
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
-        v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
-
+        if vectorized != 2:
+            v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
+        elif vectorized == 2:
+            v0 = torch.tensor([
+            [
+                [0.09], #Vx node 0
+                [0.01] #Vy node 0
+            ],
+            [
+                [-0.01], #Vx node 1
+                [-0.01] #Vy node 1
+            ],
+            [
+                [0.01], #Vx node 2
+                [-0.09] #Vy node 2
+            ],
+            [
+                [-0.01], #Vx node 3
+                [0.09]  #Vy node 3
+            ]
+        ])
+    
     elif data_set_test == 20:
         z0 = np.asarray([[-1., 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
@@ -168,7 +187,7 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        steps = 2
+        steps = v0.shape[2]
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     
     

@@ -47,7 +47,7 @@ class StepwiseConstantVelocitySimulator:
         #Generate network events for each time interval with the matching velocities
         starting_positions = self.z0
         for i, (t0,tn) in enumerate(time_intervals):
-            simulator =  ConstantVelocitySimulator(starting_positions, self.velocities[:,:,i], tn, self.__beta, self.seed, t0)
+            simulator =  ConstantVelocitySimulator(starting_positions, self.velocities[:,:,i], T=tn, beta=self.__beta, seed=self.seed, t_start=t0)
             network_events.append(simulator.sample_interaction_times_for_all_node_pairs())
             starting_positions = simulator.get_end_positions()
 
