@@ -59,13 +59,13 @@ if __name__ == '__main__':
     # python3 constantvelocity_single.py -MT 10 -TB 7.5 -MB 1 -LR 0.001 -NE 50 -TBS 141 -DS 10 -TT 0 -WAB 0 -VEC 1
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--max_time', '-MT', default=10, type=int)
+    # arg_parser.add_argument('--max_time', '-MT', default=10, type=int)
     arg_parser.add_argument('--true_beta', '-TB', default=7.5, type=float)
     arg_parser.add_argument('--model_beta', '-MB', default=10., type=float)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=150, type=int)
-    arg_parser.add_argument('--training_portion', '-TP', default=0.9, type=float)
+    arg_parser.add_argument('--training_portion', '-TP', default=0.999, type=float)
     arg_parser.add_argument('--data_set_test', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
 
     ### Set all input arguments
-    max_time = args.max_time
+    # max_time = args.max_time
     true_beta = args.true_beta
     model_beta = args.model_beta  # Model-initialized beta
     learning_rate = args.learning_rate
@@ -107,6 +107,7 @@ if __name__ == '__main__':
             
 
     if data_set_test == 7:
+        max_time = 60
         z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
         v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
     elif data_set_test == 8:
@@ -118,6 +119,7 @@ if __name__ == '__main__':
             z0 = np.append(z0, zbase*i, axis=0)
             v0 = np.append(v0, vbase*i, axis=0)
     elif data_set_test == 10:
+        max_time = 10
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         if vectorized != 2:
             v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
@@ -164,7 +166,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML5', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML6', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     wandb.log({'beta': model_beta})
@@ -186,7 +188,7 @@ if __name__ == '__main__':
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=time_col_index)
     
     ## Take out node pairs on which model will be evaluated
-    # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion)
+    # dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=training_portion, device=device)
     dataset, removed_node_pairs = dataset_full, None
 
 
@@ -203,7 +205,7 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        steps = 3
+        steps = 1
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     
     
@@ -301,52 +303,15 @@ if __name__ == '__main__':
     wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
 
     ## Compare intensity rates
-    train_t = np.linspace(0, dataset[len_training_set][2])
-    test_t = np.linspace(dataset[len_training_set][2], dataset[-1][2])
-    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
+    train_t = np.linspace(0, dataset_full[len_training_set][2])
+    test_t = np.linspace(dataset_full[len_training_set][2], dataset_full[-1][2])
+    # compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
+    # compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
+    # compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,3])
+
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
-    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,3])
 
     ## Compare intensity rates for removed node pairs
     for removed_node_pair in removed_node_pairs:
-        compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=removed_node_pair)
+        compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
     
-
-
-
-
-    ## Print model params
-    model_z0 = model.z0.cpu().detach().numpy() 
-    model_v0 = model.v0.cpu().detach().numpy()
-    print(f'Beta: {model.beta.item()}')
-    print(f'Z: {model_z0}')
-    print(f'V: {model_v0}')
-
-    print(metrics['beta_est'])
-
-    ### Log metrics to Weights and Biases
-    # wandb_metrics = {'metric_final_beta': metrics['beta_est'][-1],
-    #                 # 'metric_final_testloss': metrics['test_loss'][-1],
-    #                 # 'metric_final_trainloss': metrics['train_loss'][-1],
-    #                 # 'beta': metrics['beta_est'],
-    #                 # 'test_loss': metrics['test_loss'],
-    #                 # 'train_loss': metrics['train_loss'],
-    #                 }
-    # wandb.log(wandb_metrics)
-
-
-
-
-    ### Visualizations
-    '''
-    visualize.metrics(metrics)
-
-    ## Learned Z and true Z
-    latent_space_positions = [model_z0, z0]
-    visualize.node_positions(latent_space_positions, 'Actual vs Predicted')
-    visualize.compare_positions(latent_space_positions, ['Predicted', 'Actual'])
-
-    ## Animation of learned node movements
-    node_positions = get_contant_velocity_positions(model_z0, model_v0, max_time, time_steps=100)
-    visualize.node_movements(node_positions, 'Predicted Node Movements', trail=False)
-    '''
