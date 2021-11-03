@@ -20,7 +20,7 @@ from data.synthetic.stepwisebuilder import StepwiseDatasetBuilder
 from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
 from data.synthetic.sampling.tensor_stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
 from utils.results_evaluation.remove_nodepairs import remove_node_pairs
-from utils.results_evaluation.remove_interactions import remove_interactions
+from utils.results_evaluation.remove_interactions import auc_removed_interactions, remove_interactions
 
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel
@@ -135,17 +135,17 @@ if __name__ == '__main__':
         dataset, removed_interactions = remove_interactions(dataset=dataset_full, percentage=0.1, device=device)
         removed_node_pairs = None
     elif remove_node_pairs_b == 1 and remove_interactions_b == 1:
-        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
-        dataset, removed_interactions = remove_interactions(dataset=dataset, percentage=0.1, device=device)
+        dataset_removed_nodes, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
+        dataset, removed_interactions = remove_interactions(dataset=dataset_removed_nodes, percentage=0.1, device=device)
     else:
-        dataset, removed_node_pairs = dataset_full, None
+        dataset, removed_node_pairs, removed_interactions = dataset_full, None, None
 
     ## Compute size of dataset and find 1/500 as training batch size
     dataset_size = len(dataset_full)
-    interaction_count = len(dataset)
-    train_batch_size = int(interaction_count / 500)
-    print(f"\nLength of entire dataset: {dataset_size}\nLength of trained dataset: {interaction_count}\nTrain batch size: {train_batch_size}\n")
-    wandb.log({'dataset_size': dataset_size, 'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
+    training_set_size = len(dataset)
+    train_batch_size = int(training_set_size / 500)
+    print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
+    wandb.log({'dataset_size': dataset_size, 'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
 
 
@@ -156,8 +156,8 @@ if __name__ == '__main__':
     elif vectorized == 1:
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
-        last_time_point = dataset[-1,2]
-        steps = 3
+        last_time_point = dataset[:,2][-1].item()
+        steps = 1
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     model = model.to(device)
 
@@ -232,8 +232,7 @@ if __name__ == '__main__':
                                                         steps=v0.shape[2], max_time=max_time, device=device)
 
 
-
-    ## Compute ground truth training loss for result model and gt model
+    ## Compute ground truth training loss for gt model
     gt_train_NLL = - (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size)   
     wandb.log({'gt_train_NLL': gt_train_NLL,})
 
@@ -242,9 +241,12 @@ if __name__ == '__main__':
     train_t = np.linspace(0, dataset_full[-1][2])
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
 
-
     ## Compare intensity rates for removed node pairs
     if remove_node_pairs_b == 1:    
         for removed_node_pair in removed_node_pairs:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
+
+
+    if remove_interactions_b == 1:
+        auc_removed_interactions(removed_interactions=removed_interactions, result_model=result_model)
     
