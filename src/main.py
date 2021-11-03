@@ -56,15 +56,14 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=2, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
-    arg_parser.add_argument('--training_portion', '-TP', default=0.999, type=float)
     arg_parser.add_argument('--dataset_number', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
-    arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
-    arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=False, type=bool)
-    arg_parser.add_argument('--remove_interactions_b', '-T2', default=False, type=bool)
+    arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
+    arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
+    arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
@@ -72,7 +71,6 @@ if __name__ == '__main__':
     learning_rate = args.learning_rate
     num_epochs = args.num_epochs
     train_batch_size = args.train_batch_size
-    training_portion = args.training_portion
     dataset_number = args.dataset_number
     training_type = args.training_type
     wandb_entity = args.wandb_entity  # Not logged with wandb
@@ -88,7 +86,7 @@ if __name__ == '__main__':
     ### Defining parameters for synthetic data generation
     z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
     num_nodes = z0.shape[0]
-    print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}")
+    print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\n")
 
 
     ### WandB initialization
@@ -100,7 +98,6 @@ if __name__ == '__main__':
                     'learning_rate': learning_rate,
                     'num_epochs': num_epochs,
                     'num_nodes': num_nodes,
-                    'training_portion': training_portion,
                     'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
                     'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
                     'remove_nodepairs': remove_node_pairs_b,
@@ -129,10 +126,15 @@ if __name__ == '__main__':
         data_builder = StepwiseDatasetBuilder(simulator, device=device)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
+
     ## Take out node pairs on which model will be evaluated
-    if remove_node_pairs_b and not remove_interactions_b:
+    if remove_node_pairs_b == 1 and remove_interactions_b == 0:
         dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
-    elif remove_node_pairs_b and remove_interactions_b:
+        removed_interactions = None
+    elif remove_node_pairs_b == 0 and remove_interactions_b == 1:
+        dataset, removed_interactions = remove_interactions(dataset=dataset_full, percentage=0.1, device=device)
+        removed_node_pairs = None
+    elif remove_node_pairs_b == 1 and remove_interactions_b == 1:
         dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
         dataset, removed_interactions = remove_interactions(dataset=dataset, percentage=0.1, device=device)
     else:
@@ -142,6 +144,7 @@ if __name__ == '__main__':
     dataset_size = len(dataset_full)
     interaction_count = len(dataset)
     train_batch_size = int(interaction_count / 500)
+    print(f"\nLength of entire dataset: {dataset_size}\nLength of trained dataset: {interaction_count}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'dataset_size': dataset_size, 'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
 
@@ -163,7 +166,7 @@ if __name__ == '__main__':
 
 
     ### Model training starts
-    metrics = {'avg_train_loss': [], 'avg_test_loss': [], 'beta_est': []}
+    metrics = {'avg_train_loss': [], 'beta_est': []}
     ## Non-sequential model training
     if training_type == 0:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
@@ -171,14 +174,12 @@ if __name__ == '__main__':
                             model=model, 
                             device=device, 
                             batch_size=train_batch_size, 
-                            training_portion=training_portion,
                             optimizer=optimizer, 
                             metrics=metrics, 
                             time_column_idx=2,
                             wandb_handler = wandb)
         gym.train_test_model(epochs=num_epochs)
         
-    
     ## Sequential model training
     elif training_type == 1:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
@@ -211,36 +212,39 @@ if __name__ == '__main__':
 
     ### Results generation
     ## Build non-vectorized final and ground truth models
-    if vectorized != 2: 
-        if device == 'cuda':
-            result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach().numpy() , v=model.v0.cpu().detach().numpy() , beta=model.beta.cpu().item())
-        else:
-            result_model = GTConstantVelocityModel(n_points=num_nodes, z=model.z0 , v=model.v0 , beta=model.beta)
+    if device == 'cuda':
+        result_z0 = model.z0.cpu().detach().numpy()
+        result_v0 = model.v0.cpu().detach().numpy()
+        result_beta = model.beta.cpu().item()
+    else:
+        result_z0 = model.z0
+        result_v0 = model.v0
+        result_beta = model.beta
 
+    if vectorized != 2: 
+        result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
         gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
 
     elif vectorized == 2:
-        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=model.z0.cpu().detach(), 
-                                                        v=model.v0.cpu().detach(), beta=model.beta.cpu().detach(),
+        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                         steps=steps, max_time=max_time, device=device)
-        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0, 
-                                                beta=true_beta, steps=v0.shape[2], max_time=max_time, device=device)
+        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0, beta=true_beta, 
+                                                        steps=v0.shape[2], max_time=max_time, device=device)
 
-    len_training_set = int(len(dataset_full)*training_portion)
-    len_test_set = int(len(dataset_full) - len_training_set)
 
-    ## Compute ground truth LL's for result model and gt model
-    gt_train_NLL = - (gt_model.forward(data=dataset_full[:len_training_set], t0=dataset_full[:len_training_set][0,2].item(), tn=dataset_full[:len_training_set][-1,2].item()) / len_training_set)   
-    gt_test_NLL = - (gt_model.forward(data=dataset_full[len_training_set:], t0=dataset_full[len_training_set:][0,2].item(), tn=dataset_full[len_training_set:][-1,2].item()) / len_test_set)
-    wandb.log({'gt_train_NLL': gt_train_NLL, 'gt_test_NLL': gt_test_NLL})
+
+    ## Compute ground truth training loss for result model and gt model
+    gt_train_NLL = - (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size)   
+    wandb.log({'gt_train_NLL': gt_train_NLL,})
+
 
     ## Compare intensity rates
-    train_t = np.linspace(0, dataset_full[len_training_set][2])
-    test_t = np.linspace(dataset_full[len_training_set][2], dataset_full[-1][2])
+    train_t = np.linspace(0, dataset_full[-1][2])
+    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
 
-    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
 
     ## Compare intensity rates for removed node pairs
-    for removed_node_pair in removed_node_pairs:
-        compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
+    if remove_node_pairs_b == 1:    
+        for removed_node_pair in removed_node_pairs:
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
     
