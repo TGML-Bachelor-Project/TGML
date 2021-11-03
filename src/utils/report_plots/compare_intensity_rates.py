@@ -3,16 +3,15 @@ import matplotlib.pyplot as plt
 
 
 
-def compare_intensity_rates_plot(train_t, test_t, result_model, gt_model, nodes):
+def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes):
 
     i = nodes[0]
     j = nodes[1]
-    plot_t = [train_t, test_t]
     
     ## Compute learned as well as ground truth intensities for specific node pair
     result_train = []
     gt_train = []  
-    for ti in plot_t[0]:
+    for ti in train_t:
         result_train.append(result_model.log_intensity_function(i=i, j=j, t=ti))
         gt_train.append(gt_model.log_intensity_function(i=i, j=j, t=ti))
 
@@ -20,8 +19,8 @@ def compare_intensity_rates_plot(train_t, test_t, result_model, gt_model, nodes)
     fig = plt.figure()
     ax1 = fig.add_subplot(111)    # The big subplot
     ax1.grid()
-    ax1.plot(plot_t[0], result_train , color="red", label="est.")
-    ax1.plot(plot_t[0], gt_train , color="blue", label="gt")
+    ax1.plot(train_t[0], result_train , color="red", label="est.")
+    ax1.plot(train_t[0], gt_train , color="blue", label="gt")
     ax1.legend()
 
 
