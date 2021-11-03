@@ -90,6 +90,7 @@ if __name__ == '__main__':
 
     ## Defining Z and V for synthetic data generation
     if data_set_test == 2:
+        max_time = 20
         z0 = np.asarray([[-0.6, 0.], [0.6, 0]])
         if vectorized != 2:
             v0 = np.asarray([[0.09, 0], [-0.09, -0.1]])
@@ -204,7 +205,7 @@ if __name__ == '__main__':
     elif vectorized == 1:
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
-        last_time_point = dataset[:,2][-1].item()
+        last_time_point = dataset[-1,time_col_index]
         steps = 1
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     

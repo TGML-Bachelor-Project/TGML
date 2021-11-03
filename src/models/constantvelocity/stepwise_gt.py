@@ -47,17 +47,18 @@ class GTStepwiseConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        Z_steps = self.z0.unsqueeze(2) + self.v0*self.time_deltas
+        Z_steps = torch.cumsum(self.z0.unsqueeze(2) + self.v0*self.time_deltas, dim=2)
+        # Adding the initial Z0 position as first step
         Z_steps = torch.cat((self.z0.unsqueeze(2), Z_steps), dim=2)
         time_step_values = times/self.time_delta_size
         time_step_floored = torch.floor(time_step_values)
-        time_step_delta_difs = (times-time_step_floored*self.time_delta_size)[:-1] #Don't take last delta, as we do not step from last
-        time_step_indices = time_step_floored.tolist()[:-1] #Don't take last step
+        time_step_delta_difs = (times-time_step_floored*self.time_delta_size) 
+        time_step_indices = time_step_floored.tolist() 
         Z_step_starting_positions = Z_steps[:,:,time_step_indices]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*time_step_delta_difs
-        
+
         #We don't use first and last Z0 because first is always z0 and not zt0 and last Z_steps is not a starting step
-        return Zt, Z_steps[1:,:,:-1] 
+        return Zt, Z_steps[:,:,1:-1]
 
     def step(self, t:torch.Tensor) -> torch.Tensor:
         '''
