@@ -3,21 +3,13 @@ import os
 import sys
 import wandb
 import numpy as np
+import torch
 from argparse import ArgumentParser
 from torch.optim.optimizer import Optimizer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
-print(sys.path)
-print(os.path.dirname(__file__))
 
-
-## Set device as cpu or gpu for pytorch
-import torch
-device = 'cpu'
-# device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f'Running with pytorch device: {device}')
-torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
 
 ### Code imports
@@ -31,16 +23,19 @@ from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 from utils.results_evaluation.remove_interactions import remove_interactions
 
 ## Models
-from models.constantvelocity.standard import ConstantVelocityModel  # -VEC 0
-from models.constantvelocity.vectorized import VectorizedConstantVelocityModel  # -VEC 1
-from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel  # -VEC 2
-from models.constantvelocity.standard_gt import GTConstantVelocityModel  # Ground Truth model for results
+from models.constantvelocity.standard import ConstantVelocityModel
+from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
+from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
+from models.constantvelocity.standard_gt import GTConstantVelocityModel  
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
+
 ## Training Gym's
-from traintestgyms.ignitegym import TrainTestGym  # -TT 0, 1 is sequential
+from traintestgyms.ignitegym import TrainTestGym
+
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
 from utils.report_plots.compare_intensity_rates import compare_intensity_rates_plot
+
 ## Utils
 from utils.nodes.positions import get_contant_velocity_positions 
 import utils.visualize as visualize
@@ -70,6 +65,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=False, type=bool)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=False, type=bool)
+    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -83,7 +79,11 @@ if __name__ == '__main__':
     vectorized = args.vectorized
     remove_node_pairs_b = args.remove_node_pairs_b
     remove_interactions_b = args.remove_interactions_b
+    device = args.device
 
+    ## Device
+    print(f'Running with pytorch device: {device}')
+    torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
     ### Defining parameters for synthetic data generation
     z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
@@ -104,14 +104,15 @@ if __name__ == '__main__':
                     'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
                     'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
                     'remove_nodepairs': remove_node_pairs_b,
-                    'remove_interactions': remove_interactions_b
+                    'remove_interactions': remove_interactions_b,
+                    'device': device
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML6', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML7', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
-    
+        
 
 
     ### Initialize data builder for simulating node interactions from known Poisson Process
