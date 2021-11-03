@@ -154,7 +154,7 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
         last_time_point = dataset[-1,2]
-        steps = 1
+        steps = 3
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     model = model.to(device)
 
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     train_t = np.linspace(0, dataset_full[len_training_set][2])
     test_t = np.linspace(dataset_full[len_training_set][2], dataset_full[-1][2])
 
-    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
+    compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
 
     ## Compare intensity rates for removed node pairs
     for removed_node_pair in removed_node_pairs:

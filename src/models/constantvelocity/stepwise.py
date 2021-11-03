@@ -20,12 +20,12 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             super().__init__()
     
             self.device = device
+            self.num_of_steps = steps
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
             self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
             self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
     
             self.num_of_nodes = n_points
-            self.n_node_pairs = n_points*(n_points-1) // 2
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
 
             # Creating the time step deltas
@@ -60,22 +60,22 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        Z_steps = torch.cumsum(self.z0.unsqueeze(2) + self.v0*self.time_deltas, dim=2)
+        Z_steps = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
         # Adding the initial Z0 position as first step
         Z_steps = torch.cat((self.z0.unsqueeze(2), Z_steps), dim=2)
         # Adds self.time_delta_size*10**(-10) to make time points directly on step time fall into the right step
-        time_step_values = times/(self.time_delta_size+(self.time_delta_size*10**(-3)))
+        time_step_values = times/self.time_delta_size
         time_step_floored = torch.floor(time_step_values)
-        time_step_delta_difs = (times-time_step_floored*self.time_delta_size) 
-        time_step_indices = time_step_floored.tolist() 
-        _, unique_time_indices = np.unique(time_step_indices, return_index=True)
+        time_step_delta_difs = (times-time_step_floored*self.time_delta_size)
+        time_step_indices = [ t if t < self.num_of_steps else t-1 for t in  time_step_floored.tolist()]
+        unique_time_steps, unique_time_indices = np.unique(time_step_indices, return_index=True)
         ts = times[unique_time_indices]
         tf = torch.cat((ts[1:], times[[-1]]), dim=0)
         Z_step_starting_positions = Z_steps[:,:,time_step_indices]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*time_step_delta_difs
 
         #We don't use first and last Z0 because first is always z0 and not zt0 and last Z_steps is not a starting step
-        return Zt, Z_steps[:,:,unique_time_indices], self.v0[:,:,unique_time_indices], ts, tf
+        return Zt, Z_steps[:,:,unique_time_steps], self.v0[:,:,unique_time_steps], ts, tf
 
     def old_log_intensity_function(self, times:torch.Tensor):
         '''
@@ -127,7 +127,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
         j = torch.floor(data[:,1]).tolist()
         event_intensity = torch.sum(log_intensities[i,j,t])
-        # event_intensity = torch.sum(torch.sum(log_intensities, dim=2).triu(diagonal=1))
         all_integrals = evaluate_integral(ts, tf, 
                                     z0=Z0, v0=V0, 
                                     beta=self.beta, device=self.device)

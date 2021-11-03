@@ -19,7 +19,7 @@ def get_initial_parameters(dataset_number, vectorized):
                             ]])
         max_time = 10
         true_beta = 7.5
-        model_beta = 10.
+        model_beta = 8.
             
 
     elif dataset_number == 7:
