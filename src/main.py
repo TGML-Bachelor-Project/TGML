@@ -63,8 +63,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
-    arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=False, type=bool)
-    arg_parser.add_argument('--remove_interactions_b', '-T2', default=False, type=bool)
+    arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
+    arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     ### Defining parameters for synthetic data generation
     z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
     num_nodes = z0.shape[0]
-    print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}")
+    print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\n")
 
 
     ### WandB initialization
@@ -129,10 +129,15 @@ if __name__ == '__main__':
         data_builder = StepwiseDatasetBuilder(simulator, device=device)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
+
     ## Take out node pairs on which model will be evaluated
-    if remove_node_pairs_b and not remove_interactions_b:
+    if remove_node_pairs_b == 1 and remove_interactions_b == 0:
         dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
-    elif remove_node_pairs_b and remove_interactions_b:
+        removed_interactions = None
+    elif remove_node_pairs_b == 0 and remove_interactions_b == 1:
+        dataset, removed_interactions = remove_interactions(dataset=dataset_full, percentage=0.1, device=device)
+        removed_node_pairs = None
+    elif remove_node_pairs_b == 1 and remove_interactions_b == 1:
         dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
         dataset, removed_interactions = remove_interactions(dataset=dataset, percentage=0.1, device=device)
     else:
@@ -142,6 +147,7 @@ if __name__ == '__main__':
     dataset_size = len(dataset_full)
     interaction_count = len(dataset)
     train_batch_size = int(interaction_count / 500)
+    print(f"\nLength of entire dataset: {dataset_size}\nLength of trained dataset: {interaction_count}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'dataset_size': dataset_size, 'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
 
@@ -178,7 +184,6 @@ if __name__ == '__main__':
                             wandb_handler = wandb)
         gym.train_test_model(epochs=num_epochs)
         
-    
     ## Sequential model training
     elif training_type == 1:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = False, False, False
