@@ -56,14 +56,14 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=2, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
-    arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
+    arg_parser.add_argument('--remove_interactions_b', '-T2', default=1, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
@@ -238,15 +238,15 @@ if __name__ == '__main__':
 
 
     ## Compare intensity rates
-    train_t = np.linspace(0, dataset_full[-1][2])
-    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
-
-    ## Compare intensity rates for removed node pairs
     if remove_node_pairs_b == 1:    
+        train_t = np.linspace(0, dataset_full[-1][2])
+        compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
+        
+        ## Compare intensity rates for removed node pairs
         for removed_node_pair in removed_node_pairs:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
 
 
     if remove_interactions_b == 1:
-        auc_removed_interactions(removed_interactions=removed_interactions, result_model=result_model)
+        auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model)
     
