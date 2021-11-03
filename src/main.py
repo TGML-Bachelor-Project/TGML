@@ -105,7 +105,7 @@ if __name__ == '__main__':
                     'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
                     'remove_nodepairs': remove_node_pairs_b,
                     'remove_interactions': remove_interactions_b,
-                    'device': device
+                    'device': device,
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
@@ -131,17 +131,18 @@ if __name__ == '__main__':
     
     ## Take out node pairs on which model will be evaluated
     if remove_node_pairs_b and not remove_interactions_b:
-        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.1, device=device)
+        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
     elif remove_node_pairs_b and remove_interactions_b:
-        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.1, device=device)
+        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
         dataset, removed_interactions = remove_interactions(dataset=dataset, percentage=0.1, device=device)
     else:
         dataset, removed_node_pairs = dataset_full, None
 
     ## Compute size of dataset and find 1/500 as training batch size
+    dataset_size = len(dataset_full)
     interaction_count = len(dataset)
     train_batch_size = int(interaction_count / 500)
-    wandb.log({'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
+    wandb.log({'dataset_size': dataset_size, 'number_of_interactions': interaction_count, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
 
 
@@ -236,9 +237,6 @@ if __name__ == '__main__':
     ## Compare intensity rates
     train_t = np.linspace(0, dataset_full[len_training_set][2])
     test_t = np.linspace(dataset_full[len_training_set][2], dataset_full[-1][2])
-    # compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
-    # compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
-    # compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,3])
 
     compare_intensity_rates_plot(train_t=train_t, test_t=test_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
 
