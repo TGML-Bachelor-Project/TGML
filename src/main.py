@@ -56,13 +56,12 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=50, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=2, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
-    arg_parser.add_argument('--training_portion', '-TP', default=0.999, type=float)
     arg_parser.add_argument('--dataset_number', '-DS', default=10, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
-    arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
+    arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
@@ -72,7 +71,6 @@ if __name__ == '__main__':
     learning_rate = args.learning_rate
     num_epochs = args.num_epochs
     train_batch_size = args.train_batch_size
-    training_portion = args.training_portion
     dataset_number = args.dataset_number
     training_type = args.training_type
     wandb_entity = args.wandb_entity  # Not logged with wandb
@@ -100,7 +98,6 @@ if __name__ == '__main__':
                     'learning_rate': learning_rate,
                     'num_epochs': num_epochs,
                     'num_nodes': num_nodes,
-                    'training_portion': training_portion,
                     'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
                     'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
                     'remove_nodepairs': remove_node_pairs_b,
@@ -169,7 +166,7 @@ if __name__ == '__main__':
 
 
     ### Model training starts
-    metrics = {'avg_train_loss': [], 'avg_test_loss': [], 'beta_est': []}
+    metrics = {'avg_train_loss': [], 'beta_est': []}
     ## Non-sequential model training
     if training_type == 0:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
@@ -177,7 +174,6 @@ if __name__ == '__main__':
                             model=model, 
                             device=device, 
                             batch_size=train_batch_size, 
-                            training_portion=training_portion,
                             optimizer=optimizer, 
                             metrics=metrics, 
                             time_column_idx=2,
@@ -237,18 +233,18 @@ if __name__ == '__main__':
 
 
 
-    len_training_set = int(len(dataset_full)*training_portion)
-
     ## Compute ground truth training loss for result model and gt model
-    gt_train_NLL = - (gt_model.forward(data=dataset_full[:len_training_set], t0=dataset_full[:len_training_set][0,2].item(), tn=dataset_full[:len_training_set][-1,2].item()) / len_training_set)   
+    gt_train_NLL = - (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size)   
     wandb.log({'gt_train_NLL': gt_train_NLL,})
 
 
     ## Compare intensity rates
-    train_t = np.linspace(0, dataset_full[len_training_set][2])
+    train_t = np.linspace(0, dataset_full[-1][2])
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
 
+
     ## Compare intensity rates for removed node pairs
-    for removed_node_pair in removed_node_pairs:
-        compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
+    if remove_node_pairs_b == 1:    
+        for removed_node_pair in removed_node_pairs:
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
     
