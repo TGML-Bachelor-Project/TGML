@@ -10,7 +10,7 @@ def remove_node_pairs(dataset, num_nodes, percentage, device, node_pairs=None):
         nodepair_ind = np.triu_indices(num_nodes, k=1)
         all_node_pairs = list(zip(nodepair_ind[0], nodepair_ind[1]))
         num_pairs = len(all_node_pairs)
-        num_pairs_remove = max(int(num_pairs*(1-percentage)), 1)
+        num_pairs_remove = max(int(num_pairs*percentage), 1)
         node_pairs = random.choices(all_node_pairs, k=num_pairs_remove)
 
     dataset_reduced = []
