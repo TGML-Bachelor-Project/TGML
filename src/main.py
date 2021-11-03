@@ -96,11 +96,11 @@ if __name__ == '__main__':
         elif vectorized == 2:
             v0 = torch.tensor([
             [
-                [-0.09, 0, 0.09], #Vx node 0
+                [0.09, 0, -0.09], #Vx node 0
                 [0, 0, 0] #Vy node 0
             ],
             [
-                [0.09, 0, -0.09], #Vx node 1
+                [-0.09, 0, 0.09], #Vx node 1
                 [0, 0, 0] #Vy node 1
             ]
             ])
