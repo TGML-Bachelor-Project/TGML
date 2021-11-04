@@ -5,6 +5,7 @@ import torch
 
 def get_initial_parameters(dataset_number, vectorized):
 
+    steps = 1
     # if dataset_number == 1:
     #     z0 = np.asarray([[-0.6, 0.], [0.6, 0]])
     #     if vectorized != 2:
@@ -30,6 +31,7 @@ def get_initial_parameters(dataset_number, vectorized):
         max_time = 30
         true_beta = 7.5
         model_beta = 8.
+        steps = 3
 
     if dataset_number == 2:
         z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])
@@ -47,6 +49,7 @@ def get_initial_parameters(dataset_number, vectorized):
         max_time = 30
         true_beta = 7.5
         model_beta = 8.
+        steps = 3
             
 
     elif dataset_number == 7:
@@ -108,4 +111,4 @@ def get_initial_parameters(dataset_number, vectorized):
 
 
 
-    return z0, v0, true_beta, model_beta, max_time
+    return z0, v0, true_beta, model_beta, max_time, steps

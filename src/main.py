@@ -58,12 +58,12 @@ if __name__ == '__main__':
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
-    arg_parser.add_argument('--dataset_number', '-DS', default=10, type=int)
+    arg_parser.add_argument('--dataset_number', '-DS', default=7, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
-    arg_parser.add_argument('--remove_interactions_b', '-T2', default=1, type=int)
+    arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
     ### Defining parameters for synthetic data generation
-    z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
+    z0, v0, true_beta, model_beta, max_time, steps = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
     max_time = torch.tensor(max_time).to(device)
     num_nodes = z0.shape[0]
     print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\n")
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
                                     velocities=v0, max_time=max_time, 
                                     beta=true_beta, seed=seed)
-        data_builder = StepwiseDatasetBuilder(simulator, device=device, normalization_max_time=max_time)
+        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=max_time)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
 
@@ -144,8 +144,7 @@ if __name__ == '__main__':
     ## Compute size of dataset and find 1/500 as training batch size
     dataset_size = len(dataset_full)
     training_set_size = len(dataset)
-    # train_batch_size = int(training_set_size / 500)
-    train_batch_size = 2
+    train_batch_size = int(training_set_size / 500)
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'dataset_size': dataset_size, 'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
@@ -159,7 +158,6 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        steps = 1
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
     model = model.to(device)
 
@@ -189,7 +187,6 @@ if __name__ == '__main__':
                             model=model, 
                             device=device, 
                             batch_size=train_batch_size, 
-                            training_portion=training_portion,
                             optimizer=optimizer, 
                             metrics=metrics, 
                             time_column_idx=2,
@@ -205,9 +202,6 @@ if __name__ == '__main__':
 
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             gym.train_test_model(epochs=int(num_epochs/3))
-
-
-
 
 
 
@@ -240,6 +234,7 @@ if __name__ == '__main__':
 
     train_t = np.linspace(0, dataset_full[-1][2])
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
+    
     ## Compare intensity rates
     if remove_node_pairs_b == 1:    
         train_t = np.linspace(0, dataset_full[-1][2])
