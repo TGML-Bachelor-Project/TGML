@@ -21,9 +21,9 @@ class GTStepwiseConstantVelocityModel(nn.Module):
     
             self.device = device
             self.num_of_steps = steps
-            self.beta = beta
-            self.z0 = z
-            self.v0 = v
+            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=False)
+            self.z0 = nn.Parameter(z, requires_grad=False) 
+            self.v0 = nn.Parameter(v, requires_grad=False) 
     
             self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2

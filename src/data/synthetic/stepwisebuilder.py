@@ -2,9 +2,10 @@ import torch
 import numpy as np
 
 class StepwiseDatasetBuilder:
-    def __init__(self, simulator, device) -> None:
+    def __init__(self, simulator, device, normalization_max_time) -> None:
         self.simulator = simulator
         self.device = device
+        self.max_time = normalization_max_time
 
     def build_dataset(self, num_of_nodes:int, time_column_idx:int) -> list:
         '''
@@ -32,5 +33,7 @@ class StepwiseDatasetBuilder:
 
         print(f'Training set generated with number of interactions: {len(dataset)}')
         dataset = torch.from_numpy(dataset).to(self.device)
+        if self.max_time:
+            dataset[:,2] = dataset[:,2]/self.max_time
 
         return dataset

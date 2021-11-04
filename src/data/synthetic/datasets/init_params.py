@@ -5,21 +5,31 @@ import torch
 
 def get_initial_parameters(dataset_number, vectorized):
 
+    # if dataset_number == 1:
+    #     z0 = np.asarray([[-0.6, 0.], [0.6, 0]])
+    #     if vectorized != 2:
+    #         v0 = np.asarray([[0.09, 0], [-0.09, -0.1]])
+    #     elif vectorized == 2:
+    #         v0 = torch.tensor([
+    #                         [[0.09, 0, -0.09], #Vx node 0
+    #                         [0, 0, 0] #Vy node 0
+    #                         ],
+    #                         [[-0.09, 0, 0.09], #Vx node 1
+    #                         [0, 0, 0] #Vy node 1
+    #                         ]])
     if dataset_number == 1:
-        z0 = np.asarray([[-0.6, 0.], [0.6, 0]])
-        if vectorized != 2:
-            v0 = np.asarray([[0.09, 0], [-0.09, -0.1]])
-        elif vectorized == 2:
+        z0 = np.asarray([[-1, 0.], [1, 0]])
+        if vectorized == 2:
             v0 = torch.tensor([
-                            [[0.09, 0, -0.09], #Vx node 0
+                            [[0.5, 0, -0.5], #Vx node 0
                             [0, 0, 0] #Vy node 0
                             ],
-                            [[-0.09, 0, 0.09], #Vx node 1
+                            [[-0.5, 0, 0.5], #Vx node 1
                             [0, 0, 0] #Vy node 1
                             ]])
-        max_time = 10
-        true_beta = 7.5
-        model_beta = 8.
+        max_time = 8
+        true_beta = 5.
+        model_beta = 7.5
             
 
     elif dataset_number == 7:
