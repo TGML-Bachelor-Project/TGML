@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
-
+import time
 
 def remove_interactions(dataset, percentage, device):
 
@@ -23,7 +23,7 @@ def remove_interactions(dataset, percentage, device):
     return dataset_reduced, removed_interactions
 
 
-def auc_removed_interactions(removed_interactions, num_nodes, result_model):
+def auc_removed_interactions(removed_interactions, num_nodes, result_model, wandb_handler):
     
     nodepair_ind = np.triu_indices(num_nodes, k=1)
     all_node_pairs = list(zip(nodepair_ind[0], nodepair_ind[1]))
@@ -45,34 +45,38 @@ def auc_removed_interactions(removed_interactions, num_nodes, result_model):
             test_set.append(alternate_node_pairs[i])
             labels.append(0)
         else:
-            test_set.append(removed_interactions[i])
+            test_set.append(removed_interactions[i].tolist())
             labels.append(1)
 
     ## Compute probability for node pair interaction for test set
     probs = []
     for tup in test_set:
-        probs.append(result_model.log_intensity_function(i=tup[0], j=tup[1], t=tup[2]))
+        probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
 
     ## Compute ROC metrics
     fpr, tpr, thresh = roc_curve(labels, probs, pos_label=1)
     auc_score = roc_auc_score(labels, probs)
 
+
     ## Plot ROC Curve
+    fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
     plt.style.use('seaborn')
     # plot roc curves
-    plt.plot(fpr, tpr, linestyle='--',color='orange', label='Constant Velocity Model')
+    ax.plot(fpr, tpr, linestyle='--',color='orange', label='Constant Velocity Model')
     random_probs = [0 for i in range(len(labels))]
     p_fpr, p_tpr, _ = roc_curve(labels, random_probs, pos_label=1)
-    plt.plot(p_fpr, p_tpr, linestyle='--', color='blue')
+    ax.plot(p_fpr, p_tpr, linestyle='--', color='blue')
     # title
     plt.title('ROC curve')
     # x label
-    plt.xlabel('False Positive Rate')
+    ax.set_xlabel('False Positive Rate')
     # y label
-    plt.ylabel('True Positive rate')
+    ax.set_ylabel('True Positive rate')
 
-    plt.legend(loc='best')
-    plt.savefig('ROC',dpi=300)
+    ax.legend(loc='best')
+
+    
+    wandb_handler.log({'ROC_curve': wandb_handler.Image(fig)})
     plt.show()
 
     return fpr, tpr, thresh, auc_score

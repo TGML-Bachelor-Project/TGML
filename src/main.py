@@ -232,7 +232,7 @@ if __name__ == '__main__':
     wandb.log({'gt_train_NLL': gt_train_NLL,})
 
     train_t = np.linspace(0, dataset_full[-1][2])
-    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,1])
+    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb)
     
     ## Compare intensity rates
     if remove_node_pairs_b == 1:    
@@ -245,5 +245,5 @@ if __name__ == '__main__':
 
 
     if remove_interactions_b == 1:
-        auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model)
+        auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
     
