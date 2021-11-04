@@ -21,15 +21,32 @@ def get_initial_parameters(dataset_number, vectorized):
         z0 = np.asarray([[-1, 0.], [1, 0]])
         if vectorized == 2:
             v0 = torch.tensor([
-                            [[0.5, 0, -0.5], #Vx node 0
+                            [[0.1, 0, -0.1], #Vx node 0
                             [0, 0, 0] #Vy node 0
                             ],
-                            [[-0.5, 0, 0.5], #Vx node 1
+                            [[-0.1, 0, 0.1], #Vx node 1
                             [0, 0, 0] #Vy node 1
                             ]])
-        max_time = 8
-        true_beta = 5.
-        model_beta = 7.5
+        max_time = 30
+        true_beta = 7.5
+        model_beta = 8.
+
+    if dataset_number == 2:
+        z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])
+        if vectorized == 2:
+            v0 = torch.tensor([
+                            [[0.1, 0, -0.1], #Vx node 0
+                            [0, 0, 0] #Vy node 0
+                            ],
+                            [[-0.1, 0, 0.1], #Vx node 1
+                            [0, 0, 0] #Vy node 1
+                            ],
+                            [[0, 0, 0], #Vx node 1
+                            [-0.1, 0, 0.1] #Vy node 1
+                            ]])
+        max_time = 30
+        true_beta = 7.5
+        model_beta = 8.
             
 
     elif dataset_number == 7:

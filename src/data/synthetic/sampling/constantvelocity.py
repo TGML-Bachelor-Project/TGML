@@ -77,7 +77,7 @@ class ConstantVelocitySimulator:
         return criticalPoints
 
     def get_end_positions(self):
-        return self.z0 + self.v0*self.__max_time
+        return self.z0 + self.v0*(self.__max_time - self.__t_start)
 
     def intensity_function(self, i:int, j:int, t:float) -> np.float64:
         '''
