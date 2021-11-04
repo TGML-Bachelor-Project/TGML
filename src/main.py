@@ -123,7 +123,7 @@ if __name__ == '__main__':
         simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
                                     velocities=v0, max_time=max_time, 
                                     beta=true_beta, seed=seed)
-        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=max_time)
+        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
 

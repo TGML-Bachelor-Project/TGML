@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 class StepwiseDatasetBuilder:
-    def __init__(self, simulator, device, normalization_max_time) -> None:
+    def __init__(self, simulator, device, normalization_max_time=None) -> None:
         self.simulator = simulator
         self.device = device
         self.max_time = normalization_max_time
