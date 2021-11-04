@@ -34,6 +34,7 @@ class DatasetBuilder:
         print(dataset)
         dataset = torch.from_numpy(dataset).to(self.device)
         if self.max_time:
+            self.max_time = torch.tensor(self.max_time).to(self.device)
             dataset[:,2] = dataset[:,2]/self.max_time
 
         # # Verify time ordering

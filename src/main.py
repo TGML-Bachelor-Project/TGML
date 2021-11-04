@@ -85,7 +85,6 @@ if __name__ == '__main__':
 
     ### Defining parameters for synthetic data generation
     z0, v0, true_beta, model_beta, max_time, steps = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
-    max_time = torch.tensor(max_time).to(device)
     num_nodes = z0.shape[0]
     print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\n")
 
