@@ -66,16 +66,15 @@ def auc_removed_interactions(removed_interactions, num_nodes, result_model, wand
     random_probs = [0 for i in range(len(labels))]
     p_fpr, p_tpr, _ = roc_curve(labels, random_probs, pos_label=1)
     ax.plot(p_fpr, p_tpr, linestyle='--', color='blue')
-    # title
+    
+    ax.grid()
     plt.title('ROC curve')
-    # x label
     ax.set_xlabel('False Positive Rate')
-    # y label
     ax.set_ylabel('True Positive rate')
 
     ax.legend(loc='best')
 
-    
+
     wandb_handler.log({'ROC_curve': wandb_handler.Image(fig)})
     plt.show()
 

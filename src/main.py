@@ -106,7 +106,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML7', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML8', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
         
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     wandb.log({'gt_train_NLL': gt_train_NLL,})
 
     train_t = np.linspace(0, dataset_full[-1][2])
-    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb)
+    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,4], [2,3], [5,6], [6,7], [2,3]], wandb_handler=wandb)
     
     ## Compare intensity rates
     if remove_node_pairs_b == 1:    
