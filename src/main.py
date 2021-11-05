@@ -35,6 +35,7 @@ from traintestgyms.ignitegym import TrainTestGym
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
 from utils.report_plots.compare_intensity_rates import compare_intensity_rates_plot
+from utils.report_plots.event_distribution import plot_event_dist
 
 ## Utils
 from utils.nodes.positions import get_contant_velocity_positions 
@@ -58,10 +59,10 @@ if __name__ == '__main__':
     arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
     arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
-    arg_parser.add_argument('--dataset_number', '-DS', default=7, type=int)
+    arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
-    arg_parser.add_argument('--vectorized', '-VEC', default=1, type=int)
+    arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
@@ -106,7 +107,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML8', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML7', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
         
@@ -125,6 +126,8 @@ if __name__ == '__main__':
                                     beta=true_beta, seed=seed)
         data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    
+    plot_event_dist(dataset=dataset_full)
     
 
     ## Take out node pairs on which model will be evaluated

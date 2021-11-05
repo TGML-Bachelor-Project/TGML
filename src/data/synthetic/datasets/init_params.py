@@ -75,6 +75,7 @@ def get_initial_parameters(dataset_number, vectorized):
         max_time = 10
         true_beta = 7.5
         model_beta = 10.
+        steps = 1
         z0 = np.asarray([[-0.6, 0.], [0.6, 0.1], [0., 0.6], [0., -0.6]])
         if vectorized != 2:
             v0 = np.asarray([[0.09, 0.01], [-0.01, -0.01], [0.01, -0.09], [-0.01, 0.09]])
