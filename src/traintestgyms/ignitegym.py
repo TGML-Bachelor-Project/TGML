@@ -61,7 +61,9 @@ class TrainTestGym:
     def __train_step(self, engine, batch):
         batch = batch.to(self.device)
 
-        engine.t_start = 0 if engine.t_start == 0 else batch[0,self.time_column_idx].item()
+        if engine.t_start != 0:
+            engine.t_start = batch[0,self.time_column_idx].item()
+
         self.model.train()
         self.optimizer.zero_grad()
         train_loglikelihood = self.model(batch, t0=engine.t_start,

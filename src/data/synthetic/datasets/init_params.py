@@ -7,31 +7,29 @@ def get_initial_parameters(dataset_number, vectorized):
 
     steps = 1
     # if dataset_number == 1:
-    #     z0 = np.asarray([[-0.6, 0.], [0.6, 0]])
-    #     if vectorized != 2:
-    #         v0 = np.asarray([[0.09, 0], [-0.09, -0.1]])
-    #     elif vectorized == 2:
+    #     z0 = np.asarray([[-1, 0.], [1, 0]])
+    #     if vectorized == 2:
     #         v0 = torch.tensor([
-    #                         [[0.09, 0, -0.09], #Vx node 0
-    #                         [0, 0, 0] #Vy node 0
+    #                         [[0.1, 0, -0.1, 0.1], #Vx node 0
+    #                         [0, 0, 0, 0] #Vy node 0
     #                         ],
-    #                         [[-0.09, 0, 0.09], #Vx node 1
-    #                         [0, 0, 0] #Vy node 1
+    #                         [[-0.1, 0, 0.1, -0.1], #Vx node 1
+    #                         [0, 0, 0, 0] #Vy node 1
     #                         ]])
     if dataset_number == 1:
-        z0 = np.asarray([[-1, 0.], [1, 0]])
+        z0 = np.asarray([[1, 0], [-1, 0]])
         if vectorized == 2:
             v0 = torch.tensor([
-                            [[0.1, 0, -0.1], #Vx node 0
-                            [0, 0, 0] #Vy node 0
+                            [[-0.1, 0, 0.1, -0.1], #Vx node 0
+                            [0, 0, 0, 0] #Vy node 0
                             ],
-                            [[-0.1, 0, 0.1], #Vx node 1
-                            [0, 0, 0] #Vy node 1
+                            [[0.1, 0, -0.1, 0.1], #Vx node 1
+                            [0, 0, 0, 0] #Vy node 1
                             ]])
-        max_time = 30
+        max_time = 40
         true_beta = 7.5
-        model_beta = 8.
-        steps = 3
+        model_beta = 10. #must be floating point
+        steps = 5
 
     if dataset_number == 2:
         z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])

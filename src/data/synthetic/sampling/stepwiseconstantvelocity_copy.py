@@ -1,13 +1,14 @@
+import torch
 import numpy as np
 from data.synthetic.nhpp import NHPP
-from utils.nodes.positions import get_current_position
+from utils.nodes.positions import stepwise_get_current_position as get_current_position
 
-class ConstantVelocitySimulator:
+class StepwiseConstantVelocitySimulator:
     '''
     Model using Newtonian dynamics in the form of constant velocities
     to model node pair interactions based on Euclidean distance in a latent space.
     '''
-    def __init__(self, starting_positions:list, velocities:list, T:int, beta:list, seed:int=42, t_start=0):
+    def __init__(self, starting_positions, velocities, max_time:int, beta:int, device='cpu', seed:int=42):
         '''
         :param starting_positions:     The 2d coordinates of each node starting position in the latent space
         :param velocities:             Velocities for each node. The velocities are constant over time
@@ -16,16 +17,23 @@ class ConstantVelocitySimulator:
         :param seed:                   The seed used to pseudo randomness of the code
         '''
         # Model parameters
-        self.z0 = np.asarray(starting_positions)
-        self.v0 = np.asarray(velocities)
-        self.__t_start = t_start
-        self.__max_time = T
+        starting_positions = starting_positions.astype(np.float32)
+        self.z0 = torch.tensor(starting_positions) if not isinstance(starting_positions, torch.Tensor) else starting_positions
+        self.v0 = torch.tensor(velocities) if not isinstance(velocities, torch.Tensor) else velocities
         self.__beta = beta
         self.__num_of_nodes = self.z0.shape[0]
 
+        # Calulate the step size in time
+        self.__max_time = max_time
+        steps = self.v0.shape[2]
+        end_times = torch.linspace(0, max_time, steps+1)
+        start_times = end_times[:-1]
+        end_times = end_times[1:]
+        self.time_deltas = end_times-start_times
+
         self.__node_pair_indices = np.triu_indices(n=self.__num_of_nodes, k=1)
         np.random.seed(seed)
-        self.eps = np.finfo(float).eps
+        self.eps = torch.tensor(np.finfo(float).eps).to(device) #Adding eps to avoid devision by 0 
 
     def __squared_euclidean_distance(self, i:int, j:int, t:int) -> np.float64:
         '''
@@ -38,10 +46,11 @@ class ConstantVelocitySimulator:
         
         :returns:   The squared Euclidean distance of node i and j at time t
         '''
-        p, q = get_current_position(self.z0, self.v0, i, t), get_current_position(self.z0, self.v0, j, t)
+        p = get_current_position(self.z0, self.v0, i, t, self.time_deltas)
+        q = get_current_position(self.z0, self.v0, j, t, self.time_deltas)
 
         # Squared Euclidean distance
-        return (p[0]-q[0])**2 + (p[1]-q[1])**2
+        return ((p[0]-q[0])**2 + (p[1]-q[1])**2).item()
 
     def __critical_time_points(self, i:int, j:int) -> list:
         '''
@@ -57,27 +66,24 @@ class ConstantVelocitySimulator:
         :returns:   A list of critical time points as floating point values
         '''
         # Get the differences
-        deltaZ = self.z0[i, :] - self.z0[j, :]
-        deltaV = self.v0[i, :] - self.v0[j, :]
+        delta_z = (self.z0[i] - self.z0[j]).unsqueeze(1)
+        delta_v = self.v0[i] - self.v0[j]
 
         # Add the initial time point
-        criticalPoints = [self.__t_start]
+        critical_points = [0]
 
         # For the model containing only position and velocity
-        # Find the point in which the derivative equal to 0
-        t = - np.dot(deltaZ, deltaV) / (np.dot(deltaV, deltaV) + self.eps)
-        if self.__t_start <= t <= self.__max_time:
-            criticalPoints.append(t)
+        # Use division of two dot products to find the point in which the derivative equal to 0
+        t = -torch.sum(delta_z*delta_v,dim=0) / (torch.sum(delta_v*delta_v,dim=0) + self.eps)
+        t, _ = torch.sort(torch.unique(torch.abs(t)))
+        critical_points.extend(t.tolist())
             # print(i, j)
             # print(t)
 
         # Add the last time point
-        criticalPoints.append(self.__max_time)
+        critical_points.append(self.__max_time)
 
-        return criticalPoints
-
-    def get_end_positions(self):
-        return self.z0 + self.v0*(self.__max_time - self.__t_start)
+        return list(set(critical_points)) #get unique critical time points
 
     def intensity_function(self, i:int, j:int, t:float) -> np.float64:
         '''
@@ -121,9 +127,9 @@ class ConstantVelocitySimulator:
             critical_points = self.__critical_time_points(i=i, j=j)
             # Simulate the models
             nhppij = NHPP(max_time=self.__max_time, intensity_func=intensity_func, time_bins=critical_points, 
-                            seed=np.random.randint(100000), t_start=self.__t_start)
+                            seed=np.random.randint(100000), t_start=0)
             event_times = nhppij.generate_time_units()
             # Add the event times
             network_events[i][j].extend(event_times)
-
+        
         return network_events
