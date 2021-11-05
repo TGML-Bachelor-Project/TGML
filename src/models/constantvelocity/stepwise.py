@@ -22,8 +22,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             self.device = device
             self.num_of_steps = steps
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
-            self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.0005, requires_grad=True) 
-            self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.0005, requires_grad=True) 
+            self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+            self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
     
             self.num_of_nodes = n_points
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
@@ -123,17 +123,19 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         Z0, V0, ts, tf, log_intensities = self.log_intensity_function(times=data[:,2])
-        t = list(range(data.size()[0]))
-        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
-        j = torch.floor(data[:,1]).tolist()
-        event_intensity = torch.sum(log_intensities[i,j,t])
+        # t = list(range(data.size()[0]))
+        # i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
+        # j = torch.floor(data[:,1]).tolist()
+        # old_event_intensity = torch.sum(log_intensities[i,j,t])
+        event_intensity = torch.sum(torch.sum(log_intensities, dim=2).triu(diagonal=1))
         all_integrals = evaluate_integral(ts, tf, 
                                     z0=Z0, v0=V0, 
                                     beta=self.beta, device=self.device)
         #Sum over time dimension, dim 2, and then sum upper triangular
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)
-        
+
+        # Comparing with vectorized for single step
         # old_log_intensities = self.old_log_intensity_function(times=data[:,2])
         # t = list(range(data.size()[0]))
         # i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int

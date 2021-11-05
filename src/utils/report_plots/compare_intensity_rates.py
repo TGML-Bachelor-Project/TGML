@@ -46,6 +46,6 @@ def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_h
 
 
     wandb_handler.log({'intensity_plot': wandb_handler.Image(fig)})
-    # plt.show()
+    plt.show()
     return 
     

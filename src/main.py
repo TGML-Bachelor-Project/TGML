@@ -5,7 +5,6 @@ import wandb
 import numpy as np
 import torch
 from argparse import ArgumentParser
-from torch.optim.optimizer import Optimizer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
@@ -146,7 +145,7 @@ if __name__ == '__main__':
     ## Compute size of dataset and find 1/500 as training batch size
     dataset_size = len(dataset_full)
     training_set_size = len(dataset)
-    train_batch_size = int(training_set_size / 500)
+    train_batch_size = int(training_set_size)
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'dataset_size': dataset_size, 'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
