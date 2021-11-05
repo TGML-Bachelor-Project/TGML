@@ -128,7 +128,7 @@ if __name__ == '__main__':
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
     plot_event_dist(dataset=dataset_full)
-    
+
 
     ## Take out node pairs on which model will be evaluated
     if remove_node_pairs_b == 1 and remove_interactions_b == 0:
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     ## Compute size of dataset and find 1/500 as training batch size
     dataset_size = len(dataset_full)
     training_set_size = len(dataset)
-    train_batch_size = int(training_set_size / 10)
+    train_batch_size = int(training_set_size / 500)
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'dataset_size': dataset_size, 'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
