@@ -57,6 +57,7 @@ coverage.xml
 cover/
 
 wandb
+comm-f2f-Resistance
 
 # Translations
 *.mo
