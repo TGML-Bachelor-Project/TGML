@@ -1,5 +1,5 @@
 import numpy as np
-from data.synthetic.nhpp import NHPP
+from data.synthetic.nhpp_starttime_zero import NHPP
 from utils.nodes.positions import get_current_position
 
 class ConstantVelocitySimulator:
