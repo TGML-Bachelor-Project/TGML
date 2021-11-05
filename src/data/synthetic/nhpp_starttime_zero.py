@@ -19,7 +19,7 @@ class NHPP:
         self.__t_start = t_start - t_start
         self.__max_time = max_time - t_start
         self.__intensity_func = intensity_func
-        self.__time_bins = time_bins - t_start
+        self.__time_bins = np.asarray(time_bins) - t_start
         self.__seed = seed
 
         self.__numOfTimeBins = len(self.__time_bins)
@@ -75,4 +75,4 @@ class NHPP:
                 J += 1
                 # Step 10 -> Loop starts over going back to step 3
 
-        return S + self.__t_start_true
+        return np.asarray(S) + self.__t_start_true
