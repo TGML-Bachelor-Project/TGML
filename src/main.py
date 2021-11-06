@@ -200,10 +200,21 @@ if __name__ == '__main__':
             elif i == 2:
                 model.beta.requires_grad = True  # Learn beta first
                 
-
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             gym.train_test_model(epochs=int(num_epochs/3))
 
+    ## Non-beta_tuning training
+    if training_type == 2:
+        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, False
+        gym = TrainTestGym(dataset=dataset, 
+                            model=model, 
+                            device=device, 
+                            batch_size=train_batch_size, 
+                            optimizer=optimizer, 
+                            metrics=metrics, 
+                            time_column_idx=2,
+                            wandb_handler = wandb)
+        gym.train_test_model(epochs=num_epochs)
 
 
 
