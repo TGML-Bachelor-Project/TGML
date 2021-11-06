@@ -1,10 +1,10 @@
 import numpy as np
-from sklearn.model_selection import train_test_split
-import torch
 from ignite.engine import Engine
 from ignite.engine import Events
 from torch.utils.data import DataLoader
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
+from torch.optim.lr_scheduler import StepLR
+from ignite.handlers.param_scheduler import LRScheduler
 
 class TrainTestGym:
     def __init__(self, dataset, model, device, batch_size,
@@ -52,6 +52,11 @@ class TrainTestGym:
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count),
                                                                                                     'beta': model.beta.item(),
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
+
+        # Adding scheduler
+        # step_scheduler = StepLR(optimizer, step_size=3, gamma=0.1)
+        # scheduler = LRScheduler(step_scheduler)
+        # self.trainer.add_event_handler(Events.ITERATION_COMPLETED, scheduler)
 
 
         pbar = ProgressBar()
