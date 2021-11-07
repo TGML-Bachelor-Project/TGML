@@ -20,10 +20,10 @@ def get_initial_parameters(dataset_number, vectorized):
         z0 = np.asarray([[1., 0.], [-1., 0.]])
         if vectorized == 2:
             v0 = torch.tensor([
-                            [[-0.11, 0.01, 0.11, -0.11], #Vx node 0
+                            [[-0.12, 0.02, 0.12, -0.12], #Vx node 0
                             [0, 0, 0, 0] #Vy node 0
                             ],
-                            [[0.11, 0.01, -0.11, 0.11], #Vx node 1
+                            [[0.12, 0.02, -0.12, 0.12], #Vx node 1
                             [0, 0, 0, 0] #Vy node 1
                             ]])
         max_time = 40
@@ -32,6 +32,21 @@ def get_initial_parameters(dataset_number, vectorized):
         steps = 4
 
     if dataset_number == 2:
+        z0 = np.asarray([[1., 0.], [-1., 0.]])
+        if vectorized == 2:
+            v0 = torch.tensor([
+                            [[-0.12, 0.02, 0.12, -0.12, 0.12, 0.02, -0.12, 0.12], #Vx node 0
+                            [0, 0, 0, 0, 0, 0, 0, 0] #Vy node 0
+                            ],
+                            [[0.12, 0.02, -0.12, 0.12, -0.12, 0.02, 0.12, -0.12], #Vx node 1
+                            [0, 0, 0, 0, 0, 0, 0, 0] #Vy node 1
+                            ]])
+        max_time = 40
+        true_beta = 7.5
+        model_beta = 8. #must be floating point
+        steps = 50
+
+    if dataset_number == 3:
         z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])
         if vectorized == 2:
             v0 = torch.tensor([
@@ -49,7 +64,7 @@ def get_initial_parameters(dataset_number, vectorized):
         model_beta = 8.
         steps = 3
     
-    if dataset_number == 3:
+    if dataset_number == 4:
         z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])
         if vectorized == 2:
             v0 = torch.tensor([
