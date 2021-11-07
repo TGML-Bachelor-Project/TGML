@@ -11,7 +11,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:float, steps, max_time, device):
+    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -22,9 +22,16 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             self.device = device
             self.num_of_steps = steps
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
-            self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
-            self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
-    
+            
+            if true_init:
+                z0_copy = z0
+                v0_copy = v0.detach().clone()
+                self.z0 = nn.Parameter(torch.tensor(z0_copy), requires_grad=True) 
+                self.v0 = nn.Parameter(v0_copy, requires_grad=True) 
+            else:
+                self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
+            
             self.num_of_nodes = n_points
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
 
@@ -37,18 +44,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             # All deltas should be equal do to linspace, so we can take the first
             self.time_delta_size = self.time_deltas[0]
 
-    def old_steps(self, v0, times:torch.Tensor) -> torch.Tensor:
-        '''
-        Increments the model's time by t by
-        updating the latent node position vector z
-        based on a constant velocity dynamic.
-
-        :param t:   The time to update the latent position vector z with
-
-        :returns:   The updated latent position vector z
-        '''
-        Zt = self.z0.unsqueeze(2) + v0.unsqueeze(2) * times
-        return Zt
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
         '''
@@ -60,7 +55,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        Z_steps = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
+        Z_steps = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dtype=torch.float64, dim=2)
         # Adding the initial Z0 position as first step
         Z_steps = torch.cat((self.z0.unsqueeze(2), Z_steps), dim=2)
         # Adds self.time_delta_size*10**(-10) to make time points directly on step time fall into the right step
@@ -77,22 +72,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #We don't use first and last Z0 because first is always z0 and not zt0 and last Z_steps is not a starting step
         return Zt, Z_steps[:,:,unique_time_steps], self.v0[:,:,unique_time_steps], ts, tf
 
-    def old_log_intensity_function(self, v0, times:torch.Tensor):
-        '''
-        The log version of the  model intensity function between node i and j at time t.
-        The intensity function measures the likelihood of node i and j
-        interacting at time t using a common bias term beta
-
-
-        :param t:   The time to update the latent position vector z with
-
-        :returns:   The log of the intensity between i and j at time t as a measure of
-                    the two nodes' log-likelihood of interacting.
-        '''
-        z = self.old_steps(v0, times)
-        d = vec_squared_euclidean_dist(z)
-        #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return self.beta - d
 
     def log_intensity_function(self, times:torch.Tensor):
         '''

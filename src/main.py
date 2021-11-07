@@ -126,7 +126,7 @@ if __name__ == '__main__':
         data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
-    #plot_event_dist(dataset=dataset_full)
+    plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
 
 
     ## Take out node pairs on which model will be evaluated
@@ -156,10 +156,10 @@ if __name__ == '__main__':
     if vectorized == 0:
         model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
     elif vectorized == 1:
-        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device)
+        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device)
+        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=True)
     model = model.to(device)
 
     ## Optimizer is initialized here, Adam is used
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     elif vectorized == 2:
         result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                         steps=steps, max_time=max_time, device=device)
-        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0, beta=true_beta, 
+        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=true_beta, 
                                                         steps=v0.shape[2], max_time=max_time, device=device)
 
 
