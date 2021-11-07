@@ -24,7 +24,7 @@ from utils.results_evaluation.remove_interactions import auc_removed_interaction
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
-from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
+from models.constantvelocity.single_batch_stepwise import StepwiseVectorizedConstantVelocityModel
 from models.constantvelocity.standard_gt import GTConstantVelocityModel  
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 
