@@ -55,8 +55,8 @@ if __name__ == '__main__':
 
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
+    arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
+    arg_parser.add_argument('--num_epochs', '-NE', default=5000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--device', '-device', default='cuda', type=str)
+    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
     ## Set all input arguments

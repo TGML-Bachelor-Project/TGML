@@ -34,7 +34,7 @@ class TrainTestGym:
 
             epoch_count += 1
             training_losses.append(loss.item())
-            self.metrics['avg_train_loss'].append(sum(training_losses) / self.train_data_len)
+            self.metrics['avg_train_loss'].append(training_losses[-1] / self.train_data_len)
             beta = self.model.beta.item()
             self.metrics['beta_est'].append(beta)
             self.wandb_handler.log({'Epoch': epoch_count,
