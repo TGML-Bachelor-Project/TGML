@@ -29,7 +29,7 @@ from models.constantvelocity.standard_gt import GTConstantVelocityModel
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 
 ## Training Gym's
-from traintestgyms.fulldatagym import TrainTestGym
+from traintestgyms.ignitegym import TrainTestGym
 
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
@@ -159,7 +159,8 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=True)
+        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, 
+                        max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=True)
     model = model.to(device)
 
     ## Optimizer is initialized here, Adam is used
