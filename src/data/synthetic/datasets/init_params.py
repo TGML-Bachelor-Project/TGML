@@ -48,7 +48,21 @@ def get_initial_parameters(dataset_number, vectorized):
         true_beta = 7.5
         model_beta = 8.
         steps = 3
-            
+    
+    if dataset_number == 3:
+        z0 = np.asarray([[1.1, 0.2], [-1.3, 0.4]])
+        if vectorized == 2:
+            v0 = torch.tensor([
+                            [[-0.11, 0, 0.13, -0.14], #Vx node 0
+                            [0.1, 0, 0.2, 0.4] #Vy node 0
+                            ],
+                            [[0.15, 0, -0.17, 0.18], #Vx node 1
+                            [0.1, 0, 0.3, 0.5] #Vy node 1
+                            ]])
+        max_time = 40
+        true_beta = 7.5
+        model_beta = 7.55 #must be floating point
+        steps = 4
 
     elif dataset_number == 7:
         max_time = 60
