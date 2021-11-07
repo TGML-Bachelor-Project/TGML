@@ -28,7 +28,7 @@ def get_initial_parameters(dataset_number, vectorized):
                             ]])
         max_time = 40
         true_beta = 7.5
-        model_beta = 7.55 #must be floating point
+        model_beta = 10. #must be floating point
         steps = 4
 
     if dataset_number == 2:
