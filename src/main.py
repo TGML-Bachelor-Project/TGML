@@ -29,7 +29,7 @@ from models.constantvelocity.standard_gt import GTConstantVelocityModel
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 
 ## Training Gym's
-from traintestgyms.ignitegym import TrainTestGym
+from traintestgyms.fulldatagym import TrainTestGym
 
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
                                     velocities=v0, max_time=max_time, 
                                     beta=true_beta, seed=seed)
-        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device)
+        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=max_time)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
         model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, 
-                        max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=True)
+                        max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False)
     model = model.to(device)
 
     ## Optimizer is initialized here, Adam is used

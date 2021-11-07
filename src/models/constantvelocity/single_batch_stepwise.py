@@ -115,10 +115,10 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:   The log of the intensity between i and j at time t as a measure of
                     the two nodes' log-likelihood of interacting.
         '''
-        Zt, Z0 = self.steps(times)
+        Zt, steps_z0 = self.steps(times)
         d = vec_squared_euclidean_dist(Zt)
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return Z0, (self.beta - d)
+        return steps_z0, (self.beta - d)
 
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
