@@ -24,7 +24,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
 
             if true_init:
-                z0_copy = z0
+                z0_copy = z0.astype(np.float) if isinstance(z0, np.ndarray) else z0
                 v0_copy = v0.detach().clone()
                 self.z0 = nn.Parameter(torch.tensor(z0_copy), requires_grad=True) 
                 self.v0 = nn.Parameter(v0_copy, requires_grad=True) 
@@ -38,9 +38,9 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             # Creating the time step deltas
             #Equally distributed
             time_intervals = torch.linspace(0, max_time, steps+1)
-            shifted_time_intervals = time_intervals[:-1]
-            time_intervals = time_intervals[1:]
-            self.time_deltas = time_intervals-shifted_time_intervals
+            start_times = time_intervals[:-1]
+            end_times = time_intervals[1:]
+            self.time_deltas = end_times-start_times
             # All deltas should be equal do to linspace, so we can take the first
             self.step_size = self.time_deltas[0]
 

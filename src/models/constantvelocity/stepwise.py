@@ -24,7 +24,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
             
             if true_init:
-                z0_copy = z0
+                z0_copy = z0.astype(np.float) if isinstance(z0, np.ndarray) else z0
                 v0_copy = v0.detach().clone()
                 self.z0 = nn.Parameter(torch.tensor(z0_copy), requires_grad=True) 
                 self.v0 = nn.Parameter(v0_copy, requires_grad=True) 

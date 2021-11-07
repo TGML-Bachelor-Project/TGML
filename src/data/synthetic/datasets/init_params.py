@@ -17,7 +17,7 @@ def get_initial_parameters(dataset_number, vectorized):
     #                         [0, 0, 0, 0] #Vy node 1
     #                         ]])
     if dataset_number == 1:
-        z0 = np.asarray([[1, 0], [-1, 0]])
+        z0 = np.asarray([[1., 0.], [-1., 0.]])
         if vectorized == 2:
             v0 = torch.tensor([
                             [[-0.1, 0, 0.1, -0.1], #Vx node 0
