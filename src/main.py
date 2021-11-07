@@ -64,7 +64,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
+    arg_parser.add_argument('--device', '-device', default='cuda', type=str)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -222,8 +222,8 @@ if __name__ == '__main__':
     ### Results generation
     ## Build non-vectorized final and ground truth models
     if device == 'cuda':
-        result_z0 = model.z0.cpu().detach().numpy()
-        result_v0 = model.v0.cpu().detach().numpy()
+        result_z0 = model.z0.cpu().detach()
+        result_v0 = model.v0.cpu().detach()
         result_beta = model.beta.cpu().item()
     else:
         result_z0 = model.z0

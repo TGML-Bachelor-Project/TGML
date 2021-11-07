@@ -34,9 +34,9 @@ class GTStepwiseConstantVelocityModel(nn.Module):
             time_intervals = torch.linspace(0, max_time, steps+1)
             shifted_time_intervals = time_intervals[:-1]
             time_intervals = time_intervals[1:]
-            self.time_deltas = time_intervals-shifted_time_intervals
+            self.time_deltas = (time_intervals-shifted_time_intervals).to(self.device)
             # All deltas should be equal do to linspace, so we can take the first
-            self.time_delta_size = self.time_deltas[0].item()
+            self.time_delta_size = self.time_deltas[0].item().to(self.device)
 
 
     def steps(self, times:torch.Tensor) -> torch.Tensor:
