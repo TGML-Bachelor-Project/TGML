@@ -56,9 +56,9 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=10000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
-    arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
+    arg_parser.add_argument('--dataset_number', '-DS', default=2, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
@@ -106,7 +106,7 @@ if __name__ == '__main__':
                     }
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML7', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML9', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
         
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     gt_train_NLL = - (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size)   
     wandb.log({'gt_train_NLL': gt_train_NLL,})
 
-    train_t = np.linspace(0, dataset_full[-1][2])
+    train_t = np.linspace(0, dataset_full[-1][2], num=steps+1)
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
 
     
