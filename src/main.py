@@ -29,7 +29,7 @@ from models.constantvelocity.standard_gt import GTConstantVelocityModel
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 
 ## Training Gym's
-from traintestgyms.ignitegym import TrainTestGym
+from traintestgyms.fulldatagym import TrainTestGym
 
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
@@ -126,7 +126,7 @@ if __name__ == '__main__':
         data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
-    plot_event_dist(dataset=dataset_full)
+    #plot_event_dist(dataset=dataset_full)
 
 
     ## Take out node pairs on which model will be evaluated
