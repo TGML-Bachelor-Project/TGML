@@ -29,7 +29,7 @@ from models.constantvelocity.standard_gt import GTConstantVelocityModel
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 
 ## Training Gym's
-from traintestgyms.ignitegym import TrainTestGym
+from traintestgyms.fulldatagym import TrainTestGym
 
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad

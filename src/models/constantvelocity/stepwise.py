@@ -102,8 +102,13 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         Z0, V0, ts, tf, log_intensities = self.log_intensity_function(times=data[:,2])
-        event_intensity = torch.sum(torch.sum(log_intensities, dim=2).triu(diagonal=1))
-        all_integrals = evaluate_integral(ts, tf, 
+        ts[0] = 0. # start time from 0
+        t = list(range(data.shape[0]))
+        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
+        j = torch.floor(data[:,1]).tolist()
+        event_intensity = torch.sum(log_intensities[i,j,t])
+        #event_intensity = torch.sum(torch.sum(log_intensities, dim=2))
+        all_integrals = evaluate_integral(t0, tn, 
                                     z0=Z0, v0=V0, 
                                     beta=self.beta, device=self.device)
         #Sum over time dimension, dim 2, and then sum upper triangular

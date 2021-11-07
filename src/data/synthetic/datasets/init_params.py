@@ -29,7 +29,7 @@ def get_initial_parameters(dataset_number, vectorized):
         max_time = 40
         true_beta = 7.5
         model_beta = 10. #must be floating point
-        steps = 5
+        steps = 4
 
     if dataset_number == 2:
         z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])
