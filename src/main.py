@@ -29,7 +29,7 @@ from models.constantvelocity.standard_gt import GTConstantVelocityModel
 from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
 
 ## Training Gym's
-from traintestgyms.fulldatagym import TrainTestGym
+from traintestgyms.ignitegym import TrainTestGym
 
 ## Plots
 from utils.report_plots.training_tracking import plotres, plotgrad
@@ -55,8 +55,8 @@ if __name__ == '__main__':
 
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--learning_rate', '-LR', default=0.001, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=1, type=int)
+    arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
+    arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--device', '-device', default='cuda', type=str)
+    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
                                     velocities=v0, max_time=max_time, 
                                     beta=true_beta, seed=seed)
-        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device)
+        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=None)
         dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
@@ -247,6 +247,7 @@ if __name__ == '__main__':
 
     train_t = np.linspace(0, dataset_full[-1][2])
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
+
     
     ## Compare intensity rates
     if remove_node_pairs_b == 1:    
