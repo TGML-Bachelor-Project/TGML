@@ -21,16 +21,11 @@ class GTStepwiseConstantVelocityModel(nn.Module):
     
             self.device = device
             self.num_of_steps = steps
-            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
-
-            if true_init:
-                z0_copy = z0.astype(np.float) if isinstance(z0, np.ndarray) else z0
-                v0_copy = v0.detach().clone()
-                self.z0 = nn.Parameter(torch.tensor(z0_copy), requires_grad=True) 
-                self.v0 = nn.Parameter(v0_copy, requires_grad=True) 
-            else:
-                self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
-                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
+            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=False)
+            z0_copy = z.astype(np.float) if isinstance(z, np.ndarray) else z
+            v0_copy = v.detach().clone()
+            self.z0 = nn.Parameter(torch.tensor(z0_copy), requires_grad=False) 
+            self.v0 = nn.Parameter(v0_copy, requires_grad=False) 
     
             self.num_of_nodes = n_points
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
@@ -89,9 +84,9 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         # Adding the initial Z0 position as first step
         Z_steps = torch.cat((self.z0.unsqueeze(2), Z_steps), dim=2)
         # Adds self.time_delta_size*10**(-10) to make time points directly on step time fall into the right step
-        time_step_value = t/self.time_delta_size
+        time_step_value = t/self.step_size
         time_step_floored = int(time_step_value)
-        time_step_delta_dif = t-time_step_floored*self.time_delta_size
+        time_step_delta_dif = t-time_step_floored*self.step_size
         time_step_index = [time_step_floored if time_step_floored < self.num_of_steps else time_step_floored-1]
         Z_step_starting_positions = Z_steps[:,:,time_step_index]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_index]*time_step_delta_dif
@@ -126,10 +121,10 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         :returns:   The log of the intensity between i and j at time t as a measure of
                     the two nodes' log-likelihood of interacting.
         '''
-        Zt, Z0, V0, ts, tf = self.steps(times)
+        Zt, steps_z0 = self.steps(times)
         d = vec_squared_euclidean_dist(Zt)
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return Z0, V0, ts, tf, (self.beta - d)
+        return steps_z0, (self.beta - d)
 
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
@@ -142,7 +137,7 @@ class GTStepwiseConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        steps_z0, log_intensities = self.log_intensity_function(times=data[:,2])
+        steps_z0, log_intensities = self.vec_log_intensity_function(times=data[:,2])
         t = list(range(data.shape[0]))
         i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
         j = torch.floor(data[:,1]).tolist()
