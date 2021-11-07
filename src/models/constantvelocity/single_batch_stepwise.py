@@ -40,9 +40,9 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             time_intervals = torch.linspace(0, max_time, steps+1)
             start_times = time_intervals[:-1]
             end_times = time_intervals[1:]
-            self.time_deltas = end_times-start_times
+            self.time_deltas = (end_times-start_times).to(self.device)
             # All deltas should be equal do to linspace, so we can take the first
-            self.step_size = self.time_deltas[0]
+            self.step_size = self.time_deltas[0].to(self.device)
 
     def old_steps(self, v0, times:torch.Tensor) -> torch.Tensor:
         '''
