@@ -20,10 +20,10 @@ def get_initial_parameters(dataset_number, vectorized):
         z0 = np.asarray([[1., 0.], [-1., 0.]])
         if vectorized == 2:
             v0 = torch.tensor([
-                            [[-0.1, 0, 0.1, -0.1], #Vx node 0
+                            [[-0.11, 0.01, 0.11, -0.11], #Vx node 0
                             [0, 0, 0, 0] #Vy node 0
                             ],
-                            [[0.1, 0, -0.1, 0.1], #Vx node 1
+                            [[0.11, 0.01, -0.11, 0.11], #Vx node 1
                             [0, 0, 0, 0] #Vy node 1
                             ]])
         max_time = 40
@@ -41,8 +41,8 @@ def get_initial_parameters(dataset_number, vectorized):
                             [[-0.1, 0, 0.1], #Vx node 1
                             [0, 0, 0] #Vy node 1
                             ],
-                            [[0, 0, 0], #Vx node 1
-                            [-0.1, 0, 0.1] #Vy node 1
+                            [[0, 0, -0.1], #Vx node 1
+                            [-0.1, 0.1, -0.1] #Vy node 1
                             ]])
         max_time = 30
         true_beta = 7.5
@@ -50,19 +50,22 @@ def get_initial_parameters(dataset_number, vectorized):
         steps = 3
     
     if dataset_number == 3:
-        z0 = np.asarray([[1.1, 0.2], [-1.3, 0.4]])
+        z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])
         if vectorized == 2:
             v0 = torch.tensor([
-                            [[-0.11, 0, 0.13, -0.14], #Vx node 0
-                            [0.1, 0, 0.2, 0.4] #Vy node 0
+                            [[0.1, 0, -0.1, 0.1, 0, -0.1], #Vx node 0
+                            [0, 0, 0, 0, 0, 0] #Vy node 0
                             ],
-                            [[0.15, 0, -0.17, 0.18], #Vx node 1
-                            [0.1, 0, 0.3, 0.5] #Vy node 1
+                            [[-0.1, 0, 0.1, -0.1, 0, 0.1], #Vx node 1
+                            [0, 0, 0,0, 0, 0] #Vy node 1
+                            ],
+                            [[0, 0, -0.1, 0, 0, -0.1], #Vx node 1
+                            [-0.1, 0.1, -0.1, -0.1, 0.1, -0.1] #Vy node 1
                             ]])
-        max_time = 40
-        true_beta = 7.5
-        model_beta = 7.55 #must be floating point
-        steps = 4
+        max_time = 30
+        true_beta = 8.5
+        model_beta = 8.
+        steps = 6
 
     elif dataset_number == 7:
         max_time = 60
