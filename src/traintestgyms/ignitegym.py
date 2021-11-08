@@ -77,7 +77,7 @@ class TrainTestGym:
         loss.backward()
         self.optimizer.step()
         self.temp_metrics['train_loss'].append(loss.item())
-        self.temp_metrics['beta_est'].append(self.model.beta.detach().numpy())
+        self.temp_metrics['beta_est'].append(self.model.beta.detach().clone())
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
 
