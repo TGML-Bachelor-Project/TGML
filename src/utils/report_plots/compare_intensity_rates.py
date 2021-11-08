@@ -16,8 +16,8 @@ def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_h
         res = []
         gt = []  
         for ti in train_t:
-            res.append(result_model.log_intensity_function(i=i, j=j, t=ti))
-            gt.append(gt_model.log_intensity_function(i=i, j=j, t=ti))
+            res.append(result_model.log_intensity_function(i=i, j=j, t=ti).cpu().item())
+            gt.append(gt_model.log_intensity_function(i=i, j=j, t=ti).cpu().item())
         
         res_list.append(res)
         gt_list.append(gt)

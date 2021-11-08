@@ -47,16 +47,12 @@ from utils.visualize.positions import node_positions
 
 if __name__ == '__main__':
 
-    ### Seeding of model run
-    seed = 1
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    np.seterr(all='raise')
-
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
+    arg_parser.add_argument('--seed', '-seed', default=1, type=int)
+    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=1000, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=2, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
@@ -64,10 +60,12 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
+    arg_parser.add_argument('--synthetic_data', '-SD', default=True, type=bool)
+    arg_parser.add_argument('--steps', '-steps', default=None, type=int)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
+    seed = args.seed
     learning_rate = args.learning_rate
     num_epochs = args.num_epochs
     train_batch_size = args.train_batch_size
@@ -78,58 +76,82 @@ if __name__ == '__main__':
     remove_node_pairs_b = args.remove_node_pairs_b
     remove_interactions_b = args.remove_interactions_b
     device = args.device
+    synthetic_data = args.synthetic_data
+    num_steps = args.steps
+
+    ## Seeding of model run
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    np.seterr(all='raise')
 
     ## Device
     print(f'Running with pytorch device: {device}')
     torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
 
-    ### Defining parameters for synthetic data generation
-    z0, v0, true_beta, model_beta, max_time, steps = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
-    num_nodes = z0.shape[0]
-    print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\n")
+
+
+    ### Data: Either synthetically generated data, or loaded real world data
+    if synthetic_data:
+        ### Defining parameters for synthetic data generation
+        z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
+        num_nodes = z0.shape[0]
+        if num_steps == None:
+            num_steps = v0.shape[2]
+        print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\nNumber of steps to fit: {num_steps}")
+
+        ## Initialize data builder for simulating node interactions from known Poisson Process
+        if vectorized != 2:
+            simulator = ConstantVelocitySimulator(starting_positions=z0, velocities=v0, T=max_time, beta=true_beta, seed=seed)
+            data_builder = DatasetBuilder(simulator, device=device)
+            dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
+        elif vectorized == 2:
+            simulator = StepwiseConstantVelocitySimulator(starting_positions=z0, velocities=v0, max_time=max_time, beta=true_beta, seed=seed)
+            data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=None)
+            dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    else:
+        print(f"Loading real dataset number {1}")
+
+        dataset_full = 1
+        z0, v0, true_beta, = None, None, None 
+        model_beta = 10 
+        max_time = max(dataset_full[:,3])
+
+    dataset_size = len(dataset_full)
+
 
 
     ### WandB initialization
     ## Set input parameters as config for Weights and Biases
     wandb_config = {'seed': seed,
-                    'max_time': max_time,
-                    'true_beta': true_beta,
-                    'model_beta': model_beta,
+                    'device': device,
                     'learning_rate': learning_rate,
+                    'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized, 2 = stepwise
+                    'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training
                     'num_epochs': num_epochs,
+                    'max_time': max_time,
                     'num_nodes': num_nodes,
-                    'training_type': training_type,  # 0 = non-sequential training, 1 = sequential training, 2 = simons mse-tracking training
-                    'vectorized': vectorized,  # 0 = non-vectorized, 1 = vectorized
+                    'dataset_size': dataset_size,
                     'remove_nodepairs': remove_node_pairs_b,
                     'remove_interactions': remove_interactions_b,
-                    'device': device,
+                    'true_beta': true_beta,
+                    'model_beta': model_beta,
+                    'true_z0': z0,
+                    'true_v0': v0,
+                    'num_steps': num_steps,
                     }
+
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML7', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML10', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
-        
-
-
-    ### Initialize data builder for simulating node interactions from known Poisson Process
-    if vectorized != 2:
-        simulator = ConstantVelocitySimulator(starting_positions=z0,
-                                    velocities=v0, T=max_time, 
-                                    beta=true_beta, seed=seed)
-        data_builder = DatasetBuilder(simulator, device=device)
-        dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
-    elif vectorized == 2:
-        simulator = StepwiseConstantVelocitySimulator(starting_positions=z0,
-                                    velocities=v0, max_time=max_time, 
-                                    beta=true_beta, seed=seed)
-        data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=None)
-        dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     
+    ## Plot and log event distribution
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
 
 
-    ## Take out node pairs on which model will be evaluated
+
+    ### Testing sets: Either remove entire noode pairs, 10% of events, or both
     if remove_node_pairs_b == 1 and remove_interactions_b == 0:
         dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
         removed_interactions = None
@@ -142,33 +164,32 @@ if __name__ == '__main__':
     else:
         dataset, removed_node_pairs, removed_interactions = dataset_full, None, None
 
-    ## Compute size of dataset and find 1/500 as training batch size
-    dataset_size = len(dataset_full)
+    ## Compute size of dataset and find training batch size
     training_set_size = len(dataset)
     train_batch_size = int(training_set_size)
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
-    wandb.log({'dataset_size': dataset_size, 'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
+    wandb.log({'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
 
 
-    ### Setup Model and Optimizer
-    ## Model is either non-vectorized, vectorized or stepwise
+    ### Setup Model: Either non-vectorized, vectorized or stepwise
     if vectorized == 0:
-        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta)
+        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device)
     elif vectorized == 1:
-        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True)
+        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=steps, 
-                        max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False)
-    model = model.to(device)
+        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
+                        max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 
-    ### Model training starts
+
+    ### Model training: Either non-sequential or sequential
     metrics = {'avg_train_loss': [], 'beta_est': []}
+    
     ## Non-sequential model training
     if training_type == 0:
         model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, True
@@ -204,61 +225,45 @@ if __name__ == '__main__':
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             gym.train_test_model(epochs=int(num_epochs/3))
 
-    ## Non-beta_tuning training
-    if training_type == 2:
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, True, False
-        gym = TrainTestGym(dataset=dataset, 
-                            model=model, 
-                            device=device, 
-                            batch_size=train_batch_size, 
-                            optimizer=optimizer, 
-                            metrics=metrics, 
-                            time_column_idx=2,
-                            wandb_handler = wandb)
-        gym.train_test_model(epochs=num_epochs)
-
 
 
     ### Results generation
     ## Build non-vectorized final and ground truth models
     if device == 'cuda':
-        result_z0 = model.z0.cpu().detach()
-        result_v0 = model.v0.cpu().detach()
-        result_beta = model.beta.cpu().item()
+        result_z0 = model.z0.detach().clone()
+        result_v0 = model.v0.detach().clone()
+        result_beta = model.beta.item()
+        train_t = np.linspace(0, dataset_full.cpu()[-1][2])
     else:
-        result_z0 = model.z0
-        result_v0 = model.v0
-        result_beta = model.beta
+        result_z0 = model.z0.detach().clone()
+        result_v0 = model.v0.detach().clone()
+        result_beta = model.beta.detach().clone()
+        train_t = np.linspace(0, dataset_full[-1][2])
+    wandb.log({'final_z0': result_z0, 'final_v0': result_v0})
+
 
     if vectorized != 2: 
         result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
         gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
-
     elif vectorized == 2:
         result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
-                                                        steps=steps, max_time=max_time, device=device)
+                                                        steps=num_steps, max_time=max_time, device=device)
         gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=torch.tensor([true_beta]*steps), 
                                                         steps=v0.shape[2], max_time=max_time, device=device)
 
 
-    ## Compute ground truth training loss for gt model
-    gt_train_NLL = - (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size)   
-    wandb.log({'gt_train_NLL': gt_train_NLL,})
+    ## Compute ground truth training loss for gt model and log  
+    wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
 
-    train_t = np.linspace(0, dataset_full[-1][2])
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
 
     
-    ## Compare intensity rates
+    ## Compare intensity rates of removed node pairs
     if remove_node_pairs_b == 1:    
-        train_t = np.linspace(0, dataset_full[-1][2])
-        compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[0,2])
-        
-        ## Compare intensity rates for removed node pairs
         for removed_node_pair in removed_node_pairs:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
 
-
+    ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
         auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
     
