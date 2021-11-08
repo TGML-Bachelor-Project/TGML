@@ -10,7 +10,7 @@ def get_initial_parameters(dataset_number, vectorized):
         if vectorized == 2:
             v0 = torch.tensor([
                             [[-0.15, 0.15, -0.3, 0.3], #Vx node 0
-                            [-0.15, 0.15, -0.3], 0.3 #Vy node 0
+                            [-0.15, 0.15, -0.3, 0.3] #Vy node 0
                             ],
                             [[0.15, -0.15, 0.3, -0.3], #Vx node 1
                             [0.15, -0.15, 0.3, -0.3] #Vy node 1
