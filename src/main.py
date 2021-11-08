@@ -1,6 +1,7 @@
 ### Packages
 import os
 import sys
+from numpy.lib.arraysetops import isin
 import wandb
 import numpy as np
 import torch
@@ -24,9 +25,11 @@ from utils.results_evaluation.remove_interactions import auc_removed_interaction
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
-from models.constantvelocity.stepwise_stepbeta import StepwiseVectorizedConstantVelocityModel
+from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
+from models.constantvelocity.stepwise_stepbeta import StepwiseVectorizedConstantVelocityModel as MultiBetaStepwise
 from models.constantvelocity.standard_gt import GTConstantVelocityModel  
-from models.constantvelocity.stepwise_gt_stepbeta import GTStepwiseConstantVelocityModel
+from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
+from models.constantvelocity.stepwise_gt_stepbeta import GTStepwiseConstantVelocityModel as GTMultiBetaStepwise
 
 ## Training Gym's
 from traintestgyms.ignitegym import TrainTestGym
@@ -62,6 +65,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--synthetic_data', '-SD', default=True, type=bool)
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
+    arg_parser.add_argument('--step_beta', '-SB', default=False, type=bool)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -78,6 +82,7 @@ if __name__ == '__main__':
     device = args.device
     synthetic_data = args.synthetic_data
     num_steps = args.steps
+    step_beta = args.step_beta
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -94,6 +99,9 @@ if __name__ == '__main__':
     if synthetic_data:
         ### Defining parameters for synthetic data generation
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
+        if step_beta:
+            #Use a beta parameter for each step in the model
+            model_beta = np.asarray([model_beta]*num_steps)
         num_nodes = z0.shape[0]
         if num_steps == None:
             num_steps = v0.shape[2]
@@ -179,8 +187,12 @@ if __name__ == '__main__':
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
-        model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                        max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device)
+        if isinstance(model_beta, np.ndarray):
+            model = MultiBetaStepwise(n_points=num_nodes, beta=model_beta, steps=num_steps, max_time=last_time_point, 
+                                        device=device, z0=z0, v0=v0, true_init=False).to(device)
+        else:
+            model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -246,10 +258,16 @@ if __name__ == '__main__':
         result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
         gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
     elif vectorized == 2:
-        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
-                                                        steps=num_steps, max_time=max_time, device=device)
-        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=torch.tensor([true_beta]*steps), 
-                                                        steps=v0.shape[2], max_time=max_time, device=device)
+        if isinstance(model_beta, np.ndarray):
+            result_model = GTMultiBetaStepwise(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+                                                            steps=num_steps, max_time=max_time, device=device)
+            gt_model = GTMultiBetaStepwise(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=torch.tensor([true_beta]*steps), 
+                                                            steps=v0.shape[2], max_time=max_time, device=device)
+        else:
+            result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+                                                            steps=num_steps, max_time=max_time, device=device)
+            gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=torch.tensor([true_beta]*steps), 
+                                                            steps=v0.shape[2], max_time=max_time, device=device)
 
 
     ## Compute ground truth training loss for gt model and log  

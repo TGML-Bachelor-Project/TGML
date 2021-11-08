@@ -76,6 +76,6 @@ def auc_removed_interactions(removed_interactions, num_nodes, result_model, wand
 
 
     wandb_handler.log({'ROC_curve': wandb_handler.Image(fig)})
-    plt.show()
+    #plt.show()
 
     return fpr, tpr, thresh, auc_score
