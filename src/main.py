@@ -50,9 +50,9 @@ if __name__ == '__main__':
     ### Parse Arguments for running in terminal
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--seed', '-seed', default=1, type=int)
-    arg_parser.add_argument('--device', '-device', default='cuda', type=str)
+    arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=500, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=2, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML9', entity='augustsemrau', config=wandb_config)
+        wandb.init(project='TGML10', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     
@@ -233,10 +233,12 @@ if __name__ == '__main__':
         result_z0 = model.z0.detach().clone()
         result_v0 = model.v0.detach().clone()
         result_beta = model.beta.item()
+        train_t = np.linspace(0, dataset_full.cpu()[-1][2])
     else:
         result_z0 = model.z0.detach().clone()
         result_v0 = model.v0.detach().clone()
         result_beta = model.beta.detach().clone()
+        train_t = np.linspace(0, dataset_full[-1][2])
     wandb.log({'final_z0': result_z0, 'final_v0': result_v0})
 
 
@@ -244,7 +246,7 @@ if __name__ == '__main__':
         result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
         gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
     elif vectorized == 2:
-        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+        result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0.to(device), v=result_v0.to(device), beta=result_beta,
                                                         steps=num_steps, max_time=max_time, device=device)
         gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=true_beta, 
                                                         steps=v0.shape[2], max_time=max_time, device=device)
@@ -253,7 +255,6 @@ if __name__ == '__main__':
     ## Compute ground truth training loss for gt model and log  
     wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
 
-    train_t = np.linspace(0, dataset_full[-1][2])#, num=num_steps+1)
     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
 
     
