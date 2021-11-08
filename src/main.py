@@ -261,7 +261,7 @@ if __name__ == '__main__':
         if isinstance(model_beta, np.ndarray):
             result_model = GTMultiBetaStepwise(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                             steps=num_steps, max_time=max_time, device=device)
-            gt_model = GTMultiBetaStepwise(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=torch.tensor([true_beta]*num_steps), 
+            gt_model = GTMultiBetaStepwise(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=torch.tensor([true_beta]*v0.shape[2]), 
                                                             steps=v0.shape[2], max_time=max_time, device=device)
         else:
             result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
