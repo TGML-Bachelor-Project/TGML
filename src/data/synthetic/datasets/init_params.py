@@ -46,8 +46,8 @@ def get_initial_parameters(dataset_number, vectorized):
                             ]])
         max_time = 30
         true_beta = 7.5
-        model_beta = 8.
-        steps = 3
+        steps = 50 
+        model_beta = np.array([8.]*steps)
     
     if dataset_number == 3:
         z0 = np.asarray([[-1, 0.], [1, 0], [0, 1]])

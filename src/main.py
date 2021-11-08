@@ -24,9 +24,9 @@ from utils.results_evaluation.remove_interactions import auc_removed_interaction
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
-from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
+from models.constantvelocity.stepwise_stepbeta import StepwiseVectorizedConstantVelocityModel
 from models.constantvelocity.standard_gt import GTConstantVelocityModel  
-from models.constantvelocity.stepwise_gt import GTStepwiseConstantVelocityModel
+from models.constantvelocity.stepwise_gt_stepbeta import GTStepwiseConstantVelocityModel
 
 ## Training Gym's
 from traintestgyms.ignitegym import TrainTestGym
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     elif vectorized == 2:
         result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                         steps=steps, max_time=max_time, device=device)
-        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=true_beta, 
+        gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.detach().clone(), beta=torch.tensor([true_beta]*steps), 
                                                         steps=v0.shape[2], max_time=max_time, device=device)
 
 
