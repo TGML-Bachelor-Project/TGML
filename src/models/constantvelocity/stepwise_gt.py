@@ -22,9 +22,9 @@ class GTStepwiseConstantVelocityModel(nn.Module):
             self.device = device
             self.num_of_steps = steps
             self.beta = nn.Parameter(beta.clone().detach(), requires_grad=False).to(self.device)
-            z0_copy = z.astype(np.float) if isinstance(z, np.ndarray) else z
+            z0_copy = torch.from_numpy(z.astype(np.float)) if isinstance(z, np.ndarray) else z
             v0_copy = v.clone().detach()
-            self.z0 = nn.Parameter(torch.from_numpy(z0_copy), requires_grad=False).to(self.device) 
+            self.z0 = nn.Parameter(z0_copy, requires_grad=False).to(self.device) 
             self.v0 = nn.Parameter(v0_copy, requires_grad=False).to(self.device)
     
             self.num_of_nodes = n_points
