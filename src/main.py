@@ -244,7 +244,7 @@ if __name__ == '__main__':
     if device == 'cuda':
         result_z0 = model.z0.detach().clone()
         result_v0 = model.v0.detach().clone()
-        result_beta = model.beta.item()
+        result_beta = model.beta.detach().clone()
         train_t = np.linspace(0, dataset_full.cpu()[-1][2])
     else:
         result_z0 = model.z0.detach().clone()
