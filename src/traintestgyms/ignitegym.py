@@ -42,7 +42,7 @@ class TrainTestGym:
 
         ## Every Epoch compute mean of training and test losses for loggin
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['avg_train_loss'].append(np.sum(self.temp_metrics['train_loss']) / len_training_set))
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.detach().numpy()))
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.metrics['beta_est'].append(model.beta.detach().clone()))
 
         ## Clear temp_metrics for next epoch
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.temp_metrics['train_loss'].clear())
@@ -50,7 +50,7 @@ class TrainTestGym:
 
         ## Log metrics using WandB
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count),
-                                                                                                    'beta': model.beta.detach().numpy(),
+                                                                                                    'beta': model.beta.detach().clone(),
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
 
         # Adding scheduler
