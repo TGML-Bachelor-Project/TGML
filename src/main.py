@@ -67,6 +67,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--real_data', '-RD', default=1, type=int)
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
     arg_parser.add_argument('--step_beta', '-SB', default=False, type=bool)
+    arg_parser.add_argument('--batched', '-batch', default=0, type=int)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -84,6 +85,7 @@ if __name__ == '__main__':
     real_data = args.real_data
     num_steps = args.steps
     step_beta = args.step_beta
+    batched = args.batched
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -120,7 +122,7 @@ if __name__ == '__main__':
     else:
         print(f"Loading real dataset number {1}")
 
-        dataset_full, num_nodes = load_real_dataset(dataset_number=dataset_number)
+        dataset_full, num_nodes = load_real_dataset(dataset_number=dataset_number, debug=0)
         z0, v0, true_beta, = None, None, None 
         model_beta = 10.
         if num_steps == None:
@@ -149,6 +151,7 @@ if __name__ == '__main__':
                     'true_z0': z0,
                     'true_v0': v0,
                     'num_steps': num_steps,
+                    'batched': batched
                     }
 
     ## Initialize WandB for logging config and metrics
@@ -177,7 +180,13 @@ if __name__ == '__main__':
 
     ## Compute size of dataset and find training batch size
     training_set_size = len(dataset)
-    train_batch_size = int(training_set_size)
+
+    ## Batch
+    if batched == 1:
+        train_batch_size = int(training_set_size / 500)
+    else:
+        train_batch_size = int(training_set_size)
+
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
 
