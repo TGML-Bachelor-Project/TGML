@@ -19,6 +19,7 @@ from data.synthetic.builder import DatasetBuilder
 from data.synthetic.stepwisebuilder import StepwiseDatasetBuilder
 from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
 from data.synthetic.sampling.tensor_stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
+from data.real.load_dataset import load_real_dataset
 from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 from utils.results_evaluation.remove_interactions import auc_removed_interactions, remove_interactions
 
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--synthetic_data', '-SD', default=True, type=bool)
+    arg_parser.add_argument('--real_data', '-RD', default=1, type=int)
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
     arg_parser.add_argument('--step_beta', '-SB', default=False, type=bool)
     args = arg_parser.parse_args()
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     remove_node_pairs_b = args.remove_node_pairs_b
     remove_interactions_b = args.remove_interactions_b
     device = args.device
-    synthetic_data = args.synthetic_data
+    real_data = args.real_data
     num_steps = args.steps
     step_beta = args.step_beta
 
@@ -96,7 +97,7 @@ if __name__ == '__main__':
 
 
     ### Data: Either synthetically generated data, or loaded real world data
-    if synthetic_data:
+    if real_data == 0:
         ### Defining parameters for synthetic data generation
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
         if step_beta:
@@ -119,10 +120,12 @@ if __name__ == '__main__':
     else:
         print(f"Loading real dataset number {1}")
 
-        dataset_full = 1
+        dataset_full, num_nodes = load_real_dataset(dataset_number=dataset_number)
         z0, v0, true_beta, = None, None, None 
-        model_beta = 10 
-        max_time = max(dataset_full[:,3])
+        model_beta = 10.
+        if num_steps == None:
+            num_steps = 2
+        max_time = max(dataset_full[:,2])
 
     dataset_size = len(dataset_full)
 
