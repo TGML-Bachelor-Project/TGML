@@ -122,9 +122,8 @@ if __name__ == '__main__':
     else:
         print(f"Loading real dataset number {1}")
 
-        dataset_full, num_nodes = load_real_dataset(dataset_number=dataset_number, debug=0)
+        dataset_full, num_nodes, model_beta = load_real_dataset(dataset_number=dataset_number, debug=0)
         z0, v0, true_beta, = None, None, None 
-        model_beta = 10.
         if num_steps == None:
             num_steps = 2
         max_time = max(dataset_full[:,2])
@@ -156,7 +155,10 @@ if __name__ == '__main__':
 
     ## Initialize WandB for logging config and metrics
     if wandb_entity == 0:
-        wandb.init(project='TGML10', entity='augustsemrau', config=wandb_config)
+        if real_data:
+            wandb.init(project='TGMLRL', entity='augustsemrau', config=wandb_config)
+        else:
+            wandb.init(project='TGML10', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     
@@ -266,32 +268,44 @@ if __name__ == '__main__':
     wandb.log({'final_z0': result_z0, 'final_v0': result_v0})
 
 
-    if vectorized != 2: 
-        result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
-        gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
-    elif vectorized == 2:
-        if isinstance(model_beta, np.ndarray):
-            result_model = GTMultiBetaStepwise(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
-                                                            steps=num_steps, max_time=max_time, device=device)
-            gt_model = GTMultiBetaStepwise(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=torch.tensor([true_beta]*v0.shape[2]), 
-                                                            steps=v0.shape[2], max_time=max_time, device=device)
-        else:
-            result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
-                                                            steps=num_steps, max_time=max_time, device=device)
-            gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=true_beta, 
-                                                            steps=v0.shape[2], max_time=max_time, device=device)
+    ## Data generation is deiffrerent for synthetic and RL datasets
+    if real_data == 0:
+        if vectorized != 2: 
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
+            gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+        elif vectorized == 2:
+            if isinstance(model_beta, np.ndarray):
+                result_model = GTMultiBetaStepwise(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+                                                                steps=num_steps, max_time=max_time, device=device)
+                gt_model = GTMultiBetaStepwise(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=torch.tensor([true_beta]*v0.shape[2]), 
+                                                                steps=v0.shape[2], max_time=max_time, device=device)
+            else:
+                result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+                                                                steps=num_steps, max_time=max_time, device=device)
+                gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=true_beta, 
+                                                                steps=v0.shape[2], max_time=max_time, device=device)
 
+        ## Compute ground truth training loss for gt model and log  
+        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
 
-    ## Compute ground truth training loss for gt model and log  
-    wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
-
-    compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
-
+        compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
+        
+        ## Compare intensity rates of removed node pairs
+        if remove_node_pairs_b == 1:    
+            for removed_node_pair in removed_node_pairs:
+                compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
+    else:
+        if vectorized != 2: 
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
+        elif vectorized == 2:
+            if isinstance(model_beta, np.ndarray):
+                result_model = GTMultiBetaStepwise(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+                                                                steps=num_steps, max_time=max_time, device=device)
+            else:
+                result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
+                                                                steps=num_steps, max_time=max_time, device=device)
+        
     
-    ## Compare intensity rates of removed node pairs
-    if remove_node_pairs_b == 1:    
-        for removed_node_pair in removed_node_pairs:
-            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
 
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
