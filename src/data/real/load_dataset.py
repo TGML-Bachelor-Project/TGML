@@ -40,28 +40,18 @@ def load_real_dataset_3(dataset_path):
 ### Loading the designated dataset
 def load_real_dataset(dataset_number, debug):
 
-    path = os.getcwd() + '/src/data/real/'
+    path = os.path.dirname(os.path.realpath(__file__))
     
     if dataset_number == 1:
-        if debug == 1:
-            path = path + 'email_eu_core_temporal.csv'
-        else:
-            path = 'email_eu_core_temporal.csv'
+        path = os.path.join(path, 'email_eu_core_temporal.csv')
         dataset, num_nodes = load_real_dataset_1(dataset_path=path)
     
     elif dataset_number == 2:
-        if debug == 1:
-            path = path + 'resistance_game4.csv'
-        else:
-            path = 'resistance_game4.csv'
+        path = os.path.join(path,'resistance_game4.csv')
         dataset, num_nodes = load_real_dataset_2(dataset_path=path)
     
     elif dataset_number == 3:
-        if debug == 1:
-            path = path + 'email_eu_core_temporal.csv'
-        else:
-            path = 'email_eu_core_temporal.csv'
+        path = os.path.join(path, 'email_eu_core_temporal.csv')
         dataset, num_nodes = load_real_dataset_3(dataset_path=path)
     
     return torch.tensor(dataset, dtype=torch.float64), num_nodes
-
