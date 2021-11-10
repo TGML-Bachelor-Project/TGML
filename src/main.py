@@ -157,7 +157,7 @@ if __name__ == '__main__':
         if real_data:
             wandb.init(project='TGMLRL', entity='augustsemrau', config=wandb_config)
         else:
-            wandb.init(project='TGML10', entity='augustsemrau', config=wandb_config)
+            wandb.init(project='TGML11', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
         wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
     
@@ -303,7 +303,7 @@ if __name__ == '__main__':
             else:
                 result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                                 steps=num_steps, max_time=max_time, device=device)
-        
+
     
 
     ## Compute ROC AUC for removed interactions

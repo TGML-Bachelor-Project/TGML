@@ -70,30 +70,17 @@ def get_initial_parameters(dataset_number, vectorized):
         model_beta = 8. #must be floating point
 
 
-
-
-    elif dataset_number == 7:
-        max_time = 60
-        true_beta = 7.5
-        model_beta = 10.
-        z0 = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
-        v0 = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
-    
-    
-    elif dataset_number == 8:
+    elif dataset_number == 3:
         max_time = 60
         true_beta = 5.
         model_beta = 7.5
         zbase = np.asarray([[-3, 0], [3, 0], [0, 3], [0, -3], [3, 3], [3, -3], [-3, -3], [-3, 3]])
-        vbase = np.asarray([[0.11, 0], [-0.1, 0], [0, -0.11], [0, 0.1], [-0.11, -0.09], [0, 0.05], [0, 0], [0.051, 0]])
+        vbase = np.asarray([[0.11, 0.01], [-0.1, -0.01], [0.01, -0.11], [-0.01, 0.1], [-0.11, -0.09], [-0.01, 0.05], [0.01, -0.01], [0.051, 0.01]])
         z0 = np.append(zbase, zbase*2, axis=0)
         v0 = np.append(vbase, vbase*2, axis=0)
         for i in range(3,20):
             z0 = np.append(z0, zbase*i, axis=0)
             v0 = np.append(v0, vbase*i, axis=0)
-
-
-
 
 
 
