@@ -1,3 +1,4 @@
+import os
 import torch
 import pandas as pd
 import plotly.express as px
@@ -130,15 +131,25 @@ def animate_nomodel(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end
     step_zt = z_step_starting_positions + v0[:,:,time_step_indices]*remainding_time    
 
     df = pd.DataFrame({
-        'node': [*list(range(step_zt.shape[0]))]*len(times),
+        'node': [str(n) for n in [*list(range(step_zt.shape[0]))]*len(times)],
         'x': step_zt[:,0,:].T.flatten().tolist(),
         'y': step_zt[:,1,:].T.flatten().tolist(),
         't': [t for t in times.tolist() for _ in list(range(step_zt.shape[0]))]
     })
 
-    fig = px.scatter(df, x='x', y='y', animation_frame='t', animation_group='node', color="node", hover_name="node",
-               log_x=False, size_max=20, range_x=[torch.min(step_zt[:,0,:]).item(), torch.max(step_zt[:,0,:]).item()], 
+    fig = px.scatter(df, x='x', y='y', animation_frame='t', animation_group='node', color="node",
+               log_x=False, size_max=20,
+               range_x=[torch.min(step_zt[:,0,:]).item(), torch.max(step_zt[:,0,:]).item()], 
                range_y=[torch.min(step_zt[:,1,:]).item(), torch.max(step_zt[:,1,:]).item()])
-    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 10
+    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 100
     fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 1
+    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)')
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
+    fig.update_traces(marker=dict(size=20,
+                              line=dict(width=2,
+                                        color='DarkSlateGrey')),
+                  selector=dict(mode='markers'))
+
     fig.show()
+    fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html'))

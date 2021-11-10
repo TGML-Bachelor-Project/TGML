@@ -169,3 +169,7 @@ cython_debug/
 submit.sh
 error.err
 output.out
+
+# Don't version control animations
+animations/*
+.DS_store
