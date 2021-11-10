@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 import os
-from utils.report_plots.event_distribution import plot_event_dist_temp
+from utils.report_plots.event_distribution import plot_event_dist_eu_data
+from utils.report_plots.event_distribution import plot_event_dist_resistance_data
 
 ### Functions for loading the three datasets
 
@@ -11,7 +12,7 @@ def load_real_dataset_1(dataset_path):
     
     # dataset = dataset[:,:2][dataset[:,:2].astype(int) < 51]
 
-    plot_event_dist_temp(dataset=dataset)
+    plot_event_dist_eu_data(dataset=dataset)
     num_nodes = len(np.unique([dataset[:,0],dataset[:,1]]))
     return dataset, num_nodes
 
@@ -21,7 +22,8 @@ def load_real_dataset_2(dataset_path):
     dataset = np.genfromtxt(dataset_path, delimiter=',')
     print(f'Length of "Resistance Game 4" original dataset: {len(dataset)}')
     
-    plot_event_dist_temp(dataset=dataset)
+
+    plot_event_dist_resistance_data(dataset=dataset)
 
     num_nodes = len(np.unique([dataset[:,0],dataset[:,1]]))
     return dataset, num_nodes
@@ -32,7 +34,7 @@ def load_real_dataset_3(dataset_path):
     dataset = np.genfromtxt(dataset_path, delimiter=' ')
 
 
-    plot_event_dist_temp(dataset=dataset)
+    # plot_event_dist_temp(dataset=dataset)
 
     num_nodes = len(np.unique([dataset[:,0],dataset[:,1]]))
     return dataset, num_nodes
