@@ -106,7 +106,7 @@ def animate(model, t_start, t_end, num_of_time_points, device):
     fig.show()
 
 
-def animate(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end, num_of_time_points, device):
+def animate_nomodel(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end, num_of_time_points, device):
     # Starting positions for each model step
     steps_z0 = z0.unsqueeze(2) + torch.cumsum(v0*time_deltas, dim=2)
     steps_z0 = torch.cat((z0.unsqueeze(2), steps_z0), dim=2)
