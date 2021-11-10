@@ -1,3 +1,6 @@
+import torch
+import pandas as pd
+import plotly.express as px
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.animation import FuncAnimation
@@ -62,3 +65,90 @@ def node_movements(node_positions:list, title:str, trail:bool) -> None:
     plt.title(title)
     plt.legend()
     plt.show()
+
+def animate(model, t_start, t_end, num_of_time_points, device):
+    z0 = model.z0.clone().detach()
+    v0 = model.v0.clone().detach()
+    time_deltas = model.time_deltas.clone().detach()
+    step_size = model.step_size.clone().detach()
+    num_of_steps = model.num_of_steps
+
+    # Starting positions for each model step
+    steps_z0 = z0.unsqueeze(2) + torch.cumsum(v0*time_deltas, dim=2)
+    steps_z0 = torch.cat((z0.unsqueeze(2), steps_z0), dim=2)
+        
+    times = torch.linspace(t_start, t_end, num_of_time_points)
+
+    #Calculate how many steps each time point corresponds to
+    time_step_ratio = times/step_size
+    #Make round down time_step_ratio to find the index of the step which each time fits into
+    time_step_indices = torch.floor(time_step_ratio)
+    #Make sure times that lands on tn is put into the last time step by subtracting 1 from their step index
+    time_step_indices = torch.tensor([t if t < num_of_steps else t-1 for t in time_step_indices])
+    #Calculate the remainding time that will be inside the matching step for each time
+    remainding_time = (times-time_step_indices*step_size)
+    time_step_indices = time_step_indices.tolist()
+    #The step positions we will start from for each time point and then use to find their actual position
+    z_step_starting_positions = steps_z0[:,:,time_step_indices]
+    #Latent Z positions for all times
+    step_zt = z_step_starting_positions + v0[:,:,time_step_indices]*remainding_time    
+
+    df = pd.DataFrame({
+        'node': [*list(range(step_zt.shape[0]))]*len(times),
+        'x': step_zt[:,0,:].T.flatten().tolist(),
+        'y': step_zt[:,1,:].T.flatten().tolist(),
+        't': [t for t in times.tolist() for _ in list(range(step_zt.shape[0]))]
+    })
+
+    fig = px.scatter(df, x='x', y='y', animation_frame='t', animation_group='node', color="node", hover_name="node",
+               log_x=False, size_max=20, range_x=[torch.min(step_zt[:,0,:]).item(), torch.max(step_zt[:,0,:]).item()], 
+               range_y=[torch.min(step_zt[:,1,:]).item(), torch.max(step_zt[:,1,:]).item()])
+    fig.show()
+
+'''    
+    #Plotly animation
+    # Create figure
+    fig = go.Figure()
+
+    # Add traces, one for each slider step
+    for step in range(len(times)):
+        fig.add_trace(
+            go.Scatter(
+                visible=False,
+                line=dict(color="#00CED1", width=6),
+                name="Node position time " + str(times[step]),
+                x=step_zt[:,0,step].tolist(),
+                y=step_zt[:,1,step].tolist(),
+                mode='markers'
+            ))
+
+    # Make first trace visible
+    fig.data[0].visible = True
+
+    # Create and add slider
+    steps = []
+    for i in range(len(fig.data)):
+        step = dict(
+            method="update",
+            args=[{"visible": [False] * len(fig.data)},
+                  {"title": f"Node Positions in Latent Space at Time: {times[i].item()}"}],  # layout attribute
+        )
+        step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
+        steps.append(step)
+
+    sliders = [dict(
+        active=0,
+        currentvalue={"prefix": "Time: "},
+        pad={"t": 50},
+        steps=steps
+    )]
+
+    fig.update_layout(
+        sliders=sliders,
+        xaxis = dict(
+            tickmode = 'array',
+            tickvals = np.linspace(torch.min(step_zt), torch.max(step_zt), 50)
+        ))
+
+    fig.show()
+'''

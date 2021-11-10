@@ -40,9 +40,7 @@ from utils.report_plots.compare_intensity_rates import compare_intensity_rates_p
 from utils.report_plots.event_distribution import plot_event_dist
 
 ## Utils
-from utils.nodes.positions import get_contant_velocity_positions 
-import utils.visualize as visualize
-from utils.visualize.positions import node_positions
+from utils.visualize.animation import animate
 
 
 
@@ -65,8 +63,9 @@ if __name__ == '__main__':
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--real_data', '-RD', default=1, type=int)
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
-    arg_parser.add_argument('--step_beta', '-SB', default=False, type=bool)
+    arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--batched', '-batch', default=0, type=int)
+    arg_parser.add_argument('--animation', '-ani', action='store_true')
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -85,6 +84,7 @@ if __name__ == '__main__':
     num_steps = args.steps
     step_beta = args.step_beta
     batched = args.batched
+    animation = args.animation
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -296,3 +296,7 @@ if __name__ == '__main__':
     if remove_interactions_b == 1:
         auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
     
+    if animation:
+        num_of_time_points = 500
+        print(f'Creating animation of latent node positions on {num_of_time_points} time points')
+        animate(model, t_start=0, t_end=max_time, num_of_time_points=num_of_time_points, device=device)

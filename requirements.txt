@@ -6,3 +6,5 @@ scipy
 matplotlib
 pytorch-ignite
 sklearn
+pandas
+plotly
