@@ -103,6 +103,8 @@ def animate(model, t_start, t_end, num_of_time_points, device):
     fig = px.scatter(df, x='x', y='y', animation_frame='t', animation_group='node', color="node", hover_name="node",
                log_x=False, size_max=20, range_x=[torch.min(step_zt[:,0,:]).item(), torch.max(step_zt[:,0,:]).item()], 
                range_y=[torch.min(step_zt[:,1,:]).item(), torch.max(step_zt[:,1,:]).item()])
+    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 10
+    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 1
     fig.show()
 
 
@@ -137,4 +139,6 @@ def animate_nomodel(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end
     fig = px.scatter(df, x='x', y='y', animation_frame='t', animation_group='node', color="node", hover_name="node",
                log_x=False, size_max=20, range_x=[torch.min(step_zt[:,0,:]).item(), torch.max(step_zt[:,0,:]).item()], 
                range_y=[torch.min(step_zt[:,1,:]).item(), torch.max(step_zt[:,1,:]).item()])
+    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 10
+    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 1
     fig.show()
