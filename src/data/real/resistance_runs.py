@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 from utils.visualize.animation import animate_nomodel
 if __name__ == '__main__':
 
@@ -12,7 +12,7 @@ if __name__ == '__main__':
         [-0.2738,  0.5167],
         [-0.8103,  0.5239],
         [ 1.1430, -0.3547]])
-
+    
     v0 = torch.tensor([[[ 1.7200e+00, -3.1356e+00,  2.9032e+00, -5.0499e-01,  7.5029e-01,
            1.4820e+00, -3.3244e+00,  2.5572e+00,  6.9791e-01,  1.0572e+00,
           -6.9587e-01,  1.6938e+00, -1.7243e+00,  1.9449e+00,  2.2821e-01,
@@ -202,7 +202,21 @@ if __name__ == '__main__':
           -2.8303e+00,  2.9659e+00, -2.9178e+00,  1.5519e+00,  1.4802e+00,
            3.2062e-02,  6.3246e-01, -8.8265e-01,  1.6306e+00, -2.5851e+00]]])
 
-    
+
+    z0_xmean = np.mean(z0.numpy()[:,0])
+    z0_ymean = np.mean(z0.numpy()[:,1])
+    z0[:,0], z0[:,1] = z0[:,0] - z0_xmean, z0[:,1] -z0_ymean
+    for i in range(len(v0[0,0])):
+      sumx = 0
+      sumy = 0
+      for node in range(len(v0)):
+        sumx += v0[node,0][i]
+        sumy += v0[node,1][i]
+      meanx = sumx / len(v0)
+      meany = sumy / len(v0)
+      for node in range(len(v0)):
+        v0[node,0][i] = v0[node,0][i] - meanx
+        v0[node,1][i] = v0[node,1][i] - meany
 
     time_intervals = torch.linspace(0, 40.67, v0.shape[2] + 1)
     start_times = time_intervals[:-1]
