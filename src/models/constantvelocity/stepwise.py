@@ -76,7 +76,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #Make round down time_step_ratio to find the index of the step which each time fits into
         time_to_step_index = torch.floor(time_step_ratio)
         #Make sure times that lands on tn is put into the last time step by subtracting 1 from their step index
-        time_step_indices = torch.tensor([ t if t < self.num_of_steps else t-1 for t in  time_to_step_index])
+        time_step_indices = torch.tensor([ t if t < self.num_of_steps else t-1 for t in  time_to_step_index]).to(self.device)
         #Calculate the remainding time that will be inside the matching step for each time
         remainding_time = (times-time_step_indices*self.step_size)
         time_step_indices = time_step_indices.tolist()
