@@ -152,4 +152,4 @@ def animate_nomodel(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end
                   selector=dict(mode='markers'))
 
     fig.show()
-    fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html'))
+    #fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html'))
