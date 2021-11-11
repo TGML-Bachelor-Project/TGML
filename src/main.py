@@ -119,7 +119,7 @@ if __name__ == '__main__':
             data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=None)
             dataset_full = data_builder.build_dataset(num_nodes, time_column_idx=2)
     else:
-        print(f"Loading real dataset number {1}")
+        print(f"Loading real dataset number {dataset_number}")
 
         dataset_full, num_nodes, model_beta = load_real_dataset(dataset_number=dataset_number, debug=0)
         z0, v0, true_beta, = None, None, None 
