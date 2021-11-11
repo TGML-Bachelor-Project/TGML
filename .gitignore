@@ -60,6 +60,7 @@ wandb
 comm-f2f-Resistance
 original_datasets/
 edited_datasets/
+tij_pres_LyonSchool.csv
 # Translations
 *.mo
 *.pot
