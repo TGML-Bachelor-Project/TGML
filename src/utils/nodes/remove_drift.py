@@ -1,5 +1,8 @@
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 import torch
-import numpy as np
 from utils.visualize.animation import animate_nomodel
 
 def reset_z0(z0:torch.Tensor):
@@ -11,12 +14,13 @@ def remove_v_drift(v0:torch.Tensor):
     return v0
 
 def remove_rotation(z0:torch.Tensor, v0:torch.Tensor):
-    
-    vector = torch.tensor([z0, v0[:,:]])
+    # We need to rearange axis to [Steps x Nodes x Dimensions]
+    zv = torch.permute(torch.dstack([z0, v0]), (2,0,1))
+    U, S, VT = torch.linalg.svd(zv, full_matrices=False)
+    # We arange axis back to [Nodes x Dimensions x Steps]
+    rotation = torch.permute(U @ torch.diag_embed(S), (1,2,0))
 
-
-    return z0, v0
-
+    return z0-rotation[:,:,0], v0-rotation[:,:,1:]
 
 
 if __name__ == '__main__':
@@ -75,9 +79,9 @@ if __name__ == '__main__':
             [ 0.4250, -0.1339,  0.7135, -0.0787,  0.4723,  0.1095,  0.6859,
             -0.0862,  0.3294,  0.3916]]])
     
-    #z0 = reset_z0(z0=z0)
-    #v0 = remove_v_drift(v0=v0)
-    v0 = remove_rotation(z0=z0, v0=v0)
+    z0 = reset_z0(z0=z0)
+    v0 = remove_v_drift(v0=v0)
+    z0, v0 = remove_rotation(z0=z0, v0=v0)
 
     time_intervals = torch.linspace(0, 40.67, v0.shape[2] + 1)
     start_times = time_intervals[:-1]
