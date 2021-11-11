@@ -78,7 +78,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #Make sure times that lands on tn is put into the last time step by subtracting 1 from their step index
         time_step_indices = [ t if t < self.num_of_steps else t-1 for t in  time_to_step_index.tolist()]
         #Calculate the remainding time that will be inside the matching step for each time
-        remainding_time = (times-torch.tensor(time_step_indices).to(device)*self.step_size)
+        remainding_time = (times-torch.tensor(time_step_indices).to(self.device)*self.step_size)
         #The step positions we will start from for each time point and then use to find their actual position
         Z_step_starting_positions = steps_z0[:,:,time_step_indices]
         #Latent Z positions for all times
