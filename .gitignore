@@ -58,7 +58,8 @@ cover/
 
 wandb
 comm-f2f-Resistance
-
+original_datasets/
+edited_datasets/
 # Translations
 *.mo
 *.pot
