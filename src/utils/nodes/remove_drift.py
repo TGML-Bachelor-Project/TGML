@@ -6,21 +6,20 @@ import torch
 from utils.visualize.animation import animate_nomodel
 
 def reset_z0(z0:torch.Tensor):
-    z0[:,0], z0[:,1] = z0[:,0] - torch.mean(z0[:,0]), z0[:,1] - torch.mean(z0[:,1])
-    return z0
+    return z0 - torch.mean(z0, dim=0)
 
 def remove_v_drift(v0:torch.Tensor):
-    v0[:,0], v0[:,1] = v0[:,0] - torch.mean(v0[:,0], axis=0), v0[:,1] - torch.mean(v0[:,1], axis=0)
-    return v0
+    return v0 - torch.mean(v0, dim=0)
 
 def remove_rotation(z0:torch.Tensor, v0:torch.Tensor):
     # We need to rearange axis to [Steps x Nodes x Dimensions]
     zv = torch.permute(torch.dstack([z0, v0]), (2,0,1))
     U, S, VT = torch.linalg.svd(zv, full_matrices=False)
     # We arange axis back to [Nodes x Dimensions x Steps]
-    rotation = torch.permute(U @ torch.diag_embed(S), (1,2,0))
+    new_coords = torch.permute(U @ torch.diag_embed(S), (1,2,0))
 
-    return z0-rotation[:,:,0], v0-rotation[:,:,1:]
+    #z0, v0
+    return new_coords[:,:,0], new_coords[:,:,1:]
 
 
 if __name__ == '__main__':
