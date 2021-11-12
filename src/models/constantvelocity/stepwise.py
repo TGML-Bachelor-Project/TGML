@@ -145,7 +145,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        event_intensity = torch.tensor([0.])
+        event_intensity = torch.tensor([0.]).to(self.device)
         batch_size = 10000
         batches = torch.split(data, batch_size, dim=0)
         for batch in batches:
