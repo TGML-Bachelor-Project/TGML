@@ -195,17 +195,17 @@ if __name__ == '__main__':
 
     ### Setup Model: Either non-vectorized, vectorized or stepwise
     if vectorized == 0:
-        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device)
+        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device, dtype=torch.float16)
     elif vectorized == 1:
         model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device, dtype=torch.float16)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
         if isinstance(model_beta, np.ndarray):
             model = MultiBetaStepwise(n_points=num_nodes, beta=model_beta, steps=num_steps, max_time=last_time_point, 
-                                        device=device, z0=z0, v0=v0, true_init=False).to(device)
+                                        device=device, z0=z0, v0=v0, true_init=False).to(device, dtype=torch.float16)
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device)
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device, dtype=torch.float16)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
