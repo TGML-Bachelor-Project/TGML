@@ -39,8 +39,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             # Creating the time step deltas
             #Equally distributed
             time_intervals = torch.linspace(0, max_time, steps+1)
-            self.start_times = time_intervals[:-1].to(self.device)
-            self.end_times = time_intervals[1:].to(self.device)
+            self.start_times = time_intervals[:-1].to(self.device, dtype=torch.float32)
+            self.end_times = time_intervals[1:].to(self.device, dtype=torch.float32)
             self.time_intervals = list(zip(self.start_times.tolist(), self.end_times.tolist()))
             self.time_deltas = (self.end_times-self.start_times)
             # All deltas should be equal do to linspace, so we can take the first
@@ -146,7 +146,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        event_intensity = torch.tensor([0.]).to(self.device)
+        event_intensity = torch.tensor([0.]).to(self.device, dtype=torch.float32)
         batch_size = self.batch_size if self.batch_size > 0 else len(data)
         batches = torch.split(data, batch_size, dim=0)
         for batch in batches:
