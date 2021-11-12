@@ -37,7 +37,7 @@ def analytical_integral(t0:torch.Tensor, tn:torch.Tensor,
 def vec_analytical_integral(t0:torch.Tensor, tn:torch.Tensor, 
                             z0:torch.Tensor, v0:torch.Tensor, beta:torch.Tensor, device):
 
-    eps = torch.tensor(np.finfo(float).eps).to(device, dtype=torch.float16) #Adding eps to avoid devision by 0 
+    eps = torch.tensor(np.finfo(float).eps).to(device) #Adding eps to avoid devision by 0 
 
     a = (z0[:,0].unsqueeze(1) - z0[:,0].unsqueeze(0)) + eps
     b = (z0[:,1].unsqueeze(1) - z0[:,1].unsqueeze(0)) + eps

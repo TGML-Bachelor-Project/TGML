@@ -38,8 +38,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             # Creating the time step deltas
             #Equally distributed
             time_intervals = torch.linspace(0, max_time, steps+1)
-            self.start_times = time_intervals[:-1].to(self.device, dtype=torch.float16)
-            self.end_times = time_intervals[1:].to(self.device, dtype=torch.float16)
+            self.start_times = time_intervals[:-1].to(self.device)
+            self.end_times = time_intervals[1:].to(self.device)
             self.time_intervals = list(zip(self.start_times.tolist(), self.end_times.tolist()))
             self.time_deltas = (self.end_times-self.start_times)
             # All deltas should be equal do to linspace, so we can take the first
@@ -58,6 +58,12 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         Zt = self.z0.unsqueeze(2) + v0.unsqueeze(2) * times
         return Zt
 
+    def steps_z0(self):
+        steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
+        # Adding the initial Z0 position as first step
+        steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
+        return steps_z0[:,:,:-1]
+
     def steps(self, times:torch.Tensor) -> torch.Tensor:
         '''
         Increments the model's time by t by
@@ -68,10 +74,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
-        # Adding the initial Z0 position as first step
-        steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
-
         '''
         #Calculate how many steps each time point corresponds to
         time_step_ratio = times/self.step_size
@@ -96,7 +98,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #zt = steps_z0[:,:,time_step_indices] + self.v0[:,:,time_step_indices]*remainding_time
 
         # We don't take the very last z0, because that is the final z positions and not the start of any new step
-        return zt, steps_z0[:,:,:-1]
+        return zt
 
     def old_log_intensity_function(self, v0, times:torch.Tensor):
         '''
@@ -127,10 +129,10 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:   The log of the intensity between i and j at time t as a measure of
                     the two nodes' log-likelihood of interacting.
         '''
-        Zt, steps_z0 = self.steps(times)
+        Zt = self.steps(times)
         d = vec_squared_euclidean_dist(Zt)
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return steps_z0, (self.beta - d)
+        return self.beta - d
 
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
@@ -143,14 +145,18 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        steps_z0, log_intensities = self.log_intensity_function(times=data[:,2])
-        t = list(range(data.shape[0]))
-        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
-        j = torch.floor(data[:,1]).tolist()
-        event_intensity = torch.sum(log_intensities[i,j,t])
-        #event_intensity = torch.sum(torch.sum(log_intensities, dim=2))
+        event_intensity = torch.tensor([0.])
+        batch_size = 10000
+        batches = torch.split(data, batch_size, dim=0)
+        for batch in batches:
+            t = batch[:,2]
+            i = torch.floor(batch[:,0]).tolist() #torch.floor to make i and j int
+            j = torch.floor(batch[:,1]).tolist()
+            log_intensities = self.log_intensity_function(times=t)
+            event_intensity += torch.sum(log_intensities[i,j])
+
         all_integrals = evaluate_integral(t0, tn, 
-                                    z0=steps_z0, v0=self.v0, 
+                                    z0=self.steps_z0(), v0=self.v0, 
                                     beta=self.beta, device=self.device)
         #Sum over time dimension, dim 2, and then sum upper triangular
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
