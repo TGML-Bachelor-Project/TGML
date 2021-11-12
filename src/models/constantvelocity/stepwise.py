@@ -65,7 +65,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
         return steps_z0[:,:,:-1]
 
-    def steps(self, times:torch.Tensor) -> torch.Tensor:
+    def steps(self, nodes, times:torch.Tensor) -> torch.Tensor:
         '''
         Increments the model's time by t by
         updating the latent node position vector z
@@ -91,8 +91,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
         time_mask = times.unsqueeze(1) <= step_end_times
         time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
-        movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
-        zt = self.z0.unsqueeze(2) + movement
+        movement = torch.sum(self.v0[nodes].unsqueeze(2)*time_deltas, dim=3)
+        zt = self.z0[nodes].unsqueeze(2) + movement
 
         #Latent Z positions for all times
 
@@ -118,7 +118,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
         return self.beta - d
 
-    def log_intensity_function(self, times:torch.Tensor):
+    def log_intensity_function(self, nodes, times:torch.Tensor):
         '''
         The log version of the  model intensity function between node i and j at time t.
         The intensity function measures the likelihood of node i and j
@@ -130,7 +130,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:   The log of the intensity between i and j at time t as a measure of
                     the two nodes' log-likelihood of interacting.
         '''
-        Zt = self.steps(times)
+        Zt = self.steps(nodes, times)
         d = vec_squared_euclidean_dist(Zt)
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
         return self.beta - d
@@ -150,11 +150,11 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         batch_size = self.batch_size if self.batch_size > 0 else len(data)
         batches = torch.split(data, batch_size, dim=0)
         for batch in batches:
-            log_intensities = self.log_intensity_function(times=batch[:,2])
-            t_index = list(range(len(batch)))
             i = torch.floor(batch[:,0]).tolist() #torch.floor to make i and j int
             j = torch.floor(batch[:,1]).tolist()
-            event_intensity += torch.sum(log_intensities[i,j,t_index])
+            nodes = list(set(i+j))
+            log_intensities = self.log_intensity_function(nodes, times=batch[:,2])
+            event_intensity += torch.sum(log_intensities.triu(diagonal=1))
         '''
         log_intensities = self.log_intensity_function(times=data[:,2])
         t = list(range(data.size()[0]))
