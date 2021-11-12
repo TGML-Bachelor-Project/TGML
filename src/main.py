@@ -207,7 +207,7 @@ if __name__ == '__main__':
                                         device=device, z0=z0, v0=v0, true_init=False).to(device)
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, batch_size=model_batch_size).to(device)
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, batch_size=model_batch_size).to(device, dtype=torch.float32)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
