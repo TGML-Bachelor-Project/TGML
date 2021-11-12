@@ -176,9 +176,12 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             i = torch.floor(batch[:,0]).tolist() #torch.floor to make i and j int
             j = torch.floor(batch[:,1]).tolist()
             nodes = list(set(i+j))
+            new_node_indices = dict(zip(nodes,range(len(nodes))))
+            i = [new_node_indices[n] for n in i]
+            j = [new_node_indices[n] for n in j]
             t_index = list(range(len(batch)))
             log_intensities = self.log_intensity_function(nodes, times=batch[:,2])
-            event_intensity += torch.sum(log_intensities[i,j,t_index])
+            event_intensity += torch.sum(log_intensities[i,j,t_index]) 
 
         '''
         old_log_intensities = self.old_log_intensity_function(times=data[:,2])
