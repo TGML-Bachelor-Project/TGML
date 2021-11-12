@@ -25,6 +25,6 @@ def remove_node_pairs(dataset, num_nodes, percentage, device, node_pairs=None):
         if keep:
             dataset_reduced.append(tup)
 
-    dataset_reduced = torch.from_numpy(np.asarray(dataset_reduced)).to(device)
+    dataset_reduced = torch.from_numpy(np.asarray(dataset_reduced)).to(device, dtype=torch.float16)
     print(f'Removed node pairs: {node_pairs}, training set now contains interactions: {len(dataset_reduced)}')
     return dataset_reduced, node_pairs
