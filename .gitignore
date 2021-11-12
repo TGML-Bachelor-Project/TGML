@@ -169,8 +169,8 @@ cython_debug/
 
 # DTU HPC submit file
 submit.sh
-error.err
-output.out
+*.err
+*.out
 
 # Don't version control animations
 animations/*

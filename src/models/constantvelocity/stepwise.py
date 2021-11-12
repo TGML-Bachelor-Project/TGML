@@ -38,10 +38,10 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             # Creating the time step deltas
             #Equally distributed
             time_intervals = torch.linspace(0, max_time, steps+1)
-            start_times = time_intervals[:-1]
-            end_times = time_intervals[1:]
-            self.time_intervals = list(zip(start_times.tolist(), end_times.tolist()))
-            self.time_deltas = (end_times-start_times).to(self.device)
+            self.start_times = time_intervals[:-1]
+            self.end_times = time_intervals[1:]
+            self.time_intervals = list(zip(self.start_times.tolist(), self.end_times.tolist()))
+            self.time_deltas = (self.end_times-self.start_times).to(self.device)
             # All deltas should be equal do to linspace, so we can take the first
             self.step_size = self.time_deltas[0].to(self.device)
 
@@ -71,6 +71,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
         # Adding the initial Z0 position as first step
         steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
+
+        '''
         #Calculate how many steps each time point corresponds to
         time_step_ratio = times/self.step_size
         #Make round down time_step_ratio to find the index of the step which each time fits into
@@ -79,13 +81,22 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         time_step_indices = [ t if t < self.num_of_steps else t-1 for t in  time_to_step_index.tolist()]
         #Calculate the remainding time that will be inside the matching step for each time
         remainding_time = (times-torch.tensor(time_step_indices).to(self.device)*self.step_size)
-        #The step positions we will start from for each time point and then use to find their actual position
-        Z_step_starting_positions = steps_z0[:,:,time_step_indices]
+        '''
+
+        ## Testing new computation of zt
+        step_mask = (times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0)
+        step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
+        time_mask = times.unsqueeze(1) <= step_end_times
+        time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
+        movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
+        zt = self.z0.unsqueeze(2) + movement
+
         #Latent Z positions for all times
-        Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*remainding_time
+
+        #zt = steps_z0[:,:,time_step_indices] + self.v0[:,:,time_step_indices]*remainding_time
 
         # We don't take the very last z0, because that is the final z positions and not the start of any new step
-        return Zt, steps_z0[:,:,:-1]
+        return zt, steps_z0[:,:,:-1]
 
     def old_log_intensity_function(self, v0, times:torch.Tensor):
         '''

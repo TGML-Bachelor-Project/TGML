@@ -44,21 +44,21 @@ def load_real_dataset_3(dataset_path):
 
 ### Loading the designated dataset
 def load_real_dataset(dataset_number, debug):
-
+    data_folder = 'edited_datasets'
     path = os.path.dirname(os.path.realpath(__file__))
     
     if dataset_number == 1:
-        path = os.path.join(path, 'edited_datasets/email_eu_core_temporal.csv')
+        path = os.path.join(path, data_folder, 'email_eu_core_temporal.csv')
         dataset, num_nodes = load_real_dataset_1(dataset_path=path)
         model_beta = 10.
     
     elif dataset_number == 2:
-        path = os.path.join(path,'edited_datasets/resistance_game4.csv')
+        path = os.path.join(path, data_folder,'resistance_game4.csv')
         dataset, num_nodes = load_real_dataset_2(dataset_path=path)
         model_beta = 4.
     
     elif dataset_number == 3:
-        path = os.path.join(path, 'edited_datasets/tij_pres_LyonSchool.csv')
+        path = os.path.join(path, data_folder, 'email_eu_core_temporal.csv')
         dataset, num_nodes = load_real_dataset_3(dataset_path=path)
         model_beta = 5.
     
