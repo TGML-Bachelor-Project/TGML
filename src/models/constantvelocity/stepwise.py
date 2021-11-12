@@ -38,8 +38,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             # Creating the time step deltas
             #Equally distributed
             time_intervals = torch.linspace(0, max_time, steps+1)
-            self.start_times = time_intervals[:-1].to(self.device)
-            self.end_times = time_intervals[1:].to(self.device)
+            self.start_times = time_intervals[:-1].to(self.device, dtype=torch.float16)
+            self.end_times = time_intervals[1:].to(self.device, dtype=torch.float16)
             self.time_intervals = list(zip(self.start_times.tolist(), self.end_times.tolist()))
             self.time_deltas = (self.end_times-self.start_times)
             # All deltas should be equal do to linspace, so we can take the first
@@ -84,7 +84,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         '''
 
         ## Testing new computation of zt
-        step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0)).to(self.device)
+        step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
         step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
         time_mask = times.unsqueeze(1) <= step_end_times
         time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
