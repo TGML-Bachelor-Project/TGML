@@ -197,7 +197,7 @@ if __name__ == '__main__':
     if vectorized == 0:
         model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device)
     elif vectorized == 1:
-        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device)
+        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device, dtype=torch.float16)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
         if isinstance(model_beta, np.ndarray):
