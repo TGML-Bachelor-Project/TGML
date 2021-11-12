@@ -66,6 +66,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--batched', '-batch', default=0, type=int)
     arg_parser.add_argument('--animation', '-ani', action='store_true')
+    arg_parser.add_argument('--model_batch_size', '-MBS', default=-1, type=int)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -85,6 +86,7 @@ if __name__ == '__main__':
     step_beta = args.step_beta
     batched = args.batched
     animation = args.animation
+    model_batch_size = args.model_batch_size
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -205,7 +207,7 @@ if __name__ == '__main__':
                                         device=device, z0=z0, v0=v0, true_init=False).to(device)
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device)
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, batch_size=model_batch_size).to(device)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)

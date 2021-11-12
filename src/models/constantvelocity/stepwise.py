@@ -11,7 +11,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init):
+    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init, batch_size):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -19,6 +19,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             '''
             super().__init__()
     
+            self.batch_size = batch_size
             self.device = device
             self.num_of_steps = steps
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
@@ -146,14 +147,22 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         event_intensity = torch.tensor([0.]).to(self.device)
-        batch_size = 10000
+        batch_size = self.batch_size if self.batch_size > 0 else len(data)
         batches = torch.split(data, batch_size, dim=0)
         for batch in batches:
-            t = batch[:,2]
+            log_intensities = self.log_intensity_function(times=batch[:,2])
+            t_index = list(range(len(batch)))
             i = torch.floor(batch[:,0]).tolist() #torch.floor to make i and j int
             j = torch.floor(batch[:,1]).tolist()
-            log_intensities = self.log_intensity_function(times=t)
-            event_intensity += torch.sum(log_intensities[i,j])
+            event_intensity += torch.sum(log_intensities[i,j,t_index])
+        '''
+        log_intensities = self.log_intensity_function(times=data[:,2])
+        t = list(range(data.size()[0]))
+        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
+        j = torch.floor(data[:,1]).tolist()
+
+        event_intensity = torch.sum(log_intensities[i,j,t])
+        '''
 
         all_integrals = evaluate_integral(t0, tn, 
                                     z0=self.steps_z0(), v0=self.v0, 
