@@ -80,6 +80,13 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #Calculate the remainding time that will be inside the matching step for each time
         remainding_time = (times-torch.tensor(time_step_indices).to(self.device)*self.step_size)
 
+        times_gt_start_or_eq_0 = (((times == 0) & (self.start_times.unsqueeze(1) == times)) 
+                                    | ((self.start_times.unsqueeze(1) < times)))
+        times_le_end = times <= self.end_times.unsqueeze(1)
+        time_mask = times_gt_start_or_eq_0 & times_le_end
+        step_times = (time_mask * times.unsqueeze(0)).T
+
+
         #Latent Z positions for all times
         zt = steps_z0[:,:,time_step_indices] + self.v0[:,:,time_step_indices]*remainding_time
 
