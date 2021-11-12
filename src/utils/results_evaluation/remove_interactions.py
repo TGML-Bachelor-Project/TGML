@@ -16,8 +16,8 @@ def remove_interactions(dataset, percentage, device):
         else:
             removed_interactions.append(tup)
 
-    dataset_reduced = torch.from_numpy(np.asarray(dataset_reduced)).to(device)
-    removed_interactions = torch.from_numpy(np.asarray(removed_interactions)).to(device)
+    dataset_reduced = torch.from_numpy(np.asarray(dataset_reduced)).to(device, dtype=torch.float16)
+    removed_interactions = torch.from_numpy(np.asarray(removed_interactions)).to(device,dtype=torch.float16)
     print(f'Reduced training set by random selection, interactions: {len(dataset_reduced)}')
     print(f'Removed number of interactions: {len(removed_interactions)}')
     return dataset_reduced, removed_interactions

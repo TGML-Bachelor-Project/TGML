@@ -21,11 +21,11 @@ class GTStepwiseConstantVelocityModel(nn.Module):
     
             self.device = device
             self.num_of_steps = steps
-            self.beta = nn.Parameter(beta, requires_grad=False).to(device)
+            self.beta = nn.Parameter(beta, requires_grad=False).to(device, dtype=torch.float16)
             z0_copy = z.clone().detach()
             v0_copy = v.clone().detach()
-            self.z0 = nn.Parameter(z0_copy, requires_grad=False).to(device)
-            self.v0 = nn.Parameter(v0_copy, requires_grad=False).to(device)
+            self.z0 = nn.Parameter(z0_copy, requires_grad=False).to(device, dtype=torch.float16)
+            self.v0 = nn.Parameter(v0_copy, requires_grad=False).to(device, dtype=torch.float16)
     
             self.num_of_nodes = n_points
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
