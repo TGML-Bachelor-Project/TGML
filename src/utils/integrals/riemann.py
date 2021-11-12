@@ -17,7 +17,7 @@ def riemann_sum(t0:float, tn:float, n_samples:int, i:int, j:int, func, device) -
     x = torch.linspace(t0, tn, n_samples+1)
     x_mid = (x[:-1]+x[1:])/2
     dx = (tn - t0) / n_samples
-    rsum = torch.zeros(size=(1,1)).to(device, dtype=torch.float16)
+    rsum = torch.zeros(size=(1,1)).to(device)
 
     for x_i in x_mid:
         rsum += func(i, j, x_i) * dx

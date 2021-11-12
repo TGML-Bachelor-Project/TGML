@@ -21,11 +21,11 @@ class GTStepwiseConstantVelocityModel(nn.Module):
     
             self.device = device
             self.num_of_steps = steps
-            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=False).to(self.device, dtype=torch.float16)
+            self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=False).to(self.device)
             z0_copy = torch.from_numpy(z.astype(np.float)) if isinstance(z, np.ndarray) else z
             v0_copy = v.clone().detach()
-            self.z0 = nn.Parameter(z0_copy, requires_grad=False).to(self.device, dtype=torch.float16) 
-            self.v0 = nn.Parameter(v0_copy, requires_grad=False).to(self.device, dtype=torch.float16)
+            self.z0 = nn.Parameter(z0_copy, requires_grad=False).to(self.device) 
+            self.v0 = nn.Parameter(v0_copy, requires_grad=False).to(self.device)
     
             self.num_of_nodes = n_points
             self.node_pair_idxs = torch.triu_indices(row=self.num_of_nodes, col=self.num_of_nodes, offset=1)
@@ -35,9 +35,9 @@ class GTStepwiseConstantVelocityModel(nn.Module):
             time_intervals = torch.linspace(0, max_time, steps+1)
             start_times = time_intervals[:-1]
             end_times = time_intervals[1:]
-            self.time_deltas = (end_times-start_times).to(self.device, dtype=torch.float16)
+            self.time_deltas = (end_times-start_times).to(self.device)
             # All deltas should be equal do to linspace, so we can take the first
-            self.step_size = self.time_deltas[0].to(self.device, dtype=torch.float16)
+            self.step_size = self.time_deltas[0].to(self.device)
 
 
 
