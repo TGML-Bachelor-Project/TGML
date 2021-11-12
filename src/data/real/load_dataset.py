@@ -62,5 +62,5 @@ def load_real_dataset(dataset_number, debug):
         dataset, num_nodes = load_real_dataset_3(dataset_path=path)
         model_beta = 5.
     
-    return torch.tensor(dataset, dtype=torch.float16), num_nodes, model_beta
+    return torch.tensor(dataset), num_nodes, model_beta
 
