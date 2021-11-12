@@ -32,9 +32,9 @@ class DatasetBuilder:
 
         print(f'Dataset generated with number of interactions: {len(dataset)}')
         print(dataset)
-        dataset = torch.from_numpy(dataset).to(self.device)
+        dataset = torch.from_numpy(dataset)
         if self.max_time:
-            self.max_time = torch.tensor(self.max_time).to(self.device)
+            self.max_time = torch.tensor(self.max_time)
             dataset[:,2] = dataset[:,2]/self.max_time
 
         # # Verify time ordering
