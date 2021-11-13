@@ -41,6 +41,7 @@ from utils.report_plots.event_distribution import plot_event_dist
 
 ## Utils
 from utils.visualize.animation import animate
+from utils.nodes.remove_drift import center_z0, remove_v_drift, remove_rotation
 
 
 
@@ -66,6 +67,10 @@ if __name__ == '__main__':
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--batched', '-batch', default=0, type=int)
     arg_parser.add_argument('--animation', '-ani', action='store_true')
+    arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
+    arg_parser.add_argument('--model_time_batch_size', '-MTBS', default=-1, type=int)
+    arg_parser.add_argument('--model_node_batch_size', '-MNBS', default=-1, type=int)
+    arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -85,6 +90,10 @@ if __name__ == '__main__':
     step_beta = args.step_beta
     batched = args.batched
     animation = args.animation
+    animation_time_points = args.animation_time_points
+    model_time_batch_size = args.model_time_batch_size
+    model_node_batch_size = args.model_node_batch_size
+    velocity_gamma_regularization = args.velocity_gamma_regularization
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -101,6 +110,10 @@ if __name__ == '__main__':
     if real_data == 0:
         ### Defining parameters for synthetic data generation
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
+        # Adjusting z0 and v0
+        z0 = torch.from_numpy(z0)
+        z0, v0 = center_z0(z0), remove_v_drift(v0)
+        z0 = z0.numpy()
         if step_beta:
             #Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
@@ -131,6 +144,7 @@ if __name__ == '__main__':
 
 
 
+
     ### WandB initialization
     ## Set input parameters as config for Weights and Biases
     wandb_config = {'seed': seed,
@@ -149,7 +163,10 @@ if __name__ == '__main__':
                     'true_z0': z0,
                     'true_v0': v0,
                     'num_steps': num_steps,
-                    'batched': batched
+                    'batched': batched,
+                    'time_batch_size': model_time_batch_size,
+                    'node_batch_size': model_node_batch_size,
+                    'velocity_gamma_regularization': velocity_gamma_regularization
                     }
 
     ## Initialize WandB for logging config and metrics
@@ -205,7 +222,9 @@ if __name__ == '__main__':
                                         device=device, z0=z0, v0=v0, true_init=False).to(device)
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False).to(device)
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
+                            time_batch_size=model_time_batch_size, node_batch_size=model_node_batch_size,
+                            gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -264,7 +283,12 @@ if __name__ == '__main__':
         result_v0 = model.v0.detach().clone()
         result_beta = model.beta.detach().clone()
         train_t = np.linspace(0, dataset_full[-1][2])
-    wandb.log({'final_z0': result_z0, 'final_v0': result_v0})
+    
+    # Save model to weights and biases
+    torch.save(result_z0, os.path.join(wandb.run.dir, "final_z0.pt"))
+    torch.save(result_v0, os.path.join(wandb.run.dir, "final_v0.pt"))
+    wandb.save(os.path.join(wandb.run.dir, "final_z0.pt"))
+    wandb.save(os.path.join(wandb.run.dir, "final_v0.pt"))
 
 
     ## Data generation is deiffrerent for synthetic and RL datasets
@@ -285,7 +309,7 @@ if __name__ == '__main__':
                                                                 steps=v0.shape[2], max_time=max_time, device=device)
 
         ## Compute ground truth training loss for gt model and log  
-        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
+        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
 
         compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
         
@@ -311,6 +335,5 @@ if __name__ == '__main__':
         auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
     
     if animation:
-        num_of_time_points = 500
-        print(f'Creating animation of latent node positions on {num_of_time_points} time points')
-        animate(model, t_start=0, t_end=max_time, num_of_time_points=num_of_time_points, device=device)
+        print(f'Creating animation of latent node positions on {animation_time_points} time points')
+        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)

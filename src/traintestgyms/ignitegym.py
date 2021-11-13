@@ -1,10 +1,10 @@
+import torch
 import numpy as np
+from utils.nodes.remove_drift import remove_v_drift, center_z0, remove_rotation
 from ignite.engine import Engine
 from ignite.engine import Events
 from torch.utils.data import DataLoader
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
-from torch.optim.lr_scheduler import StepLR
-from ignite.handlers.param_scheduler import LRScheduler
 
 class TrainTestGym:
     def __init__(self, dataset, model, device, batch_size,
@@ -19,6 +19,7 @@ class TrainTestGym:
 
 
         self.model = model
+        self.model_state = self.model.state_dict()
         self.device = device
         self.optimizer = optimizer
         self.trainer = Engine(self.__train_step)
@@ -52,22 +53,21 @@ class TrainTestGym:
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count),
                                                                                                     'beta': model.beta.detach().clone(),
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
-
-        # Adding scheduler
-        # step_scheduler = StepLR(optimizer, step_size=3, gamma=0.1)
-        # scheduler = LRScheduler(step_scheduler)
-        # self.trainer.add_event_handler(Events.ITERATION_COMPLETED, scheduler)
-
+                                                                                                
 
         pbar = ProgressBar()
         pbar.attach(self.trainer)
 
     ### Training step
     def __train_step(self, engine, batch):
-        batch = batch.to(self.device)
+        batch = batch.to(self.device, dtype=torch.float32)
 
         if engine.t_start != 0:
             engine.t_start = batch[0,self.time_column_idx].item()
+
+        #Adjust model parameters for nicer visualizations
+        self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
+        self.model.load_state_dict(self.model_state)
 
         self.model.train()
         self.optimizer.zero_grad()
@@ -88,4 +88,7 @@ class TrainTestGym:
     def train_test_model(self, epochs:int):
         print(f'Starting model training with {epochs} epochs')
         self.trainer.run(self.train_loader, max_epochs=epochs)
+        # Adjust model params after last training
+        self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
+        self.model.load_state_dict(self.model_state)
         print('Completed model training')

@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 import torch
 from utils.visualize.animation import animate_nomodel
 
-def reset_z0(z0:torch.Tensor):
+def center_z0(z0:torch.Tensor):
     return z0 - torch.mean(z0, dim=0)
 
 def remove_v_drift(v0:torch.Tensor):
@@ -24,6 +24,7 @@ def remove_rotation(z0:torch.Tensor, v0:torch.Tensor):
 
 if __name__ == '__main__':
 
+    '''
     ## 10 steps sunny-moon-12 lr 0.001
     z0 = torch.tensor([[ 1.8849,  1.2768],
             [-0.0105,  0.0707],
@@ -77,8 +78,12 @@ if __name__ == '__main__':
             0.3830,  0.1189, -0.0469],
             [ 0.4250, -0.1339,  0.7135, -0.0787,  0.4723,  0.1095,  0.6859,
             -0.0862,  0.3294,  0.3916]]])
-    
-    z0 = reset_z0(z0=z0)
+    '''
+    #Create you own folder called result_z0_v0 in the root folder and add z0 and v0 there
+    load_folder = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'result_z0_v0')
+    z0 = torch.load(os.path.join(load_folder,'z0.pt'))
+    v0 = torch.load(os.path.join(load_folder, 'v0.pt'))
+    z0 = center_z0(z0=z0)
     v0 = remove_v_drift(v0=v0)
     z0, v0 = remove_rotation(z0=z0, v0=v0)
 

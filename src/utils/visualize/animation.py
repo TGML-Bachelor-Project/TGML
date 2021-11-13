@@ -1,24 +1,30 @@
 import os
 import torch
+import plotly
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.animation import FuncAnimation
 
-def animate(model, t_start, t_end, num_of_time_points, device):
+def animate(model, t_start, t_end, num_of_time_points, device, wandb_handler):
     z0 = model.z0.clone().detach()
     v0 = model.v0.clone().detach()
     time_deltas = model.time_deltas.clone().detach()
     step_size = model.step_size.clone().detach()
-    num_of_steps = model.num_of_steps
+    start_times = model.start_times
 
     # Starting positions for each model step
     steps_z0 = z0.unsqueeze(2) + torch.cumsum(v0*time_deltas, dim=2)
     steps_z0 = torch.cat((z0.unsqueeze(2), steps_z0), dim=2)
         
-    times = torch.linspace(t_start, t_end, num_of_time_points)
+    times = torch.linspace(t_start, t_end, num_of_time_points).to(device)
 
+    step_mask = ((times.unsqueeze(1) > start_times) | (start_times == 0).unsqueeze(0))
+    step_end_times = step_mask*torch.cumsum(step_mask*step_size, axis=1)
+    time_mask = times.unsqueeze(1) <= step_end_times
+    time_deltas = (step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
+    movement = torch.sum(v0.unsqueeze(2)*time_deltas, dim=3)
+    step_zt = z0.unsqueeze(2) + movement
+
+    '''
     #Calculate how many steps each time point corresponds to
     time_step_ratio = times/step_size
     #Make round down time_step_ratio to find the index of the step which each time fits into
@@ -32,6 +38,7 @@ def animate(model, t_start, t_end, num_of_time_points, device):
     z_step_starting_positions = steps_z0[:,:,time_step_indices]
     #Latent Z positions for all times
     step_zt = z_step_starting_positions + v0[:,:,time_step_indices]*remainding_time    
+    '''
 
     df = pd.DataFrame({
         'node': [str(n) for n in [*list(range(step_zt.shape[0]))]*len(times)],
@@ -54,8 +61,7 @@ def animate(model, t_start, t_end, num_of_time_points, device):
                                         color='DarkSlateGrey')),
                   selector=dict(mode='markers'))
 
-    fig.show()
-    fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html'))
+    wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
 
 
 def animate_nomodel(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end, num_of_time_points, device):

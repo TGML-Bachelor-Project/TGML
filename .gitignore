@@ -169,11 +169,17 @@ cython_debug/
 
 # DTU HPC submit file
 submit.sh
-error.err
-output.out
+*.err
+*.out
 
 # Don't version control animations
 animations/*
 .DS_store
 
+<<<<<<< HEAD
 result_z0_v0/*
+=======
+# don't take saved z0 and v0 vectors
+result_z0_v0/*
+tij_pres_LyonSchool.csv
+>>>>>>> 27da7df587b62184b1de0cc51d829829650ba2a8

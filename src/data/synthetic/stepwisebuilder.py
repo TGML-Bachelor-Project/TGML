@@ -32,9 +32,9 @@ class StepwiseDatasetBuilder:
             raise Exception('No node interactions have happened. Try increasing the max_time')
 
         print(f'Training set generated with number of interactions: {len(dataset)}')
-        dataset = torch.from_numpy(dataset).to(self.device)
+        dataset = torch.from_numpy(dataset)
         if self.max_time:
-            self.max_time = torch.tensor(self.max_time).to(self.device)
+            self.max_time = torch.tensor(self.max_time)
             dataset[:,2] = dataset[:,2]/self.max_time
 
         return dataset
