@@ -63,6 +63,7 @@ class TrainTestGym:
         if engine.t_start != 0:
             engine.t_start = batch[0,self.time_column_idx].item()
 
+        #Adjust model parameters for nicer visualizations
         self.model.z0 = center_z0(self.model.z0)
         self.model.v0 = remove_v_drift(self.model.v0)
         self.model.z0, self.model.v0 = remove_rotation(self.model.z0, self.model.v0)
@@ -86,4 +87,8 @@ class TrainTestGym:
     def train_test_model(self, epochs:int):
         print(f'Starting model training with {epochs} epochs')
         self.trainer.run(self.train_loader, max_epochs=epochs)
+        # Adjust model params after last training
+        self.model.z0 = center_z0(self.model.z0)
+        self.model.v0 = remove_v_drift(self.model.v0)
+        self.model.z0, self.model.v0 = remove_rotation(self.model.z0, self.model.v0)
         print('Completed model training')
