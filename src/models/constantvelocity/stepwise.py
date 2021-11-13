@@ -11,7 +11,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init, batch_size):
+    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init, 
+                        time_batch_size, node_batch_size):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -19,7 +20,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             '''
             super().__init__()
     
-            self.batch_size = batch_size
+            self.time_batch_size = time_batch_size
+            self.node_batch_size = node_batch_size
             self.device = device
             self.num_of_steps = steps
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
@@ -170,27 +172,25 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :returns:       Log liklihood of the model based on the given data
         '''
         event_intensity = torch.tensor(0.).to(self.device, dtype=torch.float64)
-        batch_size = self.batch_size if self.batch_size > 0 else len(data)
-        batches = torch.split(data, batch_size, dim=0)
+        time_batch_size = self.time_batch_size if self.time_batch_size > 0 else len(data)
+        batches = torch.split(data, time_batch_size, dim=0)
+        node_batch_size = self.node_batch_size if self.time_batch_size > 0 else len(self.num_of_nodes)
+
+        # Batch in time dimension
         for batch in batches:
-            i = torch.floor(batch[:,0]).tolist() #torch.floor to make i and j int
-            j = torch.floor(batch[:,1]).tolist()
-            nodes = list(set(i+j))
-            new_node_indices = dict(zip(nodes,range(len(nodes))))
-            i = [new_node_indices[n] for n in i]
-            j = [new_node_indices[n] for n in j]
-            t_index = list(range(len(batch)))
-            log_intensities = self.log_intensity_function(nodes, times=batch[:,2])
-            event_intensity += torch.sum(log_intensities[i,j,t_index]) 
-
-        '''
-        old_log_intensities = self.old_log_intensity_function(times=data[:,2])
-        t = list(range(data.size()[0]))
-        old_i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
-        old_j = torch.floor(data[:,1]).tolist()
-
-        old_event_intensity = torch.sum(old_log_intensities[old_i,old_j,t])
-        '''
+            #t_index = list(range(len(batch)))
+            i = torch.floor(batch[:,0]) #torch.floor to make i and j int
+            j = torch.floor(batch[:,1])
+            node_pairs = torch.unique(batch[:,:2], dim=0)
+            node_batches = torch.split(node_pairs, node_batch_size)
+            # Batch in nodes dimension
+            for node_batch in node_batches:
+                nodes = torch.unique(node_batch.flatten()).tolist()
+                new_node_indices = dict(zip(nodes,range(len(nodes))))
+                i = [new_node_indices[int(n)] for (n,m) in node_batch]
+                j = [new_node_indices[int(m)] for (n,m) in node_batch]
+                log_intensities = self.log_intensity_function(nodes, times=batch[:,2])
+                event_intensity += torch.sum(log_intensities[i,j]) 
 
         all_integrals = evaluate_integral(t0, tn, 
                                     z0=self.steps_z0(), v0=self.v0, 

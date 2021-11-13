@@ -66,7 +66,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--batched', '-batch', default=0, type=int)
     arg_parser.add_argument('--animation', '-ani', action='store_true')
-    arg_parser.add_argument('--model_batch_size', '-MBS', default=-1, type=int)
+    arg_parser.add_argument('--model_time_batch_size', '-MTBS', default=-1, type=int)
+    arg_parser.add_argument('--model_node_batch_size', '-MNBS', default=-1, type=int)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -86,7 +87,8 @@ if __name__ == '__main__':
     step_beta = args.step_beta
     batched = args.batched
     animation = args.animation
-    model_batch_size = args.model_batch_size
+    model_time_batch_size = args.model_time_batch_size
+    model_node_batch_size = args.model_node_batch_size
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -151,7 +153,9 @@ if __name__ == '__main__':
                     'true_z0': z0,
                     'true_v0': v0,
                     'num_steps': num_steps,
-                    'batched': batched
+                    'batched': batched,
+                    'time_batch_size': model_time_batch_size,
+                    'node_batch_size': model_node_batch_size
                     }
 
     ## Initialize WandB for logging config and metrics
@@ -207,7 +211,8 @@ if __name__ == '__main__':
                                         device=device, z0=z0, v0=v0, true_init=False).to(device)
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, batch_size=model_batch_size).to(device, dtype=torch.float32)
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
+                            time_batch_size=model_time_batch_size, node_batch_size=model_node_batch_size).to(device, dtype=torch.float32)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
