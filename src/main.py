@@ -112,7 +112,8 @@ if __name__ == '__main__':
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
         # Adjusting z0 and v0
         z0 = torch.tenstor(z0)
-        z0.numpy(), v0 = remove_rotation(center_z0(z0), remove_v_drift(v0))
+        z0, v0 = remove_rotation(center_z0(z0), remove_v_drift(v0))
+        z0 = z0.numpy()
         if step_beta:
             #Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
