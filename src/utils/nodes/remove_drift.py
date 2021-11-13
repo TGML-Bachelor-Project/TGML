@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 import torch
 from utils.visualize.animation import animate_nomodel
 
-def reset_z0(z0:torch.Tensor):
+def center_z0(z0:torch.Tensor):
     return z0 - torch.mean(z0, dim=0)
 
 def remove_v_drift(v0:torch.Tensor):
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     load_folder = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'result_z0_v0')
     z0 = torch.load(os.path.join(load_folder,'z0.pt'))
     v0 = torch.load(os.path.join(load_folder, 'v0.pt'))
-    z0 = reset_z0(z0=z0)
+    z0 = center_z0(z0=z0)
     v0 = remove_v_drift(v0=v0)
     z0, v0 = remove_rotation(z0=z0, v0=v0)
 

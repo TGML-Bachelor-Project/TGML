@@ -1,11 +1,10 @@
 import torch
 import numpy as np
+from utils.nodes.remove_drift import remove_v_drift, center_z0, remove_rotation
 from ignite.engine import Engine
 from ignite.engine import Events
 from torch.utils.data import DataLoader
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
-from torch.optim.lr_scheduler import StepLR
-from ignite.handlers.param_scheduler import LRScheduler
 
 class TrainTestGym:
     def __init__(self, dataset, model, device, batch_size,
@@ -54,12 +53,6 @@ class TrainTestGym:
                                                                                                     'beta': model.beta.detach().clone(),
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
 
-        # Adding scheduler
-        # step_scheduler = StepLR(optimizer, step_size=3, gamma=0.1)
-        # scheduler = LRScheduler(step_scheduler)
-        # self.trainer.add_event_handler(Events.ITERATION_COMPLETED, scheduler)
-
-
         pbar = ProgressBar()
         pbar.attach(self.trainer)
 
@@ -69,6 +62,10 @@ class TrainTestGym:
 
         if engine.t_start != 0:
             engine.t_start = batch[0,self.time_column_idx].item()
+
+        self.model.z0 = center_z0(self.model.z0)
+        self.model.v0 = remove_v_drift(self.model.v0)
+        self.model.z0, self.model.v0 = remove_rotation(self.model.z0, self.model.v0)
 
         self.model.train()
         self.optimizer.zero_grad()
