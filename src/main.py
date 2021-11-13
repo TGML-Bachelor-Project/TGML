@@ -303,7 +303,7 @@ if __name__ == '__main__':
                                                                 steps=v0.shape[2], max_time=max_time, device=device)
 
         ## Compute ground truth training loss for gt model and log  
-        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full, t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
+        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
 
         compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
         
