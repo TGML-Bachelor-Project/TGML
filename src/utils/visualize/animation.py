@@ -1,12 +1,10 @@
 import os
 import torch
+import plotly
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.animation import FuncAnimation
 
-def animate(model, t_start, t_end, num_of_time_points, device):
+def animate(model, t_start, t_end, num_of_time_points, device, wandb_handler):
     z0 = model.z0.clone().detach()
     v0 = model.v0.clone().detach()
     time_deltas = model.time_deltas.clone().detach()
@@ -54,8 +52,7 @@ def animate(model, t_start, t_end, num_of_time_points, device):
                                         color='DarkSlateGrey')),
                   selector=dict(mode='markers'))
 
-    fig.show()
-    fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html'))
+    wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
 
 
 def animate_nomodel(z0, v0, time_deltas, step_size, num_of_steps, t_start, t_end, num_of_time_points, device):

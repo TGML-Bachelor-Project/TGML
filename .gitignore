@@ -175,3 +175,6 @@ submit.sh
 # Don't version control animations
 animations/*
 .DS_store
+
+# don't take saved z0 and v0 vectors
+result_z0_v0/*

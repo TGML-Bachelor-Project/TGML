@@ -56,7 +56,7 @@ def auc_removed_interactions(removed_interactions, num_nodes, result_model, wand
     ## Compute ROC metrics
     fpr, tpr, thresh = roc_curve(labels, probs, pos_label=1)
     auc_score = roc_auc_score(labels, probs)
-
+    wandb_handler.log({'false_positive_rate':fpr, 'true_poitive_rate':tpr, 'thresh':thresh, 'AUC_score': auc_score})
 
     ## Plot ROC Curve
     fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
