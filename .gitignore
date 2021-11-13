@@ -175,3 +175,5 @@ output.out
 # Don't version control animations
 animations/*
 .DS_store
+
+result_z0_v0/*
