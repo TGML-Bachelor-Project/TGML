@@ -19,6 +19,7 @@ class TrainTestGym:
 
 
         self.model = model
+        self.model_state = self.model.state_dict()
         self.device = device
         self.optimizer = optimizer
         self.trainer = Engine(self.__train_step)
@@ -52,6 +53,7 @@ class TrainTestGym:
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count),
                                                                                                     'beta': model.beta.detach().clone(),
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
+                                                                                                
 
         pbar = ProgressBar()
         pbar.attach(self.trainer)
@@ -64,9 +66,9 @@ class TrainTestGym:
             engine.t_start = batch[0,self.time_column_idx].item()
 
         #Adjust model parameters for nicer visualizations
-        self.model.z0 = center_z0(self.model.z0)
-        self.model.v0 = remove_v_drift(self.model.v0)
-        self.model.z0, self.model.v0 = remove_rotation(self.model.z0, self.model.v0)
+        self.model_state['z0'], self.model_state['v0'] = remove_rotation(
+                                                            center_z0(self.model.z0), remove_v_drift(self.model.v0))
+        self.model.load_state_dict(self.model_state)
 
         self.model.train()
         self.optimizer.zero_grad()
@@ -88,7 +90,7 @@ class TrainTestGym:
         print(f'Starting model training with {epochs} epochs')
         self.trainer.run(self.train_loader, max_epochs=epochs)
         # Adjust model params after last training
-        self.model.z0 = center_z0(self.model.z0)
-        self.model.v0 = remove_v_drift(self.model.v0)
-        self.model.z0, self.model.v0 = remove_rotation(self.model.z0, self.model.v0)
+        self.model_state['z0'], self.model_state['v0'] = remove_rotation(
+                                                            center_z0(self.model.z0), remove_v_drift(self.model.v0))
+        self.model.load_state_dict(self.model_state)
         print('Completed model training')
