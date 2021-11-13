@@ -281,6 +281,8 @@ if __name__ == '__main__':
     # Save model to weights and biases
     torch.save(result_z0, os.path.join(wandb.run.dir, "final_z0.pt"))
     torch.save(result_v0, os.path.join(wandb.run.dir, "final_v0.pt"))
+    wandb.save(os.path.join(wandb.run.dir, "final_z0.pt"))
+    wandb.save(os.path.join(wandb.run.dir, "final_v0.pt"))
 
 
     ## Data generation is deiffrerent for synthetic and RL datasets
@@ -328,4 +330,4 @@ if __name__ == '__main__':
     
     if animation:
         print(f'Creating animation of latent node positions on {animation_time_points} time points')
-        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device)
+        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)

@@ -166,8 +166,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         Regularizes the model using the squared Frobenius norm of the changes in velocity
         '''
         velocity_changes = self.v0[:,:,1:]-self.v0[:,:,:-1]
-        # We permute to [Steps x Nodes x Dimensions] to use torch.linalg.norm
-        sq_frob_norms = torch.square(torch.linalg.norm(torch.permute(velocity_changes, (2,0,1)), 'fro'))
+        sq_frob_norms = torch.square(torch.linalg.norm(velocity_changes))
         return  log_likelihood + self.gamma * torch.sum(sq_frob_norms)
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
@@ -183,7 +182,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         event_intensity = torch.tensor(0.).to(self.device, dtype=torch.float64)
         time_batch_size = self.time_batch_size if self.time_batch_size > 0 else len(data)
         batches = torch.split(data, time_batch_size, dim=0)
-        node_batch_size = self.node_batch_size if self.time_batch_size > 0 else len(self.num_of_nodes)
+        node_batch_size = self.node_batch_size if self.time_batch_size > 0 else self.num_of_nodes
 
         # Batch in time dimension
         for batch in batches:
