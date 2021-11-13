@@ -85,7 +85,7 @@ if __name__ == '__main__':
     v0 = torch.load(os.path.join(load_folder, 'v0.pt'))
     z0 = reset_z0(z0=z0)
     v0 = remove_v_drift(v0=v0)
-    #z0, v0 = remove_rotation(z0=z0, v0=v0)
+    z0, v0 = remove_rotation(z0=z0, v0=v0)
 
     time_intervals = torch.linspace(0, 40.67, v0.shape[2] + 1)
     start_times = time_intervals[:-1]
