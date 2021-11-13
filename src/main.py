@@ -66,8 +66,10 @@ if __name__ == '__main__':
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--batched', '-batch', default=0, type=int)
     arg_parser.add_argument('--animation', '-ani', action='store_true')
+    arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
     arg_parser.add_argument('--model_time_batch_size', '-MTBS', default=-1, type=int)
     arg_parser.add_argument('--model_node_batch_size', '-MNBS', default=-1, type=int)
+    arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -87,8 +89,10 @@ if __name__ == '__main__':
     step_beta = args.step_beta
     batched = args.batched
     animation = args.animation
+    animation_time_points = args.animation_time_points
     model_time_batch_size = args.model_time_batch_size
     model_node_batch_size = args.model_node_batch_size
+    velocity_gamma_regularization = args.velocity_gamma_regularization
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -155,7 +159,8 @@ if __name__ == '__main__':
                     'num_steps': num_steps,
                     'batched': batched,
                     'time_batch_size': model_time_batch_size,
-                    'node_batch_size': model_node_batch_size
+                    'node_batch_size': model_node_batch_size,
+                    'velocity_gamma_regularization': velocity_gamma_regularization
                     }
 
     ## Initialize WandB for logging config and metrics
@@ -212,7 +217,8 @@ if __name__ == '__main__':
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
                             max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
-                            time_batch_size=model_time_batch_size, node_batch_size=model_node_batch_size).to(device, dtype=torch.float32)
+                            time_batch_size=model_time_batch_size, node_batch_size=model_node_batch_size,
+                            gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -271,7 +277,10 @@ if __name__ == '__main__':
         result_v0 = model.v0.detach().clone()
         result_beta = model.beta.detach().clone()
         train_t = np.linspace(0, dataset_full[-1][2])
-    wandb.log({'final_z0': result_z0, 'final_v0': result_v0})
+    
+    # Save model to weights and biases
+    torch.save(result_z0, os.path.join(wandb.run.dir, "final_z0.pt"))
+    torch.save(result_v0, os.path.join(wandb.run.dir, "final_v0.pt"))
 
 
     ## Data generation is deiffrerent for synthetic and RL datasets
@@ -318,6 +327,5 @@ if __name__ == '__main__':
         auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
     
     if animation:
-        num_of_time_points = 500
-        print(f'Creating animation of latent node positions on {num_of_time_points} time points')
-        animate(model, t_start=0, t_end=max_time, num_of_time_points=num_of_time_points, device=device)
+        print(f'Creating animation of latent node positions on {animation_time_points} time points')
+        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device)

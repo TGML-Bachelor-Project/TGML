@@ -12,7 +12,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
     using a Euclidean distance measure in latent space for the intensity function.
     '''
     def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init, 
-                        time_batch_size, node_batch_size):
+                        time_batch_size, node_batch_size, gamma=None):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -20,6 +20,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             '''
             super().__init__()
     
+            self.gamma = gamma
             self.time_batch_size = time_batch_size
             self.node_batch_size = node_batch_size
             self.device = device
@@ -160,6 +161,14 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
         return self.beta - d
 
+    def regularize(self, log_likelihood):
+        '''
+        Regularizes the model using the squared Frobenius norm of the changes in velocity
+        '''
+        velocity_changes = self.v0[:,:,1:]-self.v0[:,:,:-1]
+        # We permute to [Steps x Nodes x Dimensions] to use torch.linalg.norm
+        sq_frob_norms = torch.square(torch.linalg.norm(torch.permute(velocity_changes, (2,0,1)), 'fro'))
+        return  log_likelihood + self.gamma * torch.sum(sq_frob_norms)
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
         '''
@@ -199,5 +208,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)
 
-        # Log likelihood
-        return event_intensity - non_event_intensity
+        log_likelihood =  event_intensity - non_event_intensity 
+
+        # Regularize model on velocity change if gamma is set
+        return self.regularize(log_likelihood) if self.gamma else log_likelihood
