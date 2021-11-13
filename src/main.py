@@ -41,6 +41,7 @@ from utils.report_plots.event_distribution import plot_event_dist
 
 ## Utils
 from utils.visualize.animation import animate
+from utils.nodes.remove_drift import center_z0, remove_v_drift, remove_rotation
 
 
 
@@ -109,6 +110,8 @@ if __name__ == '__main__':
     if real_data == 0:
         ### Defining parameters for synthetic data generation
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
+        # Adjusting z0 and v0
+        z0, v0 = remove_rotation(center_z0(z0), remove_v_drift(v0))
         if step_beta:
             #Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
@@ -136,6 +139,7 @@ if __name__ == '__main__':
         max_time = max(dataset_full[:,2])
 
     dataset_size = len(dataset_full)
+
 
 
 
