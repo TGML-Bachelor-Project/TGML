@@ -178,3 +178,4 @@ animations/*
 
 # don't take saved z0 and v0 vectors
 result_z0_v0/*
+tij_pres_LyonSchool.csv
