@@ -92,15 +92,12 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         time_mask = times.unsqueeze(1) <= step_end_times
         time_deltas = torch.split((self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask, 100, dim=0)
 
-        movement = None
+        movement = []
         for td in time_deltas:
-            if movement is not None:
-                movement = torch.cat([movement, torch.sum(self.v0[nodes].unsqueeze(2)*td, dim=3)], dim=2)
-            else:
-                movement = torch.sum(self.v0[nodes].unsqueeze(2)*td, dim=3)
+            movement.append(torch.sum(self.v0[nodes].unsqueeze(2)*td, dim=3))
 
         #Latent Z positions for all times
-        zt = self.z0[nodes].unsqueeze(2) + movement
+        zt = self.z0[nodes].unsqueeze(2) + torch.cat(movement, dim=2)
         return zt
 
     def old_log_intensity_function(self, times:torch.Tensor):
