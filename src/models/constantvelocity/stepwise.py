@@ -87,22 +87,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
-        steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
-        # Adding the initial Z0 position as first step
-        steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
-        #Calculate how many steps each time point corresponds to
-        time_step_ratio = times/self.step_size
-        #Make round down time_step_ratio to find the index of the step which each time fits into
-        time_to_step_index = torch.floor(time_step_ratio)
-        #Calculate the remainding time that will be inside the matching step for each time
-        remainding_time = (times-time_to_step_index*self.step_size)
-        #Make sure times that lands on tn is put into the last time step by subtracting 1 from their step index
-        time_step_indices = [ t if t < self.num_of_steps else t-1 for t in  time_to_step_index.tolist()]
-        #The step positions we will start from for each time point and then use to find their actual position
-        Z_step_starting_positions = steps_z0[:,:,time_step_indices]
-        #Latent Z positions for all times
-        Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*remainding_time
-
         step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
         step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
         time_mask = times.unsqueeze(1) <= step_end_times
