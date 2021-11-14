@@ -15,6 +15,7 @@ def load_real_dataset_1(dataset_path):
     # plot_event_dist_eu_data(dataset=dataset)
     num_nodes = len(np.unique([dataset[:,0],dataset[:,1]]))
     return dataset, num_nodes
+    
 
 
 
