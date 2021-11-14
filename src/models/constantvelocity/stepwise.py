@@ -87,14 +87,30 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         :returns:   The updated latent position vector z
         '''
+        steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
+        # Adding the initial Z0 position as first step
+        steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
+        #Calculate how many steps each time point corresponds to
+        time_step_ratio = times/self.step_size
+        #Make round down time_step_ratio to find the index of the step which each time fits into
+        time_to_step_index = torch.floor(time_step_ratio)
+        #Calculate the remainding time that will be inside the matching step for each time
+        remainding_time = (times-time_to_step_index*self.step_size)
+        #Make sure times that lands on tn is put into the last time step by subtracting 1 from their step index
+        time_step_indices = [ t if t < self.num_of_steps else t-1 for t in  time_to_step_index.tolist()]
+        #The step positions we will start from for each time point and then use to find their actual position
+        Z_step_starting_positions = steps_z0[:,:,time_step_indices]
+        #Latent Z positions for all times
+        Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*remainding_time
+
         step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
         step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
         time_mask = times.unsqueeze(1) <= step_end_times
         time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
-        movement = torch.sum(self.v0[nodes].unsqueeze(2)*time_deltas, dim=3)
+        movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
 
         #Latent Z positions for all times
-        zt = self.z0[nodes].unsqueeze(2) + movement
+        zt = self.z0.unsqueeze(2) + movement
         return zt
 
     def old_log_intensity_function(self, times:torch.Tensor):
@@ -152,23 +168,25 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         event_intensity = torch.tensor(0.).to(self.device, dtype=torch.float64)
         time_batch_size = self.time_batch_size if self.time_batch_size > 0 else len(data)
         batches = torch.split(data, time_batch_size, dim=0)
-        node_batch_size = self.node_batch_size if self.time_batch_size > 0 else self.num_of_nodes
+        # node_batch_size = self.node_batch_size if self.time_batch_size > 0 else self.num_of_nodes
 
         # Batch in time dimension
         for batch in batches:
             #t_index = list(range(len(batch)))
-            i = torch.floor(batch[:,0]) #torch.floor to make i and j int
-            j = torch.floor(batch[:,1])
-            node_pairs = torch.unique(batch[:,:2], dim=0)
-            node_batches = torch.split(node_pairs, node_batch_size)
-            # Batch in nodes dimension
-            for node_batch in node_batches:
-                nodes = torch.unique(node_batch.flatten()).tolist()
-                new_node_indices = dict(zip(nodes,range(len(nodes))))
-                i = [new_node_indices[int(n)] for (n,m) in node_batch]
-                j = [new_node_indices[int(m)] for (n,m) in node_batch]
-                log_intensities = self.log_intensity_function(nodes, times=batch[:,2])
-                event_intensity += torch.sum(log_intensities[i,j]) 
+            i = torch.floor(batch[:,0]).tolist() #torch.floor to make i and j int
+            j = torch.floor(batch[:,1]).tolist()
+            nodes = torch.unique(batch[:,2]).tolist()
+            t_index = list(range(len(batch)))
+            log_intensities = self.log_intensity_function(nodes, times=batch[:,2])
+            event_intensity += torch.sum(log_intensities[i,j,t_index]) 
+
+        '''
+        old_log_intensities = self.old_log_intensity_function(times=data[:,2])
+        t = list(range(data.shape[0]))
+        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
+        j = torch.floor(data[:,1]).tolist()
+        old_event_intensities = torch.sum(old_log_intensities[i,j,t])
+        '''
 
         all_integrals = evaluate_integral(t0, tn, 
                                     z0=self.steps_z0(), v0=self.v0, 
