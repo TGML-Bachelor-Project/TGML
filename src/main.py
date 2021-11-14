@@ -176,7 +176,7 @@ if __name__ == '__main__':
         else:
             wandb.init(project='TGML11', entity='augustsemrau', config=wandb_config)
     elif wandb_entity == 1:
-        wandb.init(project='TGML2', entity='willdmar', config=wandb_config)
+        wandb.init(project='TGML1-Experiments', entity='willdmar', config=wandb_config)
     
     ## Plot and log event distribution
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
