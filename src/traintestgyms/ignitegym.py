@@ -53,21 +53,26 @@ class TrainTestGym:
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: wandb_handler.log({'Epoch': len(self.epoch_count),
                                                                                                     'beta': model.beta.detach().clone(),
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
+
+        ## Reset z0 and v0
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), self.__reset_model)
                                                                                                 
 
         pbar = ProgressBar()
         pbar.attach(self.trainer)
 
-    ### Training step
-    def __train_step(self, engine, batch):
-        batch = batch.to(self.device)
-
-        if engine.t_start != 0:
-            engine.t_start = batch[0,self.time_column_idx].item()
-
+    def __reset_model(self):
         #Adjust model parameters for nicer visualizations
         self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
         self.model.load_state_dict(self.model_state)
+
+
+    ### Training step
+    def __train_step(self, engine, batch):
+        batch = batch.to(self.device, dtype=torch.float32)
+
+        if engine.t_start != 0:
+            engine.t_start = batch[0,self.time_column_idx].item()
 
         self.model.train()
         self.optimizer.zero_grad()
