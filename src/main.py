@@ -67,7 +67,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--animation', '-ani', action='store_true')
-    arg_parser.add_argument('--animation_time_points', '-ATP', default=100, type=int)
+    arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
     arg_parser.add_argument('--wandb_entity', '-WE', default=None, type=str)
     arg_parser.add_argument('--wandb_project', '-WP', default=None, type=str)
