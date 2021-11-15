@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from argparse import ArgumentParser
 
+from wandb.sdk import wandb_run
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
 
@@ -58,19 +60,19 @@ if __name__ == '__main__':
     arg_parser.add_argument('--train_batch_size', '-TBS', default=None, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
     arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
-    arg_parser.add_argument('--wandb_entity', '-WAB', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--real_data', '-RD', default=1, type=int)
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
-    arg_parser.add_argument('--batched', '-batch', default=0, type=int)
     arg_parser.add_argument('--animation', '-ani', action='store_true')
     arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
-    arg_parser.add_argument('--model_time_batch_size', '-MTBS', default=-1, type=int)
-    arg_parser.add_argument('--model_node_batch_size', '-MNBS', default=-1, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
+    arg_parser.add_argument('--wandb_entity', '-WE', default=None, type=str)
+    arg_parser.add_argument('--wandb_project', '-WP', default=None, type=str)
+    arg_parser.add_argument('--wandb_run_name', '-WRN', default=None, type=str)
+    arg_parser.add_argument('--wandb_group', '-WG', default=None, type=str)
     args = arg_parser.parse_args()
 
     ## Set all input arguments
@@ -80,7 +82,6 @@ if __name__ == '__main__':
     train_batch_size = args.train_batch_size
     dataset_number = args.dataset_number
     training_type = args.training_type
-    wandb_entity = args.wandb_entity  # Not logged with wandb
     vectorized = args.vectorized
     remove_node_pairs_b = args.remove_node_pairs_b
     remove_interactions_b = args.remove_interactions_b
@@ -88,12 +89,13 @@ if __name__ == '__main__':
     real_data = args.real_data
     num_steps = args.steps
     step_beta = args.step_beta
-    batched = args.batched
     animation = args.animation
     animation_time_points = args.animation_time_points
-    model_time_batch_size = args.model_time_batch_size
-    model_node_batch_size = args.model_node_batch_size
     velocity_gamma_regularization = args.velocity_gamma_regularization
+    wandb_entity= args.wandb_entity
+    wandb_project = args.wandb_project
+    wandb_run_name = args.wandb_run_name
+    wandb_group = args.wandb_group
 
     ## Seeding of model run
     np.random.seed(seed)
@@ -166,20 +168,13 @@ if __name__ == '__main__':
                     'true_v0': v0,
                     'num_steps': num_steps,
                     'train_batch_size': train_batch_size,
-                    'time_batch_size': model_time_batch_size,
-                    'node_batch_size': model_node_batch_size,
                     'velocity_gamma_regularization': velocity_gamma_regularization
                     }
 
     ## Initialize WandB for logging config and metrics
-    if wandb_entity == 0:
-        if real_data:
-            wandb.init(project='TGMLRL', entity='augustsemrau', config=wandb_config)
-        else:
-            wandb.init(project='TGML11', entity='augustsemrau', config=wandb_config)
-    elif wandb_entity == 1:
-        wandb.init(project='TGML1-Experiments', entity='willdmar', config=wandb_config)
-    
+    wandb.init(project=wandb_project, name=wandb_run_name, 
+                entity=wandb_entity, group=wandb_group, config=wandb_config)
+
     ## Plot and log event distribution
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
 
@@ -220,13 +215,10 @@ if __name__ == '__main__':
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
                             max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
-                            time_batch_size=model_time_batch_size, node_batch_size=model_node_batch_size,
                             gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
 
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-
 
     ### Model training: Either non-sequential or sequential
     metrics = {'avg_train_loss': [], 'beta_est': []}
