@@ -316,7 +316,7 @@ if __name__ == '__main__':
         ## Compare intensity rates of removed node pairs
         if remove_node_pairs_b == 1:    
             for removed_node_pair in removed_node_pairs:
-                compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=list(removed_node_pair))
+                compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb)
     else:
         if vectorized != 2: 
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
