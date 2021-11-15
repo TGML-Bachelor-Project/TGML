@@ -143,6 +143,8 @@ if __name__ == '__main__':
     dataset_size = len(dataset_full)
 
 
+    ## Batch
+    train_batch_size = train_batch_size if train_batch_size > 0 else dataset_size
 
 
     ### WandB initialization
@@ -163,7 +165,7 @@ if __name__ == '__main__':
                     'true_z0': z0,
                     'true_v0': v0,
                     'num_steps': num_steps,
-                    'batched': batched,
+                    'train_batch_size': train_batch_size,
                     'time_batch_size': model_time_batch_size,
                     'node_batch_size': model_node_batch_size,
                     'velocity_gamma_regularization': velocity_gamma_regularization
@@ -199,11 +201,6 @@ if __name__ == '__main__':
     ## Compute size of dataset and find training batch size
     training_set_size = len(dataset)
 
-    ## Batch
-    if batched == 1:
-        train_batch_size = int(training_set_size / 500)
-    else:
-        train_batch_size = int(training_set_size)
 
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
