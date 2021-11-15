@@ -98,10 +98,10 @@ def get_initial_parameters(dataset_number, vectorized):
         for i in range(2,20):
             z0 = np.append(z0, zbase*(i+0.5), axis=0)
             v0 = np.append(v0, vbase*(i+0.5), axis=0)
-            
+        v0 = torch.tensor(v0)
         max_time = 15
-        true_beta = 7.5
-        model_beta = 8.
+        true_beta = 5.0
+        model_beta = 5.5
 
 
 
