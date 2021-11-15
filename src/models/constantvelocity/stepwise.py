@@ -61,9 +61,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
            :param t:   The time to update the latent position vector z with
            :returns:   The updated latent position vector z
            '''
-           steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
-           # Adding the initial Z0 position as first step and removes last step, as it is not a starting position
-           steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)[:,:,:-1]
            step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
            step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
            time_mask = times.unsqueeze(1) <= step_end_times
