@@ -67,7 +67,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--steps', '-steps', default=None, type=int)
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--animation', '-ani', action='store_true')
-    arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
+    arg_parser.add_argument('--animation_time_points', '-ATP', default=100, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
     arg_parser.add_argument('--wandb_entity', '-WE', default=None, type=str)
     arg_parser.add_argument('--wandb_project', '-WP', default=None, type=str)
@@ -298,7 +298,7 @@ if __name__ == '__main__':
                                                                 steps=v0.shape[2], max_time=max_time, device=device)
 
         ## Compute ground truth training loss for gt model and log  
-        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
+        # wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
 
         compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
         
