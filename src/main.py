@@ -273,14 +273,14 @@ if __name__ == '__main__':
         result_beta = model.beta.detach().clone()
         train_t = np.linspace(0, dataset_full[-1][2])
     
-    # Save model to weights and biases
+    # Save learned model parameters to weights and biases
     torch.save(result_z0, os.path.join(wandb.run.dir, "final_z0.pt"))
     torch.save(result_v0, os.path.join(wandb.run.dir, "final_v0.pt"))
     wandb.save(os.path.join(wandb.run.dir, "final_z0.pt"))
     wandb.save(os.path.join(wandb.run.dir, "final_v0.pt"))
 
 
-    ## Data generation is deiffrerent for synthetic and RL datasets
+    ## Data generation is diffrerent for synthetic and RL datasets
     if real_data == 0:
         if vectorized != 2: 
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
@@ -296,11 +296,6 @@ if __name__ == '__main__':
                                                                 steps=num_steps, max_time=max_time, device=device)
                 gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=true_beta, 
                                                                 steps=v0.shape[2], max_time=max_time, device=device)
-
-        ## Compute ground truth training loss for gt model and log  
-        # wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
-
-        compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1]], wandb_handler=wandb)
         
         ## Compare intensity rates of removed node pairs
         if remove_node_pairs_b == 1:    
@@ -325,4 +320,20 @@ if __name__ == '__main__':
 
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
-        auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
+        if real_data == 0:
+            auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_model)
+        else:
+            auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=None)
+
+    if real_data == 0:
+        ## Compute ground truth training loss for gt model and log  
+        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
+        if dataset_number == 1:
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb)
+        elif dataset_number == 2:
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [0,4]], wandb_handler=wandb)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[1,2], [1,3], [1,4], [2,3], [2,4], [3,4]], wandb_handler=wandb)
+        elif dataset_number == 3:
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb)
