@@ -95,7 +95,7 @@ def get_initial_parameters(dataset_number, vectorized):
                             ]])
         z0 = np.append(zbase, zbase*1.5, axis=0)
         v0 = np.append(vbase, vbase*1.5, axis=0)
-        for i in range(2,20):
+        for i in range(2,19):
             z0 = np.append(z0, zbase*(i+0.5), axis=0)
             v0 = np.append(v0, vbase*(i+0.5), axis=0)
         v0 = torch.tensor(v0)

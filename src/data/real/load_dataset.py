@@ -41,8 +41,8 @@ def load_real_dataset(dataset_number, debug):
         model_beta = 10.
     
     elif dataset_number == 3:
-        path = os.path.join(path, 'datasets/tij_pres_LyonSchool_98nodes.csv')
+        path = os.path.join(path, 'datasets/tij_pres_LyonSchool.csv')
         dataset, num_nodes = load_real_dataset_3(dataset_path=path)
-        model_beta = 1.4
+        model_beta = 4.
     
     return torch.tensor(dataset, dtype=torch.float64), num_nodes, model_beta
