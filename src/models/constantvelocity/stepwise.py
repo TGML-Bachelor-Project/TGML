@@ -52,6 +52,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
         # We don't take the very last z0, because that is the final z positions and not the start of any new step
         return steps_z0[:,:,:-1]
+
     
     def steps(self, times:torch.Tensor) -> torch.Tensor:
         '''
@@ -84,23 +85,23 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         return zt
     
     def log_intensity_function(self, times:torch.Tensor):
-            '''
-            The log version of the  model intensity function between node i and j at time t.
-            The intensity function measures the likelihood of node i and j
-            interacting at time t using a common bias term beta
-            :param t:   The time to update the latent position vector z with
-            :returns:   The log of the intensity between i and j at time t as a measure of
-                        the two nodes' log-likelihood of interacting.
-            '''
-            Zt = self.steps(times)
-            d = vec_squared_euclidean_dist(Zt)
+        '''
+        The log version of the  model intensity function between node i and j at time t.
+        The intensity function measures the likelihood of node i and j
+        interacting at time t using a common bias term beta
+        :param t:   The time to update the latent position vector z with
+        :returns:   The log of the intensity between i and j at time t as a measure of
+                    the two nodes' log-likelihood of interacting.
+        '''
+        Zt = self.steps(times)
+        d = vec_squared_euclidean_dist(Zt)
 
-            #Clear Zt as it is not used anymore
-            Zt = None
-            torch.cuda.empty_cache()
+        #Clear Zt as it is not used anymore
+        Zt = None
+        torch.cuda.empty_cache()
 
-            #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-            return self.beta - d
+        #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
+        return self.beta - d
     
     def regularize(self, log_likelihood):
         '''
@@ -118,7 +119,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :param tn:      End of the interaction period
         :returns:       Log liklihood of the model based on the given data
         '''
-        times = data[:,2].to(self.device, dtype=torch.float16)
+        times = data[:,2].to(self.device, dtype=torch.float32)
         unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
         i = data[:,0].long() #long to make i and j int
         j = data[:,1].long()

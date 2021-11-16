@@ -46,29 +46,30 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         Increments the model's time by t by
         updating the latent node position vector z
         based on a constant velocity dynamic.
-
         :param t:   The time to update the latent position vector z with
-
         :returns:   The updated latent position vector z
         '''
-        steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
-        # Adding the initial Z0 position as first step
-        steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
-        #Calculate how many steps each time point corresponds to
-        time_step_ratio = times/self.step_size
-        #Make round down time_step_ratio to find the index of the step which each time fits into
-        time_to_step_index = torch.floor(time_step_ratio)
-        #Calculate the remainding time that will be inside the matching step for each time
-        remainding_time = (times-time_to_step_index*self.step_size)
-        #Make sure times that lands on tn is put into the last time step by subtracting 1 from their step index
-        time_step_indices = [ t if t < self.num_of_steps else t-1 for t in  time_to_step_index.tolist()]
-        #The step positions we will start from for each time point and then use to find their actual position
-        Z_step_starting_positions = steps_z0[:,:,time_step_indices]
-        #Latent Z positions for all times
-        Zt = Z_step_starting_positions + self.v0[:,:,time_step_indices]*remainding_time
+        step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
+        step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
+        time_mask = times.unsqueeze(1) <= step_end_times
+        time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
+           
+        #Clear times before heavy movement computation, as they are not used anymore
+        step_mask = None
+        step_end_times = None
+        times = None
+        torch.cuda.empty_cache()
 
-        # We don't take the very last z0, because that is the final z positions and not the start of any new step
-        return Zt, steps_z0[:,:,:-1]
+        movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
+    
+        #Latent Z positions for all times
+        zt = self.z0.unsqueeze(2) + movement
+
+        # Clear movement as it is not used anymore
+        movement = None
+        torch.cuda.empty_cache()
+
+        return zt
 
     def step(self, t:torch.Tensor) -> torch.Tensor:
         '''
@@ -114,17 +115,19 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         The log version of the  model intensity function between node i and j at time t.
         The intensity function measures the likelihood of node i and j
         interacting at time t using a common bias term beta
-
-
         :param t:   The time to update the latent position vector z with
-
         :returns:   The log of the intensity between i and j at time t as a measure of
                     the two nodes' log-likelihood of interacting.
         '''
-        Zt, steps_z0 = self.steps(times)
+        Zt = self.steps(times)
         d = vec_squared_euclidean_dist(Zt)
+
+        #Clear Zt as it is not used anymore
+        Zt = None
+        torch.cuda.empty_cache()
+
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return steps_z0, (self.beta - d)
+        return self.beta - d
 
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
@@ -137,18 +140,31 @@ class GTStepwiseConstantVelocityModel(nn.Module):
 
         :returns:       Log liklihood of the model based on the given data
         '''
-        steps_z0, log_intensities = self.vec_log_intensity_function(times=data[:,2])
-        t = list(range(data.shape[0]))
-        i = torch.floor(data[:,0]).tolist() #torch.floor to make i and j int
-        j = torch.floor(data[:,1]).tolist()
-        event_intensity = torch.sum(log_intensities[i,j,t])
-        #event_intensity = torch.sum(torch.sum(log_intensities, dim=2))
+        times = data[:,2].to(self.device, dtype=torch.float32)
+        unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
+        i = data[:,0].long() #long to make i and j int
+        j = data[:,1].long()
+        log_intensities = self.log_intensity_function(times=unique_times)
+        event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
+
+        # Clear log_intensities as they are not used anymore
+        log_intensities = None
+        torch.cuda.empty_cache()
+    
         all_integrals = evaluate_integral(t0, tn, 
-                                    z0=steps_z0, v0=self.v0, 
+                                    z0=self.steps_z0(), v0=self.v0, 
                                     beta=self.beta, device=self.device)
         #Sum over time dimension, dim 2, and then sum upper triangular
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)
 
-        # Log likelihood
-        return event_intensity - non_event_intensity
+        # Clear integrals as they are not used anymore
+        all_integrals = None
+        integral = None
+        torch.cuda.empty_cache()
+
+    
+        log_likelihood =  event_intensity - non_event_intensity 
+    
+        # Regularize model on velocity change if gamma is set
+        return self.regularize(log_likelihood) if self.gamma else log_likelihood
