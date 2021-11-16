@@ -24,4 +24,11 @@ def old_vec_squared_euclidean_dist(Z):
     return torch.cdist(Z,Z,2)**2
 
 def vec_squared_euclidean_dist(Z):
-    return torch.sum(torch.square(Z.unsqueeze(0)-Z.unsqueeze(1)), dim=2)
+    Z0 = Z.unsqueeze(0)
+    Z1 = Z.unsqueeze(1)
+    
+    # Clear Z as it is not used anymore
+    Z = None
+    torch.cuda.empty_cache()
+
+    return torch.sum(torch.square(Z0-Z1), dim=2)
