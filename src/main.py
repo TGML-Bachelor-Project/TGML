@@ -144,9 +144,27 @@ if __name__ == '__main__':
 
     dataset_size = len(dataset_full)
 
+    ### Testing sets: Either remove entire noode pairs, 10% of events, or both
+    if remove_node_pairs_b == 1 and remove_interactions_b == 0:
+        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
+        removed_interactions = None
+    elif remove_node_pairs_b == 0 and remove_interactions_b == 1:
+        dataset, removed_interactions = remove_interactions(dataset=dataset_full, percentage=0.1, device=device)
+        removed_node_pairs = None
+    elif remove_node_pairs_b == 1 and remove_interactions_b == 1:
+        dataset_removed_nodes, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
+        dataset, removed_interactions = remove_interactions(dataset=dataset_removed_nodes, percentage=0.1, device=device)
+    else:
+        dataset, removed_node_pairs, removed_interactions = dataset_full, None, None
+
+    ## Compute size of dataset and find training batch size
+    training_set_size = len(dataset)
 
     ## Batch
-    train_batch_size = train_batch_size if train_batch_size > 0 else dataset_size
+    train_batch_size = train_batch_size if train_batch_size > 0 else training_set_size
+
+    print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
+
 
 
     ### WandB initialization
@@ -178,27 +196,9 @@ if __name__ == '__main__':
     ## Plot and log event distribution
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
 
-
-
-    ### Testing sets: Either remove entire noode pairs, 10% of events, or both
-    if remove_node_pairs_b == 1 and remove_interactions_b == 0:
-        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
-        removed_interactions = None
-    elif remove_node_pairs_b == 0 and remove_interactions_b == 1:
-        dataset, removed_interactions = remove_interactions(dataset=dataset_full, percentage=0.1, device=device)
-        removed_node_pairs = None
-    elif remove_node_pairs_b == 1 and remove_interactions_b == 1:
-        dataset_removed_nodes, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
-        dataset, removed_interactions = remove_interactions(dataset=dataset_removed_nodes, percentage=0.1, device=device)
-    else:
-        dataset, removed_node_pairs, removed_interactions = dataset_full, None, None
-
-    ## Compute size of dataset and find training batch size
-    training_set_size = len(dataset)
-
-
-    print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
     wandb.log({'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
+
+
 
 
 
@@ -318,11 +318,11 @@ if __name__ == '__main__':
                                                                 steps=num_steps, max_time=max_time, device=device)
 
     
+    if animation:
+        print(f'Creating animation of latent node positions on {animation_time_points} time points')
+        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
+    
 
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
         auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb)
-    
-    if animation:
-        print(f'Creating animation of latent node positions on {animation_time_points} time points')
-        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
