@@ -15,7 +15,7 @@ class TrainTestGym:
         len_training_set = int(len(dataset))
         train_data = dataset[:len_training_set]
 
-        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False)
+        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False, num_workers=4, pin_memory=True)
 
 
         self.model = model
@@ -69,15 +69,15 @@ class TrainTestGym:
 
     ### Training step
     def __train_step(self, engine, batch):
-        batch = batch.to(self.device, dtype=torch.float32)
+        batch = batch.to(self.device, dtype=torch.float16)
 
         if engine.t_start != 0:
-            engine.t_start = batch[0,self.time_column_idx].item()
+            engine.t_start = batch[0,self.time_column_idx]
 
         self.model.train()
         self.optimizer.zero_grad()
         train_loglikelihood = self.model(batch, t0=engine.t_start,
-                                            tn=batch[-1,self.time_column_idx].item())
+                                            tn=batch[-1,self.time_column_idx])
         loss = - train_loglikelihood
         loss.backward()
         self.optimizer.step()
@@ -85,6 +85,8 @@ class TrainTestGym:
         self.temp_metrics['beta_est'].append(self.model.beta.detach().clone())
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
+
+        batch.detach()
 
         return loss.item()
 
