@@ -61,6 +61,7 @@ comm-f2f-Resistance
 original_datasets/
 edited_datasets/
 tij_pres_LyonSchool.csv
+animations_rl_data/
 # Translations
 *.mo
 *.pot
