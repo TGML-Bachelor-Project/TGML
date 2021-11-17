@@ -328,6 +328,7 @@ if __name__ == '__main__':
     if real_data == 0:
         ## Compute ground truth training loss for gt model and log  
         wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
+        ## Make intensity rate comparison plots for the synthetic datasets
         if dataset_number == 1:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb)
         elif dataset_number == 2:

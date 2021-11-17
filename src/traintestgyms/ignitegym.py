@@ -78,6 +78,7 @@ class TrainTestGym:
 
     ### Training step
     def __train_step(self, engine, batch):
+        batch = batch
         if engine.t_start != 0:
             engine.t_start = batch[0,self.time_column_idx]
 
