@@ -68,7 +68,7 @@ class TrainTestGym:
 
 
     ### Training step
-    def __train_step(self, engine, batch)
+    def __train_step(self, engine, batch):
         batch = batch.to(self.device, dtype=torch.float32)
 
         if engine.t_start != 0:
