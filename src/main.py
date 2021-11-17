@@ -143,6 +143,7 @@ if __name__ == '__main__':
         max_time = max(dataset_full[:,2])
 
     dataset_size = len(dataset_full)
+    num_dyads = (num_nodes * (num_nodes - 1)) / 2
 
     ### Testing sets: Either remove entire noode pairs, 10% of events, or both
     if remove_node_pairs_b == 1 and remove_interactions_b == 0:
@@ -213,10 +214,14 @@ if __name__ == '__main__':
             model = MultiBetaStepwise(n_points=num_nodes, beta=model_beta, steps=num_steps, max_time=last_time_point, 
                                         device=device, z0=z0, v0=v0, true_init=False).to(device)
         else:
-            model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                            max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
-                            gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
-
+            if training_type == 2:
+                model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
+                                max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
+                                gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
+            else:
+                model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
+                                max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
+                                gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)                
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -233,7 +238,8 @@ if __name__ == '__main__':
                             optimizer=optimizer, 
                             metrics=metrics, 
                             time_column_idx=2,
-                            wandb_handler = wandb)
+                            wandb_handler = wandb,
+                            num_dyads=num_dyads)
         gym.train_test_model(epochs=num_epochs)
         
     ## Sequential model training
@@ -257,6 +263,20 @@ if __name__ == '__main__':
                 
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             gym.train_test_model(epochs=int(num_epochs/3))
+    
+    ## Baseline of no velocities
+    elif training_type == 2:
+        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, False, True
+        gym = TrainTestGym(dataset=dataset, 
+                            model=model, 
+                            device=device, 
+                            batch_size=train_batch_size, 
+                            optimizer=optimizer, 
+                            metrics=metrics, 
+                            time_column_idx=2,
+                            wandb_handler = wandb,
+                            num_dyads=num_dyads)
+        gym.train_test_model(epochs=num_epochs)
 
 
 
@@ -301,6 +321,7 @@ if __name__ == '__main__':
         if remove_node_pairs_b == 1:    
             for removed_node_pair in removed_node_pairs:
                 compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb)
+    
     else:
         if vectorized != 2: 
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
@@ -327,7 +348,7 @@ if __name__ == '__main__':
 
     if real_data == 0:
         ## Compute ground truth training loss for gt model and log  
-        wandb.log({'gt_train_NLL': (- (gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / dataset_size))})
+        wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
         ## Make intensity rate comparison plots for the synthetic datasets
         if dataset_number == 1:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb, num=1)
