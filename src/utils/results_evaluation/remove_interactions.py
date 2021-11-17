@@ -49,8 +49,8 @@ def make_AUC_testset(num_nodes, removed_interactions):
     pos_test_set, neg_test_set = removed_interactions.tolist(), alternate_node_pairs
 
     ## Define labels
-    positive_labels = np.ones(shape=(len(len(removed_interactions.tolist())),))
-    negative_labels = np.zeros(shape=(len(len(removed_interactions.tolist())),))
+    positive_labels = np.ones(shape=(len(removed_interactions.tolist())))
+    negative_labels = np.zeros(shape=(len(removed_interactions.tolist())))
     labels = np.concatenate([positive_labels, negative_labels], axis=0)
 
     return pos_test_set, neg_test_set, labels
@@ -60,7 +60,6 @@ def make_AUC_testset(num_nodes, removed_interactions):
 def auc_removed_interactions(removed_interactions, num_nodes, result_model, wandb_handler, gt_model=None):
     
     if gt_model is None:
-        
         pos_test_set, neg_test_set, labels = make_AUC_testset(num_nodes=num_nodes, removed_interactions=removed_interactions)
 
         ## Compute probability for node pair interaction for test set
@@ -97,7 +96,53 @@ def auc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         return fpr, tpr, thresh, auc_score
         
     else:
-        d
+        pos_test_set, neg_test_set, labels = make_AUC_testset(num_nodes=num_nodes, removed_interactions=removed_interactions)
+
+        ## Compute probability for node pair interaction for test set
+        pos_probs, neg_probs = [], []
+        gt_pos_probs, gt_neg_probs = [], []
+        
+        for tup in pos_test_set:
+            pos_probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+            gt_pos_probs.append(float(gt_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+        for tup in neg_test_set:
+            neg_probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+            gt_neg_probs.append(float(gt_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+        
+        probs = np.concatenate([pos_probs, neg_probs], axis=0)
+        gt_probs = np.concatenate([gt_pos_probs, gt_neg_probs], axis=0)
+
+
+        ## Compute ROC metrics
+        fpr, tpr, thresh = roc_curve(labels, probs, pos_label=1)
+        auc_score = roc_auc_score(labels, probs)
+        wandb_handler.log({'false_positive_rate':fpr, 'true_poitive_rate':tpr, 'thresh':thresh, 'AUC_score': auc_score})
+
+        gt_fpr, gt_tpr, gt_thresh = roc_curve(labels, gt_probs, pos_label=1)
+        gt_auc_score = roc_auc_score(labels, gt_probs)
+        wandb_handler.log({'GT_false_positive_rate':gt_fpr, 'GT_true_poitive_rate':gt_tpr, 'GT_thresh':gt_thresh, 'GT_AUC_score': gt_auc_score})
+
+        ## Plot ROC Curve
+        fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
+        plt.style.use('seaborn')
+
+        # plot roc curves
+        ax.plot(fpr, tpr, linestyle='--',color='red', label='est. Model')
+        ax.plot(gt_fpr, gt_tpr, linestyle='--',color='blue', label='gt. Model')
+        random_probs = [0 for i in range(len(labels))]
+        p_fpr, p_tpr, _ = roc_curve(labels, random_probs, pos_label=1)
+        ax.plot(p_fpr, p_tpr, linestyle='--', color='black')
+        
+        ax.grid()
+        plt.title('ROC curve')
+        ax.set_xlabel('False Positive Rate')
+        ax.set_ylabel('True Positive rate')
+
+        ax.legend(loc='best')
+
+        wandb_handler.log({'ROC_curve': wandb_handler.Image(fig)})
+
+        return fpr, tpr, thresh, auc_score
 
 
 
