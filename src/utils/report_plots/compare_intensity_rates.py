@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import time
 
 
-def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_handler):
+def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_handler, num):
 
 
     res_list = []
@@ -49,8 +49,8 @@ def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_h
             axs[i].set_xlabel('Time')
             axs[i].set_ylabel('Interaction Intensity')
 
-
-    wandb_handler.log({'intensity_plot': wandb_handler.Image(fig)})
+    name = 'intensity_plot' + str(num)
+    wandb_handler.log({name: wandb_handler.Image(fig)})
     # plt.show()
     return 
     

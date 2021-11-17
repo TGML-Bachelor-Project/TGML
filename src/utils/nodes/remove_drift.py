@@ -12,14 +12,11 @@ def remove_v_drift(v0:torch.Tensor):
     return v0 - torch.mean(v0, dim=0)
 
 def remove_rotation(z0:torch.Tensor, v0:torch.Tensor):
-    # We need to rearange axis to [Steps x Nodes x Dimensions] to work with torch.linalg.svd
-    zv = torch.permute(torch.dstack([z0, v0]), (2,0,1))
+    zv = torch.vstack([z0, v0.reshape(-1,2)])
     U, S, VT = torch.linalg.svd(zv, full_matrices=False)
-    # We arange axis back to [Nodes x Dimensions x Steps]
-    new_coords = torch.permute(U @ torch.diag_embed(S), (1,2,0))
-
-    #z0, v0
-    return new_coords[:,:,0], new_coords[:,:,1:]
+    new_coords = U * S.unsqueeze(0)
+    # z0 and v0 without rotation
+    return new_coords[:z0.shape[0],:], new_coords[z0.shape[0]:,:].reshape(v0.shape)
 
 
 if __name__ == '__main__':
@@ -79,13 +76,23 @@ if __name__ == '__main__':
             [ 0.4250, -0.1339,  0.7135, -0.0787,  0.4723,  0.1095,  0.6859,
             -0.0862,  0.3294,  0.3916]]])
     '''
+    z0 = torch.tensor([   
+                        [0., 1.], 
+                        [0., -1.]
+                    ])
+    v0 = torch.tensor([
+                        [[0.], #Vx node 0
+                        [-0.01] #Vy node 0
+                        ],
+                        [[0.], #Vx node 1
+                        [0.01] #Vy node 1
+                        ]])
+
     #Create you own folder called result_z0_v0 in the root folder and add z0 and v0 there
-    load_folder = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'result_z0_v0')
-    z0 = torch.load(os.path.join(load_folder,'z0.pt'))
-    v0 = torch.load(os.path.join(load_folder, 'v0.pt'))
-    z0 = center_z0(z0=z0)
-    v0 = remove_v_drift(v0=v0)
-    z0, v0 = remove_rotation(z0=z0, v0=v0)
+    # load_folder = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'result_z0_v0')
+    # z0 = torch.load(os.path.join(load_folder,'z0.pt'))
+    # v0 = torch.load(os.path.join(load_folder, 'v0.pt'))
+    z0, v0 = remove_rotation(z0=center_z0(z0), v0=remove_v_drift(v0))
 
     time_intervals = torch.linspace(0, 40.67, v0.shape[2] + 1)
     start_times = time_intervals[:-1]
