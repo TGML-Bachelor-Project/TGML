@@ -315,9 +315,12 @@ if __name__ == '__main__':
                                                                 steps=v0.shape[2], max_time=max_time, device=device)
         
         ## Compare intensity rates of removed node pairs
-        if remove_node_pairs_b == 1:    
+        if remove_node_pairs_b == 1: 
+            num = 0
             for removed_node_pair in removed_node_pairs:
-                compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb)
+                num += 1
+                plot_num = '_removed_dyad' + str(num)
+                compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb, num=plot_num)
     
     else:
         if vectorized != 2: 
@@ -350,8 +353,8 @@ if __name__ == '__main__':
         if dataset_number == 1:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb, num=1)
         elif dataset_number == 2:
-            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [0,4]], wandb_handler=wandb, num=1)
-            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[1,2], [1,3], [1,4], [2,3], [2,4], [3,4]], wandb_handler=wandb, num=2)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [0,4], [3,4]], wandb_handler=wandb, num=1)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[1,2], [1,3], [1,4], [2,3], [2,4]], wandb_handler=wandb, num=2)
         elif dataset_number == 3:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=1)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=2)
