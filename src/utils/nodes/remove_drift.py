@@ -12,16 +12,17 @@ def remove_v_drift(v0:torch.Tensor):
     return v0 - torch.mean(v0, dim=0)
 
 def remove_rotation(z0:torch.Tensor, v0:torch.Tensor):
-    z
-    zv = torch.dstack([z0, v0]).reshape(-1,2)
-    U, S, VT = torch.linalg.svd(zv, full_matrices=False)
-    # We arange axis back to [Nodes x Dimensions x Steps]
-    new_coords = U.unsqueeze() S
+    # z
+    # zv = torch.dstack([z0, v0]).reshape(-1,2)
+    # U, S, VT = torch.linalg.svd(zv, full_matrices=False)
+    # # We arange axis back to [Nodes x Dimensions x Steps]
+    # new_coords = U.unsqueeze() S
 
-    #z0, v0
-    new_coords = new_coords.reshape(zt)
+    # #z0, v0
+    # new_coords = new_coords.reshape(zt)
 
-    return new_coords[:,:,0], new_coords[:,:,1:]
+    # return new_coords[:,:,0], new_coords[:,:,1:]
+    return 1
 
 
 if __name__ == '__main__':
