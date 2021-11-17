@@ -32,6 +32,6 @@ def load_real_dataset(dataset_number, debug):
         path = os.path.join(path, 'datasets/tij_pres_LyonSchool.csv')
         dataset, num_nodes = load_data(dataset_path=path)
         print(f'Length of "Lyon School" dataset: {len(dataset)}')
-        model_beta = 1.
+        model_beta = 2.5
     
     return torch.tensor(dataset, dtype=torch.float64), num_nodes, model_beta
