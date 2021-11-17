@@ -81,6 +81,5 @@ class ConstantVelocityModel(nn.Module):
                                                     z=self.z0, v=self.v0, beta=self.beta)
 
         log_likelihood = event_intensity - non_event_intensity
-        ratio = event_intensity / non_event_intensity
 
-        return log_likelihood#, ratio
+        return -log_likelihood
