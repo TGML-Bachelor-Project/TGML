@@ -163,8 +163,5 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         integral = None
         torch.cuda.empty_cache()
 
-    
-        log_likelihood =  event_intensity - non_event_intensity 
-    
-        # Regularize model on velocity change if gamma is set
-        return self.regularize(log_likelihood) if self.gamma else log_likelihood
+        log_likelihood = event_intensity - non_event_intensity
+        return -log_likelihood

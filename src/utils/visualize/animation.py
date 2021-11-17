@@ -130,5 +130,5 @@ def animate_nomodel_lyon(z0, v0, time_deltas, step_size, num_of_steps, t_start, 
                   selector=dict(mode='markers'))
 
     fig.show()
-    # fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html'))
-    fig.write_html('/home/augustsemrau/drive/bachelor/TGML/animations_rl_data/lyon_full_lr0025_steps240.html')
+    fig.write_html(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'animations', 'latest_animation.html', auto_play=False))
+    # fig.write_html('/home/augustsemrau/drive/bachelor/TGML/animations_rl_data/lyon_full_lr0025_steps240.html', auto_play=False)
