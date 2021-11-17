@@ -56,11 +56,11 @@ if __name__ == '__main__':
     arg_parser.add_argument('--seed', '-seed', default=1, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=2, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=5, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=-1, type=int)
-    arg_parser.add_argument('--real_data', '-RD', default=1, type=int)
+    arg_parser.add_argument('--real_data', '-RD', default=0, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=1, type=int)
-    arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
+    arg_parser.add_argument('--training_type', '-TT', default=2, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
@@ -69,8 +69,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--animation', '-ani', action='store_true')
     arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
-    arg_parser.add_argument('--wandb_entity', '-WE', default=None, type=str)
-    arg_parser.add_argument('--wandb_project', '-WP', default=None, type=str)
+    arg_parser.add_argument('--wandb_entity', '-WE', default='augustsemrau', type=str)
+    arg_parser.add_argument('--wandb_project', '-WP', default='TGML11', type=str)
     arg_parser.add_argument('--wandb_run_name', '-WRN', default=None, type=str)
     arg_parser.add_argument('--wandb_group', '-WG', default=None, type=str)
     args = arg_parser.parse_args()
@@ -214,14 +214,10 @@ if __name__ == '__main__':
             model = MultiBetaStepwise(n_points=num_nodes, beta=model_beta, steps=num_steps, max_time=last_time_point, 
                                         device=device, z0=z0, v0=v0, true_init=False).to(device)
         else:
-            if training_type == 2:
-                model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                                max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
-                                gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
-            else:
-                model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
-                                max_time=last_time_point, device=device, z0=z0, v0=v0, true_init=False, 
-                                gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)                
+            model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
+                            max_time=last_time_point, device=device, z0=z0, v0=v0, v0_init=training_type, 
+                            gamma=velocity_gamma_regularization).to(device, dtype=torch.float32)
+              
     ## Optimizer is initialized here, Adam is used
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 

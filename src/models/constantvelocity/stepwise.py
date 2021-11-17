@@ -11,7 +11,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
     The model predicts starting postion z0, starting velocities v0, and starting background node intensity beta
     using a Euclidean distance measure in latent space for the intensity function.
     '''
-    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, true_init, gamma=None):
+    def __init__(self, n_points:int, beta:float, steps, max_time, device, z0, v0, v0_init, gamma=None):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
             :param intensity_func:          The intensity function of the model
@@ -24,11 +24,9 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             self.num_of_steps = steps
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
 
-            if true_init:
-                z0_copy = z0.astype(np.float) if isinstance(z0, np.ndarray) else z0
-                v0_copy = v0.detach().clone()
-                self.z0 = nn.Parameter(torch.tensor(z0_copy), requires_grad=True) 
-                self.v0 = nn.Parameter(v0_copy, requires_grad=True) 
+            if v0_init == 2:
+                self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0., requires_grad=True) 
             else:
                 self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
                 self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
