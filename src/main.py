@@ -115,6 +115,7 @@ if __name__ == '__main__':
         # Adjusting z0 and v0
         z0 = torch.from_numpy(z0)
         z0, v0 = center_z0(z0), remove_v_drift(v0)
+        z0, v0 = remove_rotation(z0, v0)
         z0 = z0.numpy()
         if step_beta:
             #Use a beta parameter for each step in the model
