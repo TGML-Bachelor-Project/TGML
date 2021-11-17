@@ -90,7 +90,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         '''
         velocity_changes = self.v0[:,:,1:]-self.v0[:,:,:-1]
         sq_frob_norms = torch.square(torch.linalg.norm(velocity_changes))
-        return  log_likelihood + self.gamma * torch.sum(sq_frob_norms)
+        return  -log_likelihood + self.gamma * torch.sum(sq_frob_norms)
     
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
         '''
@@ -116,4 +116,4 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         log_likelihood =  event_intensity - non_event_intensity 
     
         # Regularize model on velocity change if gamma is set
-        return self.regularize(log_likelihood) if self.gamma else log_likelihood
+        return self.regularize(log_likelihood) if self.gamma else -log_likelihood

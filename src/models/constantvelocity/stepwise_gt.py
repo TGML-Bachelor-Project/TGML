@@ -150,5 +150,5 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)
 
-        # Log likelihood
-        return event_intensity - non_event_intensity
+        log_likelihood = event_intensity - non_event_intensity
+        return -log_likelihood

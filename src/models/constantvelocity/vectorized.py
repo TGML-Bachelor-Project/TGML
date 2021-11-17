@@ -87,5 +87,5 @@ class VectorizedConstantVelocityModel(nn.Module):
                                                         z0=self.z0, v0=self.v0, 
                                                         beta=self.beta, device=self.device).triu(diagonal=1))
 
-        # Log likelihood
-        return event_intensity - non_event_intensity
+        log_liklihood = event_intensity - non_event_intensity
+        return -log_liklihood

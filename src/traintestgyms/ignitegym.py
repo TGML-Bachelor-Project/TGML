@@ -76,9 +76,8 @@ class TrainTestGym:
 
         self.model.train()
         self.optimizer.zero_grad()
-        train_loglikelihood = self.model(batch, t0=engine.t_start,
+        loss = self.model(batch, t0=engine.t_start,
                                             tn=batch[-1,self.time_column_idx])
-        loss = - train_loglikelihood
         loss.backward()
         self.optimizer.step()
         self.temp_metrics['train_loss'].append(loss.item())

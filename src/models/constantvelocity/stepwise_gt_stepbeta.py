@@ -1,3 +1,4 @@
+from math import log
 import torch
 import numpy as np
 import torch.nn as nn
@@ -151,4 +152,5 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         non_event_intensity = torch.sum(integral)
 
         # Log likelihood
-        return event_intensity - non_event_intensity
+        log_likelihood = event_intensity - non_event_intensity
+        return -log_likelihood
