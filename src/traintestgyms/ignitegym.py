@@ -72,7 +72,7 @@ class TrainTestGym:
 
     def __reset_model(self):
         #Adjust model parameters for nicer visualizations
-        self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
+        self.model_state['z0'], self.model_state['v0'] = remove_rotation(center_z0(self.model.z0), remove_v_drift(self.model.v0))
         self.model.load_state_dict(self.model_state)
 
 
