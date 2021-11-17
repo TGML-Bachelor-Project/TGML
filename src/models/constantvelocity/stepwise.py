@@ -25,8 +25,9 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
 
             if v0_init == 2:
-                self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
-                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0., requires_grad=True) 
+                self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True)
+                eps = torch.tensor(np.finfo(float).eps).to(device)
+                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*eps, requires_grad=True) 
             else:
                 self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
                 self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
