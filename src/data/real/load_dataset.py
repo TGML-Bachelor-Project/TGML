@@ -36,7 +36,7 @@ def load_real_dataset(dataset_number, debug):
         model_beta = 4.
 
     elif dataset_number == 2:
-        path = os.path.join(path, 'datasets/email_eu_core_temporal.csv')
+        path = os.path.join(path, 'datasets/email_eu_core_temporal_500nodes.csv')
         dataset, num_nodes = load_real_dataset_1(dataset_path=path)
         model_beta = 10.
     
