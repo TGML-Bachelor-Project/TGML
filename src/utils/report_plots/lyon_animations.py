@@ -6,8 +6,11 @@ import pandas as pd
 import torch
 import numpy as np
 from utils.visualize.animation import animate_nomodel_lyon
+
+
 if __name__ == '__main__':
 
+    
     z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/src/wandb/run-20211116_102215-3j9hw6j1/files/final_z0.pt', map_location=torch.device('cpu'))
     
     v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/src/wandb/run-20211116_102215-3j9hw6j1/files/final_v0.pt', map_location=torch.device('cpu'))
