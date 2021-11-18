@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 from utils.nodes.remove_drift import remove_v_drift, center_z0, remove_rotation
@@ -56,10 +57,18 @@ class TrainTestGym:
 
         ## Reset z0 and v0
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), self.__reset_model)
+        # Save z0 and v0
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=500), self.__log_params)
                                                                                                 
 
         pbar = ProgressBar()
         pbar.attach(self.trainer)
+
+    def __log_params(self):
+        result_z0 = self.model.z0.detach().clone()
+        result_v0 = self.model.v0.detach().clone()
+        torch.save(result_z0, os.path.join(self.wandb_handler.run.dir, "final_z0.pt"))
+        torch.save(result_v0, os.path.join(self.wandb_handler.run.dir, "final_v0.pt"))
 
     def __reset_model(self):
         #Adjust model parameters for nicer visualizations
@@ -69,8 +78,6 @@ class TrainTestGym:
 
     ### Training step
     def __train_step(self, engine, batch):
-        batch = batch.to(self.device, dtype=torch.float32)
-
         if engine.t_start != 0:
             engine.t_start = batch[0,self.time_column_idx]
 
@@ -85,7 +92,9 @@ class TrainTestGym:
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
 
+        # Detach batch, as it is not used anymore
         batch.detach()
+        torch.cuda.empty_cache()
 
         return loss.item()
 

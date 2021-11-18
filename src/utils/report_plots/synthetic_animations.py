@@ -66,4 +66,4 @@ if __name__ == '__main__':
     time_deltas = (end_times-start_times)
     # All deltas should be equal do to linspace, so we can take the first
     step_size = time_deltas[0]
-    animate_nomodel(z0=z0, v0=v0, time_deltas=time_deltas, step_size=step_size, num_of_steps=v0.shape[2], t_start=0, t_end=max_time, num_of_time_points=100, device=None)
+    animate_nomodel(z0=z0, v0=v0, time_deltas=time_deltas, step_size=step_size, start_times=start_times, t_start=0, t_end=max_time, num_of_time_points=100, device=None)
