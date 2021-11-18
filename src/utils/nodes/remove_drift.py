@@ -83,6 +83,47 @@ if __name__ == '__main__':
             [ 0.4250, -0.1339,  0.7135, -0.0787,  0.4723,  0.1095,  0.6859,
             -0.0862,  0.3294,  0.3916]]])
     '''
+    z0 = torch.tensor([[-0.6, -0.4], [-0.6, 0.4], [-0.8, 0.2], [-0.4, 0.2], [0.2, -0.3], [0.2, 0.3], [0.1, -0.3], [0.5, -0.3], [0.4,0.6], [0.6,0.6], [0.5,0.3], [0.5, 0.6]])
+    v0 = torch.tensor([
+                [[0.09], #Vx node 0
+                [0.01] #Vy node 0
+                ],
+                [[-0.01], #Vx node 1
+                [-0.01] #Vy node 1
+                ],
+                [[0.01], #Vx node 2
+                [0.09] #Vy node 2
+                ],
+                [[-0.01], #Vx node 3
+                [0.09]  #Vy node 3
+                ],
+                [[0.01],
+                [0.09]
+                ],
+                [[0.01],
+                [-0.09]
+                ],
+                [[0.09],
+                [0.01]
+                ],
+                [[-0.09],
+                [0.09]
+                ],
+                [[-0.01],
+                [-0.09]
+                ],
+                [[-0.01],
+                [-0.09]
+                ],
+                [[-0.01],
+                [-0.09]
+                ],
+                [[0.09],
+                [0.01]
+                ],
+                ])
+      
+    '''
     z0 = torch.tensor([   
                         [0., 1.], 
                         [0., -1.]
@@ -94,6 +135,7 @@ if __name__ == '__main__':
                         [[0.], #Vx node 1
                         [0.01] #Vy node 1
                         ]])
+    '''
 
     #Create you own folder called result_z0_v0 in the root folder and add z0 and v0 there
     # load_folder = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'result_z0_v0')
@@ -101,14 +143,14 @@ if __name__ == '__main__':
     # v0 = torch.load(os.path.join(load_folder, 'v0.pt'))
     z0, v0 = remove_rotation(z0=center_z0(z0), v0=remove_v_drift(v0))
 
-    time_intervals = torch.linspace(0, 40.67, v0.shape[2] + 1)
+    time_intervals = torch.linspace(0, 10, v0.shape[2] + 1)
     start_times = time_intervals[:-1]
     end_times = time_intervals[1:]
     time_intervals = list(zip(start_times.tolist(), end_times.tolist()))
     time_deltas = (end_times-start_times)
     # All deltas should be equal do to linspace, so we can take the first
     step_size = time_deltas[0]
-    animate_nomodel(z0=z0, v0=v0, time_deltas=time_deltas, step_size=step_size, num_of_steps=v0.shape[2], t_start=0, t_end=40.67, num_of_time_points=100, device=None)
+    animate_nomodel(z0=z0, v0=v0, time_deltas=time_deltas, step_size=step_size, start_times=start_times, t_start=0, t_end=10, num_of_time_points=100, device=None)
 
 
 
