@@ -94,7 +94,6 @@ class TrainTestGym:
 
         # Detach batch, as it is not used anymore
         batch.detach()
-        torch.cuda.empty_cache()
 
         return loss.item()
 

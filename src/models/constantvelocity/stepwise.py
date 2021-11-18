@@ -66,20 +66,10 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         time_mask = times.unsqueeze(1) <= step_end_times
         time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
            
-        #Clear times before heavy movement computation, as they are not used anymore
-        step_mask = None
-        step_end_times = None
-        times = None
-        torch.cuda.empty_cache()
-
         movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
     
         #Latent Z positions for all times
         zt = self.z0.unsqueeze(2) + movement
-
-        # Clear movement as it is not used anymore
-        movement = None
-        torch.cuda.empty_cache()
 
         return zt
     
@@ -94,10 +84,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         '''
         Zt = self.steps(times)
         d = vec_squared_euclidean_dist(Zt)
-
-        #Clear Zt as it is not used anymore
-        Zt = None
-        torch.cuda.empty_cache()
 
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
         return self.beta - d
@@ -125,10 +111,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         log_intensities = self.log_intensity_function(times=unique_times)
         event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
 
-        # Clear log_intensities as they are not used anymore
-        log_intensities = None
-        torch.cuda.empty_cache()
-    
         all_integrals = evaluate_integral(t0, tn, 
                                     z0=self.steps_z0(), v0=self.v0, 
                                     beta=self.beta, device=self.device)
@@ -136,12 +118,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)
 
-        # Clear integrals as they are not used anymore
-        all_integrals = None
-        integral = None
-        torch.cuda.empty_cache()
-
-    
         log_likelihood =  event_intensity - non_event_intensity 
     
         # Regularize model on velocity change if gamma is set
