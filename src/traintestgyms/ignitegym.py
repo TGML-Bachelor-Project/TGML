@@ -92,9 +92,6 @@ class TrainTestGym:
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
 
-        # Detach batch, as it is not used anymore
-        batch.detach()
-
         return loss.item()
 
 
