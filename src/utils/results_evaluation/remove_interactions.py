@@ -5,6 +5,12 @@ import torch
 from sklearn.metrics import roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
 import time
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import scipy.stats as stats
+import random
+
+
 
 def remove_interactions(dataset, percentage, device):
 
@@ -23,13 +29,177 @@ def remove_interactions(dataset, percentage, device):
     return dataset_reduced, removed_interactions
 
 
-def predict(model, sample_indices, t0, tn, triu_indices):
-    scores = []
-    for idx in sample_indices:
-        u, v = triu_indices[0][idx], triu_indices[1][idx]
-        score = model.riemann_sum(u, v, t0, tn, n_samples=10).item()
-        scores.append(score)
-    return np.array(scores)
+def make_testset(num_nodes, removed_interactions):
+    nodepair_ind = np.triu_indices(num_nodes, k=1)
+    all_node_pairs = list(zip(nodepair_ind[0], nodepair_ind[1]))
+
+    ## Sample alernative node pairs for each of the timestamps in the removed interactions
+    alternate_node_pairs = []
+    for tup in removed_interactions.tolist():
+        tup_copy = tup
+        excluded_node_pair = [tup[0], tup[1]]
+        alternate_node_pair = random.choice([i for i in all_node_pairs if i not in excluded_node_pair])
+        tup_copy[0], tup_copy[1] = alternate_node_pair[0], alternate_node_pair[1]
+        alternate_node_pairs.append(tup_copy)
+
+    ## Define positive and negative sets of node pairs
+    pos_test_set, neg_test_set = removed_interactions.tolist(), alternate_node_pairs
+
+    return pos_test_set, neg_test_set
+
+
+def acc_removed_interactions(removed_interactions, num_nodes, result_model, wandb_handler, gt_model=None):
+    
+    if gt_model is None:
+        pos_test_set, neg_test_set = make_testset(num_nodes=num_nodes, removed_interactions=removed_interactions)
+
+        ## Compute probability for node pair interaction for test set
+        pos_probs, neg_probs = [], []
+        for tup in pos_test_set:
+            pos_probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+        for tup in neg_test_set:
+            neg_probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+        probs = []
+        for i in range(len(pos_probs)):
+            probs.append([pos_probs[i], neg_probs[i]])
+
+        y_pred = []
+        y_true = [1] * len(removed_interactions.tolist())
+        for i in probs:
+            if probs[i][0] > probs[i][1]:
+                y_pred.append(1)
+            else:
+                y_pred.append(0)
+
+        ## Compute bootstrapped accuracy metrics
+        acc_scores = []
+        for _ in range(1000):
+            y_pred_sample, y_true_sample, _, _ = train_test_split(y_pred, y_true, test_size=0.9, random_state=random.randint(0,10000))
+            acc_scores.append(accuracy_score(y_true_sample, y_pred_sample))
+        
+        mean_acc_score = np.mean(acc_scores)
+        sigma_acc_score = np.std(acc_scores)
+
+        conf_interval = stats.norm.interval(0.95, loc=mean_acc_score, scale=sigma_acc_score)
+        wandb_handler.log({'Mean_Accuracy': mean_acc_score, 'STD_Accuracy': sigma_acc_score, 'Confidence_Interval': conf_interval})
+
+        # Plot accuracies and confidence interval
+        fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
+        plt.style.use('seaborn')
+
+        ax.hist(acc_scores, color='red')
+        ax.vlines(conf_interval[0], label='Lower Confidence Bound')
+        ax.vlines(conf_interval[1], label='Upper Confidence Bound')
+        ax.vlines(mean_acc_score, label='Mean')
+        
+        ax.grid()
+        plt.title('Bootstrapped Accuracy with 95% Confidence Interval')
+        ax.set_xlabel('Accuracy')
+        ax.set_ylabel('Frequency')
+
+        ax.legend(loc='best')
+
+        wandb_handler.log({'Accuracy_Plot': wandb_handler.Image(fig)})
+
+        return 
+        
+    else:
+        pos_test_set, neg_test_set = make_testset(num_nodes=num_nodes, removed_interactions=removed_interactions)
+
+        ## Compute probability for node pair interaction for test set
+        pos_probs, neg_probs = [], []
+        gt_pos_probs, gt_neg_probs = [], []
+        for tup in pos_test_set:
+            pos_probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+            gt_pos_probs.append(float(gt_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+        for tup in neg_test_set:
+            neg_probs.append(float(result_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+            gt_neg_probs.append(float(gt_model.log_intensity_function(i=int(tup[0]), j=int(tup[1]), t=tup[2])))
+
+        probs = []
+        gt_probs = []
+        for i in range(len(pos_probs)):
+            probs.append([pos_probs[i], neg_probs[i]])
+            gt_probs.append([gt_pos_probs[i], gt_neg_probs[i]])
+
+        y_pred = []
+        gt_y_pred = []
+        y_true = [1] * len(removed_interactions.tolist())
+        for i in probs:
+            if probs[i][0] > probs[i][1]:
+                y_pred.append(1)
+            else:
+                y_pred.append(0)
+            if gt_probs[i][0] > gt_probs[i][1]:
+                gt_y_pred.append(1)
+            else:
+                gt_y_pred.append(0)
+
+        ## Compute bootstrapped accuracy metrics
+        acc_scores = []
+        gt_acc_scores = []
+        for _ in range(1000):
+            num = random.randint(0,10000)
+            y_pred_sample, y_true_sample, _, _ = train_test_split(y_pred, y_true, test_size=0.9, random_state=num)
+            acc_scores.append(accuracy_score(y_true_sample, y_pred_sample))
+            gt_y_pred_sample, gt_y_true_sample, _, _ = train_test_split(gt_y_pred, y_true, test_size=0.9, random_state=num)
+            gt_acc_scores.append(accuracy_score(gt_y_true_sample, gt_y_pred_sample))
+        
+        mean_acc_score = np.mean(acc_scores)
+        sigma_acc_score = np.std(acc_scores)
+        gt_mean_acc_score = np.mean(gt_acc_scores)
+        gt_sigma_acc_score = np.std(gt_acc_scores)
+
+        conf_interval = stats.norm.interval(0.95, loc=mean_acc_score, scale=sigma_acc_score)
+        wandb_handler.log({'Mean_Accuracy': mean_acc_score, 'STD_Accuracy': sigma_acc_score, 'Confidence_Interval': conf_interval})
+
+        gt_conf_interval = stats.norm.interval(0.95, loc=gt_mean_acc_score, scale=gt_sigma_acc_score)
+        wandb_handler.log({'GT_Mean_Accuracy': gt_mean_acc_score, 'GT_STD_Accuracy': gt_sigma_acc_score, 'GT_Confidence_Interval': gt_conf_interval})
+
+        # Plot accuracies and confidence interval
+        fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
+        plt.style.use('seaborn')
+        ax.hist(acc_scores, color='red')
+        ax.vlines(conf_interval[0], label='Lower Confidence Bound')
+        ax.vlines(conf_interval[1], label='Upper Confidence Bound')
+        ax.vlines(mean_acc_score, label='Mean')
+        
+        ax.grid()
+        plt.title('Bootstrapped Accuracy with 95% Confidence Interval')
+        ax.set_xlabel('Accuracy')
+        ax.set_ylabel('Frequency')
+
+        ax.legend(loc='best')
+
+        wandb_handler.log({'Accuracy_Plot': wandb_handler.Image(fig)})
+
+        fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
+        plt.style.use('seaborn')
+        ax.hist(gt_acc_scores, color='blue')
+        ax.vlines(gt_conf_interval[0], label='Lower Confidence Bound')
+        ax.vlines(gt_conf_interval[1], label='Upper Confidence Bound')
+        ax.vlines(gt_mean_acc_score, label='Mean')
+        
+        ax.grid()
+        plt.title('GT Bootstrapped Accuracy with 95% Confidence Interval')
+        ax.set_xlabel('Accuracy')
+        ax.set_ylabel('Frequency')
+
+        ax.legend(loc='best')
+
+        wandb_handler.log({'GT_Accuracy_Plot': wandb_handler.Image(fig)})
+
+        return 
+
+
+
+
+
+
+
+
+
+
 
 
 def make_AUC_testset(num_nodes, removed_interactions):
@@ -55,7 +225,6 @@ def make_AUC_testset(num_nodes, removed_interactions):
 
     return pos_test_set, neg_test_set, labels
 
-    
 
 def auc_removed_interactions(removed_interactions, num_nodes, result_model, wandb_handler, gt_model=None):
     

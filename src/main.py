@@ -22,7 +22,7 @@ from data.synthetic.sampling.constantvelocity import ConstantVelocitySimulator
 from data.synthetic.sampling.tensor_stepwiseconstantvelocity import StepwiseConstantVelocitySimulator
 from data.real.load_dataset import load_real_dataset
 from utils.results_evaluation.remove_nodepairs import remove_node_pairs
-from utils.results_evaluation.remove_interactions import auc_removed_interactions, remove_interactions
+from utils.results_evaluation.remove_interactions import acc_removed_interactions, remove_interactions
 
 ## Models
 from models.constantvelocity.standard import ConstantVelocityModel
@@ -343,9 +343,9 @@ if __name__ == '__main__':
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
         if real_data == 0:
-            auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_model)
+            acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_model)
         else:
-            auc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=None)
+            acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=None)
 
     if real_data == 0:
         ## Compute ground truth training loss for gt model and log  
