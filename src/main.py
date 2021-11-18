@@ -27,7 +27,6 @@ from utils.results_evaluation.remove_interactions import acc_removed_interaction
 
 ## Models
 from models.nodynamics import NoDynamicsModel
-from models.gt_nodynamics import GTNoDynamicsModel
 from models.constantvelocity.standard import ConstantVelocityModel
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
 from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
