@@ -130,7 +130,7 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
         i = data[:,0].long() #long to make i and j int
         j = data[:,1].long()
-        log_intensities = self.log_intensity_function(times=unique_times)
+        log_intensities = self.vec_log_intensity_function(times=unique_times)
         event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
 
         all_integrals = evaluate_integral(t0, tn, z0=self.steps_z0(), 
