@@ -33,11 +33,12 @@ class GTStepwiseConstantVelocityModel(nn.Module):
             # Creating the time step deltas
             #Equally distributed
             time_intervals = torch.linspace(0, max_time, steps+1)
-            start_times = time_intervals[:-1]
-            end_times = time_intervals[1:]
-            self.time_deltas = (end_times-start_times).to(self.device)
+            self.start_times = time_intervals[:-1].to(self.device, dtype=torch.float32)
+            self.end_times = time_intervals[1:].to(self.device, dtype=torch.float32)
+            self.time_intervals = list(zip(self.start_times.tolist(), self.end_times.tolist()))
+            self.time_deltas = (self.end_times-self.start_times)
             # All deltas should be equal do to linspace, so we can take the first
-            self.step_size = self.time_deltas[0].to(self.device)
+            self.step_size = self.time_deltas[0]
 
 
 
@@ -82,6 +83,13 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         Z_step_starting_positions = Z_steps[:,:,time_step_index]
         Zt = Z_step_starting_positions + self.v0[:,:,time_step_index]*time_step_delta_dif
         return Zt
+
+    def steps_z0(self):
+        steps_z0 = self.z0.unsqueeze(2) + torch.cumsum(self.v0*self.time_deltas, dim=2)
+        # Adding the initial Z0 position as first step
+        steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
+        # We don't take the very last z0, because that is the final z positions and not the start of any new step
+        return steps_z0[:,:,:-1]
 
     def log_intensity_function(self, i, j, t):
         '''
@@ -130,7 +138,7 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
         i = data[:,0].long() #long to make i and j int
         j = data[:,1].long()
-        log_intensities = self.log_intensity_function(times=unique_times)
+        log_intensities = self.vec_log_intensity_function(times=unique_times)
         event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
 
         all_integrals = evaluate_integral(t0, tn, z0=self.steps_z0(), 
