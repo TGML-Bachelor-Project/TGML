@@ -110,9 +110,6 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         j = data[:,1].long()
         log_intensities = self.log_intensity_function(times=unique_times)
 
-        #Detach times from GPU as we are done using them in computations
-        times.detach()
-
         event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
 
         all_integrals = evaluate_integral(t0, tn, 
