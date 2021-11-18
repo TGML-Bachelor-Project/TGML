@@ -25,6 +25,7 @@ from utils.results_evaluation.remove_nodepairs import remove_node_pairs
 from utils.results_evaluation.remove_interactions import acc_removed_interactions, remove_interactions
 
 ## Models
+from models.nodynamics import NoDynamicsModel
 from models.constantvelocity.standard import ConstantVelocityModel
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
 from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
@@ -206,6 +207,8 @@ if __name__ == '__main__':
 
 
     ### Setup Model: Either non-vectorized, vectorized or stepwise
+    if vectorized == -1:
+        model = NoDynamicsModel(n_points=num_nodes, beta=model_beta).to(device)
     if vectorized == 0:
         model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device)
     elif vectorized == 1:
