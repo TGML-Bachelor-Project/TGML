@@ -74,7 +74,7 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         ## Compute bootstrapped accuracy metrics
         acc_scores = []
         for _ in range(10000):
-            y_pred_sample, _, y_true_sample, _ = train_test_split(y_pred, y_true, test_size=0.9, random_state=random.randint(0,10000))
+            y_pred_sample, _, y_true_sample, _ = train_test_split(y_pred, y_true, test_size=0.25, random_state=random.randint(0,10000))
             acc_scores.append(accuracy_score(y_true_sample, y_pred_sample))
         
         mean_acc_score = np.mean(acc_scores)
@@ -86,10 +86,12 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         # Plot accuracies and confidence interval
         fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
         plt.style.use('seaborn')
-        ax.hist(acc_scores, bins=100, color='red')
-        ax.vlines(conf_interval[0], ymin=0, ymax=2000, colors='green', label='Lower Confidence Bound')
-        ax.vlines(conf_interval[1], ymin=0, ymax=2000, colors='green', label='Upper Confidence Bound')
-        ax.vlines(mean_acc_score, ymin=0, ymax=2000, colors='yellow', label='Mean')
+        ax.hist(acc_scores, bins=50, color='red')
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymin, ymax)
+        ax.vlines(conf_interval[0], ymin=0, ymax=ymax, colors='green', label='Lower Confidence Bound')
+        ax.vlines(conf_interval[1], ymin=0, ymax=ymax, colors='green', label='Upper Confidence Bound')
+        ax.vlines(mean_acc_score, ymin=0, ymax=ymax, colors='yellow', label='Mean')
         
         ax.grid()
         plt.title('Bootstrapped Accuracy with 95% Confidence Interval')
@@ -141,7 +143,7 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
             num = random.randint(0,10000)
             y_pred_sample, _, y_true_sample, _ = train_test_split(y_pred, y_true, test_size=0.25, random_state=num)
             acc_scores.append(accuracy_score(y_true_sample, y_pred_sample))
-            gt_y_pred_sample, _, gt_y_true_sample, _ = train_test_split(gt_y_pred, y_true, test_size=0.9, random_state=num)
+            gt_y_pred_sample, _, gt_y_true_sample, _ = train_test_split(gt_y_pred, y_true, test_size=0.25, random_state=num)
             gt_acc_scores.append(accuracy_score(gt_y_true_sample, gt_y_pred_sample))
         
         mean_acc_score = np.mean(acc_scores)
@@ -158,10 +160,12 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         # Plot accuracies and confidence interval
         fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
         plt.style.use('seaborn')
-        ax.hist(acc_scores, bins=100, color='red')
-        ax.vlines(conf_interval[0], ymin=0, ymax=2000, colors='green', label='Lower Confidence Bound')
-        ax.vlines(conf_interval[1], ymin=0, ymax=2000, colors='green', label='Upper Confidence Bound')
-        ax.vlines(mean_acc_score, ymin=0, ymax=2000, colors='yellow', label='Mean')
+        ax.hist(acc_scores, bins=50, color='red')
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymin, ymax)
+        ax.vlines(conf_interval[0], ymin=0, ymax=ymax, colors='green', label='Lower Confidence Bound')
+        ax.vlines(conf_interval[1], ymin=0, ymax=ymax, colors='green', label='Upper Confidence Bound')
+        ax.vlines(mean_acc_score, ymin=0, ymax=ymax, colors='yellow', label='Mean')
         
         ax.grid()
         plt.title('Bootstrapped Accuracy with 95% Confidence Interval')
@@ -174,10 +178,12 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
 
         fig, ax = plt.subplots(1,1, figsize=(10, 6), facecolor='w', edgecolor='k')
         plt.style.use('seaborn')
-        ax.hist(gt_acc_scores, bins=100, color='blue')
-        ax.vlines(gt_conf_interval[0], ymin=0, ymax=2000, colors='green', label='Lower Confidence Bound')
-        ax.vlines(gt_conf_interval[1], ymin=0, ymax=2000, colors='green', label='Upper Confidence Bound')
-        ax.vlines(gt_mean_acc_score, ymin=0, ymax=2000, colors='yellow', label='Mean')
+        ax.hist(gt_acc_scores, bins=50, color='blue')
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymin, ymax)
+        ax.vlines(gt_conf_interval[0], ymin=0, ymax=ymax, colors='green', label='Lower Confidence Bound')
+        ax.vlines(gt_conf_interval[1], ymin=0, ymax=ymax, colors='green', label='Upper Confidence Bound')
+        ax.vlines(gt_mean_acc_score, ymin=0, ymax=ymax, colors='yellow', label='Mean')
         
         ax.grid()
         plt.title('GT Bootstrapped Accuracy with 95% Confidence Interval')
