@@ -78,6 +78,7 @@ class TrainTestGym:
 
     ### Training step
     def __train_step(self, engine, batch):
+        batch = batch.to(self.device)
         if engine.t_start != 0:
             engine.t_start = batch[0,self.time_column_idx]
 
@@ -91,6 +92,8 @@ class TrainTestGym:
         self.temp_metrics['beta_est'].append(self.model.beta.detach().clone())
         if engine.t_start == 0:
             engine.t_start = 1 #change t_start to flag it for updates
+
+        batch.detach()
 
         return loss.item()
 
