@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import torch.nn as nn
 from utils.nodes.distances import vec_squared_euclidean_dist, old_vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
@@ -26,8 +25,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
             if v0_init == 2:
                 self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True)
-                eps = torch.tensor(np.finfo(float).eps).to(device)
-                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*eps, requires_grad=True) 
+                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*torch.eps, requires_grad=True) 
             else:
                 self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
                 self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
@@ -112,9 +110,8 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
         event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
 
-        all_integrals = evaluate_integral(t0, tn, 
-                                    z0=self.steps_z0(), v0=self.v0, 
-                                    beta=self.beta, device=self.device)
+        all_integrals = evaluate_integral(t0, tn, z0=self.steps_z0(), 
+                                            v0=self.v0, beta=self.beta)
         #Sum over time dimension, dim 2, and then sum upper triangular
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)

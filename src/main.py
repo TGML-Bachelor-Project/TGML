@@ -104,7 +104,8 @@ if __name__ == '__main__':
 
     ## Device
     print(f'Running with pytorch device: {device}')
-    torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
+    torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2).to(device)
+    torch.eps = torch.tensor(np.finfo(float).eps).to(device) #Adding eps to avoid devision by 0 
 
 
 

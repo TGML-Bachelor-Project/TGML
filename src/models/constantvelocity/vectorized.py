@@ -83,9 +83,8 @@ class VectorizedConstantVelocityModel(nn.Module):
         j = torch.floor(data[:,1]).tolist()
 
         event_intensity = torch.sum(log_intensities[i,j,t])
-        non_event_intensity = torch.sum(evaluate_integral(t0, tn, 
-                                                        z0=self.z0, v0=self.v0, 
-                                                        beta=self.beta, device=self.device).triu(diagonal=1))
+        non_event_intensity = torch.sum(evaluate_integral(t0, tn, z0=self.z0, 
+                                                            v0=self.v0, beta=self.beta).triu(diagonal=1))
 
         log_liklihood = event_intensity - non_event_intensity
         return -log_liklihood
