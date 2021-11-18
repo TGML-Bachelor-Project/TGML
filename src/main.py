@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 
 from wandb.sdk import wandb_run
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
 
@@ -65,10 +66,10 @@ if __name__ == '__main__':
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--steps', '-steps', default=None, type=int)
+    arg_parser.add_argument('--steps', '-steps', default=1, type=int)
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--animation', '-ani', action='store_true')
-    arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
+    arg_parser.add_argument('--animation_time_points', '-ATP', default=1000, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
     arg_parser.add_argument('--wandb_entity', '-WE', default='augustsemrau', type=str)
     arg_parser.add_argument('--wandb_project', '-WP', default='TGML11', type=str)
@@ -123,8 +124,6 @@ if __name__ == '__main__':
             #Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
         num_nodes = z0.shape[0]
-        if num_steps == None:
-            num_steps = v0.shape[2]
         print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\nNumber of steps to fit: {num_steps}")
 
         ## Initialize data builder for simulating node interactions from known Poisson Process
@@ -141,8 +140,6 @@ if __name__ == '__main__':
 
         dataset_full, num_nodes, model_beta = load_real_dataset(dataset_number=dataset_number, debug=0)
         z0, v0, true_beta, = None, None, None 
-        if num_steps == None:
-            num_steps = 2
         max_time = max(dataset_full[:,2])
 
     dataset_size = len(dataset_full)
@@ -208,16 +205,16 @@ if __name__ == '__main__':
 
     ### Setup Model: Either non-vectorized, vectorized or stepwise
     if vectorized == -1:
-        model = NoDynamicsModel(n_points=num_nodes, beta=model_beta).to(device)
+        model = NoDynamicsModel(n_points=num_nodes, beta=model_beta).to(device, dtype=torch.float32)
     if vectorized == 0:
-        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device)
+        model = ConstantVelocityModel(n_points=num_nodes, beta=model_beta).to(device, dtype=torch.float32)
     elif vectorized == 1:
-        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device)
+        model = VectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, device=device, z0=z0, v0=v0, true_init=True).to(device, dtype=torch.float32)
     elif vectorized == 2:
         last_time_point = dataset[:,2][-1].item()
         if isinstance(model_beta, np.ndarray):
             model = MultiBetaStepwise(n_points=num_nodes, beta=model_beta, steps=num_steps, max_time=last_time_point, 
-                                        device=device, z0=z0, v0=v0, true_init=False).to(device)
+                                        device=device, z0=z0, v0=v0, true_init=False).to(device, dtype=torch.float32)
         else:
             model = StepwiseVectorizedConstantVelocityModel(n_points=num_nodes, beta=model_beta, steps=num_steps, 
                             max_time=last_time_point, device=device, z0=z0, v0=v0, v0_init=training_type, 
@@ -351,8 +348,6 @@ if __name__ == '__main__':
             acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=None)
 
     if real_data == 0:
-        ## Compute ground truth training loss for gt model and log  
-        wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
         ## Make intensity rate comparison plots for the synthetic datasets
         if dataset_number == 1:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb, num=1)
@@ -363,3 +358,6 @@ if __name__ == '__main__':
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=1)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=2)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb, num=3)
+
+        ## Compute ground truth training loss for gt model and log  
+        wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
