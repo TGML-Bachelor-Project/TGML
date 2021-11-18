@@ -117,12 +117,6 @@ if __name__ == '__main__':
     if real_data == 0:
         ### Defining parameters for synthetic data generation
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
-        # Adjusting z0 and v0
-        z0 = torch.from_numpy(z0)
-        z0, v0 = center_z0(z0), remove_v_drift(v0)
-        if not keep_rotation:
-            z0, v0 = remove_rotation(z0, v0)
-        z0 = z0.numpy()
         if step_beta:
             #Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
