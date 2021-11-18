@@ -10,7 +10,7 @@ from ignite.contrib.handlers.tqdm_logger import ProgressBar
 class TrainTestGym:
     def __init__(self, dataset, model, device, batch_size,
                     optimizer, metrics,
-                    time_column_idx, wandb_handler, num_dyads) -> None:
+                    time_column_idx, wandb_handler, num_dyads, keep_rotation) -> None:
 
         ## Split dataset and intiate dataloder
         len_training_set = int(len(dataset))
@@ -56,7 +56,7 @@ class TrainTestGym:
                                                                                                     'avg_train_loss': self.metrics['avg_train_loss'][len(self.epoch_count)-1]}))
 
         ## Reset z0 and v0
-        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), self.__reset_model)
+        self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.__reset_model(keep_rotation))
         # Save z0 and v0
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=500), self.__log_params)
                                                                                                 
@@ -70,9 +70,12 @@ class TrainTestGym:
         torch.save(result_z0, os.path.join(self.wandb_handler.run.dir, "final_z0.pt"))
         torch.save(result_v0, os.path.join(self.wandb_handler.run.dir, "final_v0.pt"))
 
-    def __reset_model(self):
+    def __reset_model(self, keep_rotation):
+        z0, v0 = center_z0(self.model.z0), remove_v_drift(self.model.v0)
+        if not keep_rotation:
+            z0, v0 = remove_rotation(z0,v0)
         #Adjust model parameters for nicer visualizations
-        self.model_state['z0'], self.model_state['v0'] = remove_rotation(center_z0(self.model.z0), remove_v_drift(self.model.v0))
+        self.model_state['z0'], self.model_state['v0'] = z0, v0
         self.model.load_state_dict(self.model_state)
 
 

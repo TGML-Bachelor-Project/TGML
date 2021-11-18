@@ -68,6 +68,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--steps', '-steps', default=1, type=int)
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
+    arg_parser.add_argument('--keep_rotation', '-KR', action='store_true')
     arg_parser.add_argument('--animation', '-ani', action='store_true')
     arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
@@ -91,6 +92,7 @@ if __name__ == '__main__':
     real_data = args.real_data
     num_steps = args.steps
     step_beta = args.step_beta
+    keep_rotation = args.keep_rotation
     animation = args.animation
     animation_time_points = args.animation_time_points
     velocity_gamma_regularization = args.velocity_gamma_regularization
@@ -118,7 +120,8 @@ if __name__ == '__main__':
         # Adjusting z0 and v0
         z0 = torch.from_numpy(z0)
         z0, v0 = center_z0(z0), remove_v_drift(v0)
-        z0, v0 = remove_rotation(z0, v0)
+        if not keep_rotation:
+            z0, v0 = remove_rotation(z0, v0)
         z0 = z0.numpy()
         if step_beta:
             #Use a beta parameter for each step in the model
@@ -237,7 +240,8 @@ if __name__ == '__main__':
                             metrics=metrics, 
                             time_column_idx=2,
                             wandb_handler = wandb,
-                            num_dyads=num_dyads)
+                            num_dyads=num_dyads,
+                            keep_rotation=keep_rotation)
         gym.train_test_model(epochs=num_epochs)
         
     ## Sequential model training
@@ -250,7 +254,8 @@ if __name__ == '__main__':
                             optimizer=optimizer, 
                             metrics=metrics, 
                             time_column_idx=2,
-                            wandb_handler = wandb)
+                            wandb_handler = wandb,
+                            keep_rotation=keep_rotation)
         for i in range(3):
             if i == 0:
                 model.z0.requires_grad = True  # Learn Z next
@@ -273,7 +278,8 @@ if __name__ == '__main__':
                             metrics=metrics, 
                             time_column_idx=2,
                             wandb_handler = wandb,
-                            num_dyads=num_dyads)
+                            num_dyads=num_dyads,
+                            keep_rotation=keep_rotation)
         gym.train_test_model(epochs=num_epochs)
 
 
