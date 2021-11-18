@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
     ### Testing sets: Either remove entire noode pairs, 10% of events, or both
     if remove_node_pairs_b == 1 and remove_interactions_b == 0:
-        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.05, device=device)
+        dataset, removed_node_pairs = remove_node_pairs(dataset=dataset_full, num_nodes=num_nodes, percentage=0.10, device=device)
         removed_interactions = None
     elif remove_node_pairs_b == 0 and remove_interactions_b == 1:
         dataset, removed_interactions = remove_interactions(dataset=dataset_full, percentage=0.1, device=device)

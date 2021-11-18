@@ -18,7 +18,7 @@ def remove_node_pairs(dataset, num_nodes, percentage, device, node_pairs=None):
     for tup in dataset.tolist():
         keep = True
         for node_pair in node_pairs:
-            if int(tup[0]) == node_pair[0] and int(tup[1]) == node_pair[1]:
+            if int(tup[0]) == node_pair[0] and int(tup[1]) == node_pair[1] or int(tup[0]) == node_pair[1] and int(tup[1]) == node_pair[0]:
                 keep = False
             else:
                 pass
