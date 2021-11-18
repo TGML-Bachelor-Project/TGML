@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 import torch.nn as nn
 from utils.nodes.distances import vec_squared_euclidean_dist, old_vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
@@ -26,8 +25,7 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
 
             if v0_init == 2:
                 self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True)
-                eps = torch.tensor(np.finfo(float).eps).to(device)
-                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*eps, requires_grad=True) 
+                self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*torch.eps, requires_grad=True) 
             else:
                 self.z0 = nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
                 self.v0 = nn.Parameter(torch.rand(size=(n_points,2, steps))*0.5, requires_grad=True) 
@@ -51,39 +49,42 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         steps_z0 = torch.cat((self.z0.unsqueeze(2), steps_z0), dim=2)
         # We don't take the very last z0, because that is the final z positions and not the start of any new step
         return steps_z0[:,:,:-1]
+
     
     def steps(self, times:torch.Tensor) -> torch.Tensor:
-           '''
-           Increments the model's time by t by
-           updating the latent node position vector z
-           based on a constant velocity dynamic.
-           :param t:   The time to update the latent position vector z with
-           :returns:   The updated latent position vector z
-           '''
-           step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
-           step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
-           time_mask = times.unsqueeze(1) <= step_end_times
-           time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
+        '''
+        Increments the model's time by t by
+        updating the latent node position vector z
+        based on a constant velocity dynamic.
+        :param t:   The time to update the latent position vector z with
+        :returns:   The updated latent position vector z
+        '''
+        step_mask = ((times.unsqueeze(1) > self.start_times) | (self.start_times == 0).unsqueeze(0))
+        step_end_times = step_mask*torch.cumsum(step_mask*self.step_size, axis=1)
+        time_mask = times.unsqueeze(1) <= step_end_times
+        time_deltas = (self.step_size - (step_end_times - times.unsqueeze(1))*time_mask)*step_mask
            
-           movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
+        movement = torch.sum(self.v0.unsqueeze(2)*time_deltas, dim=3)
     
-           #Latent Z positions for all times
-           zt = self.z0.unsqueeze(2) + movement
-           return zt
+        #Latent Z positions for all times
+        zt = self.z0.unsqueeze(2) + movement
+
+        return zt
     
     def log_intensity_function(self, times:torch.Tensor):
-            '''
-            The log version of the  model intensity function between node i and j at time t.
-            The intensity function measures the likelihood of node i and j
-            interacting at time t using a common bias term beta
-            :param t:   The time to update the latent position vector z with
-            :returns:   The log of the intensity between i and j at time t as a measure of
-                        the two nodes' log-likelihood of interacting.
-            '''
-            Zt = self.steps(times)
-            d = vec_squared_euclidean_dist(Zt)
-            #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-            return self.beta - d
+        '''
+        The log version of the  model intensity function between node i and j at time t.
+        The intensity function measures the likelihood of node i and j
+        interacting at time t using a common bias term beta
+        :param t:   The time to update the latent position vector z with
+        :returns:   The log of the intensity between i and j at time t as a measure of
+                    the two nodes' log-likelihood of interacting.
+        '''
+        Zt = self.steps(times)
+        d = vec_squared_euclidean_dist(Zt)
+
+        #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
+        return self.beta - d
     
     def regularize(self, log_likelihood):
         '''
@@ -101,19 +102,20 @@ class StepwiseVectorizedConstantVelocityModel(nn.Module):
         :param tn:      End of the interaction period
         :returns:       Log liklihood of the model based on the given data
         '''
-        unique_times, unique_time_indices = torch.unique(data[:,2], return_inverse=True)
+        times = data[:,2].to(self.device, dtype=torch.float32)
+        unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
         i = data[:,0].long() #long to make i and j int
         j = data[:,1].long()
         log_intensities = self.log_intensity_function(times=unique_times)
-        event_intensity = torch.sum(log_intensities[i,j,unique_time_indices]) 
-    
-        all_integrals = evaluate_integral(t0, tn, 
-                                    z0=self.steps_z0(), v0=self.v0, 
-                                    beta=self.beta, device=self.device)
+
+        event_intensity = torch.sum(log_intensities[i,j,unique_time_indices])
+
+        all_integrals = evaluate_integral(t0, tn, z0=self.steps_z0(), 
+                                            v0=self.v0, beta=self.beta)
         #Sum over time dimension, dim 2, and then sum upper triangular
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)
-    
+
         log_likelihood =  event_intensity - non_event_intensity 
     
         # Regularize model on velocity change if gamma is set

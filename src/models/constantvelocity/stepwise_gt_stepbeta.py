@@ -144,9 +144,8 @@ class GTStepwiseConstantVelocityModel(nn.Module):
         j = torch.floor(data[:,1]).tolist()
         event_intensity = torch.sum(log_intensities[i,j,t])
         #event_intensity = torch.sum(torch.sum(log_intensities, dim=2))
-        all_integrals = evaluate_integral(t0, tn, 
-                                    z0=steps_z0, v0=self.v0, 
-                                    beta=self.beta, device=self.device)
+        all_integrals = evaluate_integral(t0, tn, z0=steps_z0, 
+                                            v0=self.v0, beta=self.beta)
         #Sum over time dimension, dim 2, and then sum upper triangular
         integral = torch.sum(torch.sum(all_integrals,dim=2).triu(diagonal=1))
         non_event_intensity = torch.sum(integral)

@@ -104,7 +104,8 @@ if __name__ == '__main__':
 
     ## Device
     print(f'Running with pytorch device: {device}')
-    torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2)
+    torch.pi = torch.tensor(torch.acos(torch.zeros(1)).item()*2).to(device)
+    torch.eps = torch.tensor(np.finfo(float).eps).to(device) #Adding eps to avoid devision by 0 
 
 
 
@@ -300,19 +301,19 @@ if __name__ == '__main__':
     ## Data generation is diffrerent for synthetic and RL datasets
     if real_data == 0:
         if vectorized != 2: 
-            result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
-            gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta)
+            result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta).to(device, dtype=torch.float32)
+            gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta).to(device, torch.float32)
         elif vectorized == 2:
             if isinstance(model_beta, np.ndarray):
                 result_model = GTMultiBetaStepwise(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
-                                                                steps=num_steps, max_time=max_time, device=device)
+                                                                steps=num_steps, max_time=max_time, device=device).to(device, dtype=torch.float32)
                 gt_model = GTMultiBetaStepwise(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=torch.tensor([true_beta]*v0.shape[2]), 
-                                                                steps=v0.shape[2], max_time=max_time, device=device)
+                                                                steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
             else:
                 result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
-                                                                steps=num_steps, max_time=max_time, device=device)
+                                                                steps=num_steps, max_time=max_time, device=device).to(device, dtype=torch.float32)
                 gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=true_beta, 
-                                                                steps=v0.shape[2], max_time=max_time, device=device)
+                                                                steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
         
         ## Compare intensity rates of removed node pairs
         if remove_node_pairs_b == 1: 
