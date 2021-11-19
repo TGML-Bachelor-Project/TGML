@@ -302,6 +302,7 @@ if __name__ == '__main__':
 
     ## Data generation is diffrerent for synthetic and RL datasets
     if real_data == 0:
+        print('Generating GT and RES model')
         if vectorized != 2: 
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta).to(device, dtype=torch.float32)
             gt_model = GTConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta).to(device, torch.float32)
@@ -319,6 +320,7 @@ if __name__ == '__main__':
         
         ## Compare intensity rates of removed node pairs
         if remove_node_pairs_b == 1: 
+            print('Plotting interation intensities for removed dyads')
             num = 0
             for removed_node_pair in removed_node_pairs:
                 num += 1
@@ -326,6 +328,7 @@ if __name__ == '__main__':
                 compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb, num=plot_num)
     
     else:
+        print('Generating RES model')
         if vectorized != 2: 
             result_model = GTConstantVelocityModel(n_points=num_nodes, z=result_z0 , v=result_v0 , beta=result_beta)
         elif vectorized == 2:
@@ -337,13 +340,10 @@ if __name__ == '__main__':
                                                                 steps=num_steps, max_time=max_time, device=device)
 
     
-    if animation:
-        print(f'Creating animation of latent node positions on {animation_time_points} time points')
-        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
     
-
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
+        print('Computing Accuracy Scores for Removed Interactions')
         if real_data == 0:
             acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_model)
         else:
@@ -364,3 +364,7 @@ if __name__ == '__main__':
 
         ## Compute ground truth training loss for gt model and log  
         wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
+    
+    if animation:
+        print(f'Creating animation of latent node positions on {animation_time_points} time points')
+        animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
