@@ -16,7 +16,7 @@ class TrainTestGym:
         len_training_set = int(len(dataset))
         train_data = dataset[:len_training_set]
 
-        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False, num_workers=4, pin_memory=True)
+        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle= False)
 
 
         self.model = model

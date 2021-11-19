@@ -11,11 +11,14 @@ from utils.visualize.animation import animate_nomodel_lyon
 if __name__ == '__main__':
 
     
-    z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/src/wandb/run-20211116_102215-3j9hw6j1/files/final_z0.pt', map_location=torch.device('cpu'))
-    
-    v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/src/wandb/run-20211116_102215-3j9hw6j1/files/final_v0.pt', map_location=torch.device('cpu'))
+    load_folder = os.path.join(os.path.dirname(__file__),'..', '..', '..')
+    z0 = torch.load(os.path.join(load_folder, 'result_z0_v0', 'final_z0_lyon_fulldata.pt'), map_location=torch.device('cpu'))
+    v0 = torch.load(os.path.join(load_folder, 'result_z0_v0', 'final_v0_lyon_fulldata.pt'), map_location=torch.device('cpu'))
+    # z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/src/wandb/run-20211116_102215-3j9hw6j1/files/final_z0.pt', map_location=torch.device('cpu'))
+    # v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/src/wandb/run-20211116_102215-3j9hw6j1/files/final_v0.pt', map_location=torch.device('cpu'))
 
-    metadata = pd.read_csv('/home/augustsemrau/drive/bachelor/TGML/src/data/real/datasets/metadata_LyonSchool.csv', delimiter=',', header=None)
+    # metadata = pd.read_csv('/home/augustsemrau/drive/bachelor/TGML/src/data/real/datasets/metadata_LyonSchool.csv', delimiter=',', header=None)
+    metadata = pd.read_csv(os.path.join(load_folder, 'src', 'data', 'real', 'datasets', 'metadata_LyonSchool.csv'), delimiter=',', header=None)
     metadata = metadata.values.tolist()
     # color_dict = {'cpa': 'red',
     #                 'cpb': 'cyan',
