@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import scipy.stats as stats
 import random
-
+from tqdm import tqdm
 
 
 def remove_interactions(dataset, percentage, device):
@@ -73,7 +73,7 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
 
         ## Compute bootstrapped accuracy metrics
         acc_scores = []
-        for _ in range(10000):
+        for _ in tqdm(range(10000)):
             y_pred_sample, _, y_true_sample, _ = train_test_split(y_pred, y_true, test_size=0.25, random_state=random.randint(0,10000))
             acc_scores.append(accuracy_score(y_true_sample, y_pred_sample))
         
@@ -139,7 +139,7 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         ## Compute bootstrapped accuracy metrics
         acc_scores = []
         gt_acc_scores = []
-        for _ in range(10000):
+        for _ in tqdm(range(10000)):
             num = random.randint(0,10000)
             y_pred_sample, _, y_true_sample, _ = train_test_split(y_pred, y_true, test_size=0.25, random_state=num)
             acc_scores.append(accuracy_score(y_true_sample, y_pred_sample))
