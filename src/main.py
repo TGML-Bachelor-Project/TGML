@@ -120,6 +120,8 @@ if __name__ == '__main__':
         if step_beta:
             #Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
+        if num_steps == 0:
+            num_steps = v0.shape[2]
         num_nodes = z0.shape[0]
         print(f"Number of nodes: {num_nodes} \nz0: \n{z0} \nv0: \n{v0} \nTrue Beta: {true_beta} \nModel initiated Beta: {model_beta} \nMax time: {max_time}\nNumber of steps to fit: {num_steps}")
 
@@ -355,10 +357,10 @@ if __name__ == '__main__':
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [0,4], [3,4]], wandb_handler=wandb, num=1)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[1,2], [1,3], [1,4], [2,3], [2,4]], wandb_handler=wandb, num=2)
         elif dataset_number == 3:
-            animate(gt_model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
-        #     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=1)
-        #     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=2)
-        #     compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb, num=3)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=1)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=2)
+            compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb, num=3)
+        # animate(gt_model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
 
         ## Compute ground truth training loss for gt model and log  
         wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
