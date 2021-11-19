@@ -103,6 +103,6 @@ class TrainTestGym:
         print(f'Starting model training with {epochs} epochs')
         self.trainer.run(self.train_loader, max_epochs=epochs)
         # Adjust model params after last training
-        self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
+        # self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
         self.model.load_state_dict(self.model_state)
         print('Completed model training')
