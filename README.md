@@ -8,6 +8,8 @@ The project contains the implementation of the models used in the project. This 
 
 To see some animations created using the code, checkout: https://tgml-bachelor-project.github.io/
 
+Also, the whole report can be compiled as .pdf from the latex code in: https://github.com/TGML-Bachelor-Project/Report
+
 ## Folder Structure
 The `src` folder contains all source code for the project. Inside this folder is:
 * `data` - Contains all data for the project and the code for loading the data (some data might need to be unzipped before running the code)
