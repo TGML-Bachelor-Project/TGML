@@ -11,7 +11,7 @@ def load_data(dataset_path):
 
 
 ### Loading the designated dataset
-def load_real_dataset(dataset_number, debug):
+def load_real_dataset(dataset_number):
 
     path = os.path.dirname(os.path.realpath(__file__))
     
@@ -20,14 +20,8 @@ def load_real_dataset(dataset_number, debug):
         dataset, num_nodes = load_data(dataset_path=path)
         print(f'Length of "Resistance Game 4" dataset: {len(dataset)}')
         model_beta = 4.
-
-    elif dataset_number == 2:
-        path = os.path.join(path, 'datasets/email_eu_core_temporal_500nodes.csv')
-        dataset, num_nodes = load_data(dataset_path=path)
-        print(f'Length of "EU Email" dataset: {len(dataset)}')
-        model_beta = 10.
     
-    elif dataset_number == 3:
+    elif dataset_number == 2:
         path = os.path.join(path, 'datasets/tij_pres_LyonSchool.csv')
         dataset, num_nodes = load_data(dataset_path=path)
         print(f'Length of "Lyon School" dataset: {len(dataset)}')

@@ -37,11 +37,5 @@ class DatasetBuilder:
             self.max_time = torch.tensor(self.max_time)
             dataset[:,2] = dataset[:,2]/self.max_time
 
-        # # Verify time ordering
-        # prev_t = 0.
-        # for row in dataset:
-        #     cur_t = row[time_column_idx]
-        #     assert cur_t > prev_t
-        #     prev_t = cur_t
 
         return dataset

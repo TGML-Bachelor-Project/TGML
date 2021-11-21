@@ -1,6 +1,5 @@
 from math import log
 import torch
-import numpy as np
 import torch.nn as nn
 from utils.nodes.distances import get_squared_euclidean_dist, vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral

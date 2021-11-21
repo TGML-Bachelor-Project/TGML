@@ -28,7 +28,7 @@ class NHPP:
                                         intensity_func(t=self.__time_bins[inx])) 
                                         for inx in range(1, self.__numOfTimeBins)]
 
-        # Set seed
+        ## Set seed
         np.random.seed(self.__seed)
 
     def generate_time_units(self) -> list:

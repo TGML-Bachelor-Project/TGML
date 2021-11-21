@@ -1,5 +1,5 @@
 import torch
-import numpy as np
+
 
 def analytical_integral(t0:torch.Tensor, tn:torch.Tensor, 
                         i:int, j:int,

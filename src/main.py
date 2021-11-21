@@ -6,12 +6,7 @@ import numpy as np
 import torch
 from argparse import ArgumentParser
 
-from wandb.sdk import wandb_run
-
-
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append('/home/augustsemrau/drive/bachelor/TGML/src')
-
 
 
 ### Code imports
@@ -39,15 +34,11 @@ from models.constantvelocity.stepwise_gt_stepbeta import GTStepwiseConstantVeloc
 from traintestgyms.ignitegym import TrainTestGym
 
 ## Plots
-from utils.report_plots.training_tracking import plotres, plotgrad
-from utils.report_plots.compare_intensity_rates import compare_intensity_rates_plot
-from utils.report_plots.event_distribution import plot_event_dist
+from utils.results_evaluation.compare_intensity_rates import compare_intensity_rates_plot
+from utils.results_evaluation.event_distribution import plot_event_dist
 
 ## Utils
 from utils.visualize.animation import animate
-from utils.nodes.remove_drift import center_z0, remove_v_drift, remove_rotation
-
-
 
 
 
@@ -58,19 +49,19 @@ if __name__ == '__main__':
     arg_parser.add_argument('--seed', '-seed', default=1, type=int)
     arg_parser.add_argument('--device', '-device', default='cpu', type=str)
     arg_parser.add_argument('--learning_rate', '-LR', default=0.025, type=float)
-    arg_parser.add_argument('--num_epochs', '-NE', default=5, type=int)
+    arg_parser.add_argument('--num_epochs', '-NE', default=5000, type=int)
     arg_parser.add_argument('--train_batch_size', '-TBS', default=-1, type=int)
     arg_parser.add_argument('--real_data', '-RD', default=0, type=int)
-    arg_parser.add_argument('--dataset_number', '-DS', default=3, type=int)
-    arg_parser.add_argument('--training_type', '-TT', default=2, type=int)
+    arg_parser.add_argument('--dataset_number', '-DS', default=2, type=int)
+    arg_parser.add_argument('--training_type', '-TT', default=1, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
-    arg_parser.add_argument('--steps', '-steps', default=1, type=int)
+    arg_parser.add_argument('--steps', '-steps', default=10, type=int)
     arg_parser.add_argument('--step_beta', '-SB', action='store_true')
     arg_parser.add_argument('--keep_rotation', '-KR', action='store_true')
     arg_parser.add_argument('--animation', '-ani', action='store_true')
-    arg_parser.add_argument('--animation_time_points', '-ATP', default=500, type=int)
+    arg_parser.add_argument('--animation_time_points', '-ATP', default=1500, type=int)
     arg_parser.add_argument('--velocity_gamma_regularization', '-VGR', default=None, type=float)
     arg_parser.add_argument('--wandb_entity', '-WE', default='augustsemrau', type=str)
     arg_parser.add_argument('--wandb_project', '-WP', default='TGMLRQ2', type=str)
@@ -115,10 +106,10 @@ if __name__ == '__main__':
 
     ### Data: Either synthetically generated data, or loaded real world data
     if real_data == 0:
-        ### Defining parameters for synthetic data generation
+        ## Defining parameters for synthetic data generation
         z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=dataset_number, vectorized=vectorized)
         if step_beta:
-            #Use a beta parameter for each step in the model
+            ## Use a beta parameter for each step in the model
             model_beta = np.asarray([model_beta]*num_steps)
         if num_steps == 0:
             num_steps = v0.shape[2]
@@ -137,7 +128,7 @@ if __name__ == '__main__':
     else:
         print(f"Loading real dataset number {dataset_number}")
 
-        dataset_full, num_nodes, model_beta = load_real_dataset(dataset_number=dataset_number, debug=0)
+        dataset_full, num_nodes, model_beta = load_real_dataset(dataset_number=dataset_number)
         z0, v0, true_beta, = None, None, None 
         max_time = max(dataset_full[:,2])
 
@@ -164,7 +155,6 @@ if __name__ == '__main__':
     train_batch_size = train_batch_size if train_batch_size > 0 else training_set_size
 
     print(f"\nLength of entire dataset: {dataset_size}\nLength of training set: {training_set_size}\nTrain batch size: {train_batch_size}\n")
-
 
 
     ### WandB initialization
@@ -197,8 +187,6 @@ if __name__ == '__main__':
     plot_event_dist(dataset=dataset_full, wandb_handler=wandb)
 
     wandb.log({'training_set_size': training_set_size, 'removed_node_pairs': removed_node_pairs, 'train_batch_size': train_batch_size, 'beta': model_beta})
-
-
 
 
 
@@ -263,20 +251,6 @@ if __name__ == '__main__':
             gym.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             gym.train_test_model(epochs=int(num_epochs/3))
     
-    ## Baseline of no velocities
-    elif training_type == 2:
-        model.z0.requires_grad, model.v0.requires_grad, model.beta.requires_grad = True, False, True
-        gym = TrainTestGym(dataset=dataset, 
-                            model=model, 
-                            device=device, 
-                            batch_size=train_batch_size, 
-                            optimizer=optimizer, 
-                            metrics=metrics, 
-                            time_column_idx=2,
-                            wandb_handler = wandb,
-                            num_dyads=num_dyads,
-                            keep_rotation=keep_rotation)
-        gym.train_test_model(epochs=num_epochs)
 
 
 
@@ -360,7 +334,6 @@ if __name__ == '__main__':
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=1)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=2)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb, num=3)
-        # animate(gt_model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
 
         ## Compute ground truth training loss for gt model and log  
         wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})

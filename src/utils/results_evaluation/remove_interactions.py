@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
-import time
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import scipy.stats as stats

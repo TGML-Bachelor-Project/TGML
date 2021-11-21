@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from utils.nodes.distances import vec_squared_euclidean_dist, old_vec_squared_euclidean_dist
+from utils.nodes.distances import vec_squared_euclidean_dist
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
 
 

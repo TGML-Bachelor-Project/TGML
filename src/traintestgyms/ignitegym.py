@@ -57,7 +57,7 @@ class TrainTestGym:
 
         ## Reset z0 and v0
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=1), lambda: self.__reset_model(keep_rotation))
-        # Save z0 and v0
+        ## Save z0 and v0
         self.trainer.add_event_handler(Events.EPOCH_COMPLETED(every=500), self.__log_params)
                                                                                                 
 
@@ -74,7 +74,7 @@ class TrainTestGym:
         z0, v0 = center_z0(self.model.z0), remove_v_drift(self.model.v0)
         if not keep_rotation:
             z0, v0 = remove_rotation(z0,v0)
-        #Adjust model parameters for nicer visualizations
+        ## Adjust model parameters for nicer visualizations
         self.model_state['z0'], self.model_state['v0'] = z0, v0
         self.model.load_state_dict(self.model_state)
 
@@ -102,7 +102,5 @@ class TrainTestGym:
     def train_test_model(self, epochs:int):
         print(f'Starting model training with {epochs} epochs')
         self.trainer.run(self.train_loader, max_epochs=epochs)
-        # Adjust model params after last training
-        # self.model_state['z0'], self.model_state['v0'] = center_z0(self.model.z0), remove_v_drift(self.model.v0)
         self.model.load_state_dict(self.model_state)
         print('Completed model training')

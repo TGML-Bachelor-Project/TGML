@@ -1,10 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import time
 
 
 def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_handler, num):
-
 
     res_list = []
     gt_list = []
@@ -21,7 +18,6 @@ def compare_intensity_rates_plot(train_t, result_model, gt_model, nodes, wandb_h
         
         res_list.append(res)
         gt_list.append(gt)
-
 
     ## Plot
     if len(res_list) == 1:
