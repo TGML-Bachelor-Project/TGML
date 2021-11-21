@@ -6,6 +6,8 @@ The project is supervised by Morten Mørup, Nikolaos Nakis, and Abdulkadir Çeli
 ## Description
 The project contains the implementation of the models used in the project. This includes the Constant Velocity Model (CVM) on which this project extends and the Stepwise Constant Velocity Model (SCVM). A couple of ground truth models and a no dynamics model is also implemented for evaluation purposes.
 
+To see some animations created using the code, checkout: https://tgml-bachelor-project.github.io/
+
 ## Folder Structure
 The `src` folder contains all source code for the project. Inside this folder is:
 * `data` - Contains all data for the project and the code for loading the data (some data might need to be unzipped before running the code)
