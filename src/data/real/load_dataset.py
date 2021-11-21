@@ -1,8 +1,7 @@
 import numpy as np
 import torch
 import os
-from utils.report_plots.event_distribution import plot_event_dist_eu_data
-from utils.report_plots.event_distribution import plot_event_dist_resistance_data
+
 
 ### Function for loading the three datasets
 def load_data(dataset_path):
