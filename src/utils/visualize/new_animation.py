@@ -1,5 +1,6 @@
 import torch 
 import plotly
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -106,37 +107,39 @@ def update_fig_layout(fig):
     return fig
 
 def animate(model, interaction_data, device, wandb_handler):
-    z0 = model.z0.clone().detach().to(device)
-    v0 = model.v0.clone().detach().to(device)
-    time_deltas = model.time_deltas.clone().detach().to(device)
-    step_size = model.step_size.clone().detach().to(device)
-    start_times = model.start_times.to(device)
+    z0 = model.z0.detach().to(device)
+    v0 = model.v0.detach().to(device)
+    time_deltas = model.time_deltas.detach().to(device)
+    step_size = model.step_size.detach().to(device)
+    start_times = model.start_times.detach().to(device)
 
     # Starting positions for each model step
     steps_z0 = z0.unsqueeze(2) + torch.cumsum(v0*time_deltas, dim=2)
     steps_z0 = torch.cat((z0.unsqueeze(2), steps_z0), dim=2)
-        
     #times = torch.linspace(t_start, t_end, num_of_time_points).to(device)
-    times = interaction_data[:,2]
-    unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
+        
+    x_positions = []
+    y_positions = []
+    for data in torch.split(interaction_data, 10000):
+        times = data[:,2]
+        unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
 
-    step_mask = ((unique_times.unsqueeze(1) > start_times) | (start_times == 0).unsqueeze(0))
-    step_end_times = step_mask*torch.cumsum(step_mask*step_size, axis=1)
-    time_mask = unique_times.unsqueeze(1) <= step_end_times
-    time_deltas = (step_size - (step_end_times - unique_times.unsqueeze(1))*time_mask)*step_mask
-    movement = torch.sum(v0.unsqueeze(2)*time_deltas, dim=3)
-    step_zt = z0.unsqueeze(2) + movement
-    node_positions = step_zt[interaction_data[:,0], interaction_data[:,1], unique_time_indices].clone().detach().numpy()
-    interaction_data = interaction_data.clone().detach().numpy()
+        step_mask = ((unique_times.unsqueeze(1) > start_times) | (start_times == 0).unsqueeze(0))
+        step_end_times = step_mask*torch.cumsum(step_mask*step_size, axis=1)
+        time_mask = unique_times.unsqueeze(1) <= step_end_times
+        time_deltas = (step_size - (step_end_times - unique_times.unsqueeze(1))*time_mask)*step_mask
+        movement = torch.sum(v0.unsqueeze(2)*time_deltas, dim=3)
+        step_zt = z0.unsqueeze(2) + movement
 
-    # [node0, node1, interaction_time]
+        positions = step_zt[data[:,0].long(), data[:,1].long(), unique_time_indices]
+        x_positions.extend(positions[:,0].tolist())
+        y_positions.extend(positions[:,1].tolist())
 
-    node1_col, node2_col, time_col, x, y = 'node1', 'node2', 'interaction_time', 'pos x', 'pos y'
+    node_col, time_col, x, y = 'node', 'interaction_time', 'pos x', 'pos y'
     interactions =  pd.DataFrame({
-        node1_col: interaction_data[:,0],
-        node2_col: interaction_data[:,1],
-        x: node_positions[:,0],
-        y: node_positions[:,1],
+        node_col: torch.unique(interaction_data[:,:2].long()).detach().numpy(),
+        x: x_positions, 
+        y: y_positions,
         time_col: interaction_data[:,2]
     })
     nodes = pd.unique(interactions[['node1', 'node2']].values.ravel())
@@ -156,7 +159,7 @@ def animate(model, interaction_data, device, wandb_handler):
     
     # Create animation frames
     fig_dict = create_animation_frames(fig_dict=fig_dict, sliders_dict=sliders_dict, data=interactions, nodes=nodes,
-                                        node1_col=node1_col, node2_col=node2_col, time_col=time_col, 
+                                        node1_col=node1_col, node2_col=node_col, time_col=time_col, 
                                         frame_duration=frame_duration, transition_duration=transition_duration)
 
     # Create figure

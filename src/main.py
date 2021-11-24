@@ -342,4 +342,4 @@ if __name__ == '__main__':
     if animation:
         print(f'Creating animation of latent node positions on {animation_time_points} time points')
         # animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
-        new_animate(model, dataset_full, device)
+        new_animate(model, dataset_full, device, wandb)
