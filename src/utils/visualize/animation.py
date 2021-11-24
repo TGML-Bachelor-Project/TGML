@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 
 
-def animate(model, t_start, t_end, num_of_time_points, device, wandb_handler):
+def animate(model, t_start, t_end, num_of_time_points, device, wandb_handler, title=''):
     z0 = model.z0.clone().detach()
     v0 = model.v0.clone().detach()
     time_deltas = model.time_deltas.clone().detach()
@@ -33,7 +33,7 @@ def animate(model, t_start, t_end, num_of_time_points, device, wandb_handler):
     })
 
     fig = px.scatter(df, x='x', y='y', animation_frame='t', animation_group='node', color="node",
-               log_x=False, size_max=20,
+               log_x=False, size_max=20, title=title,
                range_x=[torch.min(step_zt[:,0,:]).item(), torch.max(step_zt[:,0,:]).item()], 
                range_y=[torch.min(step_zt[:,1,:]).item(), torch.max(step_zt[:,1,:]).item()])
     fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 100
