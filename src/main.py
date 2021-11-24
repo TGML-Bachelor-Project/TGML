@@ -318,7 +318,7 @@ if __name__ == '__main__':
 
     # Overwrite ground truth to mean intensity
     if gt_mean_intensity:
-        gt_mean = GTMeanIntensity(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=true_beta, 
+        gt_mean = GTMeanIntensity(n_points=num_nodes, z=z0, v=v0, beta=true_beta, 
                                     steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
     
     ## Compute ROC AUC for removed interactions
@@ -353,7 +353,9 @@ if __name__ == '__main__':
 
         ## Compute ground truth training loss for gt model and log  
         wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
-        wandb.log({'gt_train_NLL': ((gt_mean.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
+
+        if gt_mean_intensity:
+            wandb.log({'gt_train_NLL': ((gt_mean.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
     
     if animation:
         print(f'Creating animation of latent node positions on {animation_time_points} time points')
