@@ -326,6 +326,7 @@ if __name__ == '__main__':
         print('Computing Accuracy Scores for Removed Interactions')
         if real_data == 0:
             acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_model)
+            acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_mean, title_extension=' - Mean Ground truth')
         else:
             acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=None)
 
