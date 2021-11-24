@@ -1,3 +1,4 @@
+from numpy.core.fromnumeric import diagonal
 import torch
 import numpy as np
 import torch.nn as nn
@@ -113,10 +114,10 @@ class GTMeanIntensity(nn.Module):
                     the two nodes' log-likelihood of interacting.
         '''
         Zt = self.steps(times)
-        d = vec_squared_euclidean_dist(Zt)
+        d = vec_squared_euclidean_dist(Zt)[self.node_pair_idxs[0,:], self.node_pair_idxs[1,:],:]
 
         #Only take upper triangular part, since the distance matrix is symmetric and exclude node distance to same node
-        return torch.mean(self.beta - d[self.node_pair_idxs], dim=(0,1))
+        return torch.mean(self.beta - d, dim=0)
 
 
     def forward(self, data:torch.Tensor, t0:torch.Tensor, tn:torch.Tensor) -> torch.Tensor:
@@ -132,7 +133,11 @@ class GTMeanIntensity(nn.Module):
         times = data[:,2].to(self.device, dtype=torch.float32)
         unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
         log_intensities = self.vec_log_intensity_function(times=unique_times)
-        event_intensity = torch.sum(log_intensities[unique_time_indices])
+
+        # Have to batch event intensity sum, otherwise there are too many time points
+        event_intensity = torch.tensor(0.)
+        for time_batch in torch.split(unique_time_indices, 10000):
+            event_intensity += torch.sum(log_intensities[time_batch])
 
         all_integrals = evaluate_integral(t0, tn, z0=self.steps_z0(), 
                                             v0=self.v0, beta=self.beta)
