@@ -19,8 +19,8 @@ class GTConstantVelocityModel(nn.Module):
             super().__init__()
     
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=False)
-            self.z0 = nn.Parameter(torch.tensor(z), requires_grad=False) 
-            self.v0 = nn.Parameter(torch.tensor(v), requires_grad=False) 
+            self.z0 = z.clone().detach() if isinstance(z, torch.Tensor) else torch.from_numpy(z)
+            self.v0 = v.clone().detach() if isinstance(v, torch.Tensor) else torch.from_numpy(v)
     
             self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2
