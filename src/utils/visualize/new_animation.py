@@ -1,11 +1,38 @@
 import torch 
 import plotly
-import numpy as np
 import pandas as pd
+from tqdm import tqdm
+from itertools import repeat
 import plotly.graph_objects as go
 
-def create_coordinate_system(fig_dict, frame_duration, transition_duration):
+def create_animation_data(model, interaction_data, device):
+    nodes = []    
+    x_positions = []
+    y_positions = []
+    interaction_times = []
+    interacts_with = []
+    print('Preprocessing animation data...')
+    for data in tqdm(torch.split(interaction_data, 10000)):
+        times = torch.unique(data[:,2])
+        step_zt = model.steps(times)
+        nodes.extend(list(range(step_zt.shape[0]))*len(times))
+        x_positions.extend(step_zt[:,0,:].flatten().tolist())
+        y_positions.extend(step_zt[:,1,:].flatten().tolist())
+        # Adding time of node positions
+        interaction_times.extend([t for time in times.tolist() for t in repeat(time, step_zt.shape[0])])
+
+
+    return nodes, x_positions, y_positions, interaction_times
+
+
+def create_coordinate_system(fig_dict, xrange, yrange, frame_duration, transition_duration):
+    print('Creating animation main layout and coordinate system...')
+    fig_dict["layout"]["xaxis"] = {"range": xrange}
+    fig_dict["layout"]["yaxis"] = {"range": yrange}
     fig_dict["layout"]["hovermode"] = "closest"
+    fig_dict["layout"]["plot_bgcolor"] = 'rgba(0,0,0,0)'
+    fig_dict["layout"]["xaxis"] = { 'showgrid': True, 'gridwidth': 1, 'gridcolor': 'LightGray'}
+    fig_dict["yaxis"]= {'showgrid': True, 'gridwidth': 1, 'gridcolor': 'LightGray'}
     fig_dict["layout"]["updatemenus"] = [
         {
             "buttons": [
@@ -58,92 +85,59 @@ def create_time_slider(prefix, transition_duration):
     return sliders_dict
 
 
-def create_animation_frames(fig_dict, sliders_dict, data, nodes, node1_col, node2_col, time_col, x_pos, y_pos, frame_duration, transition_duration):
-    for time in data[time_col]:
-        frame = {"data": [], "name": str(time)}
-        for node in nodes:
-            data_by_time = data[data[time_col] == int(time)]
-            data_by_time_and_node = data_by_time[(data_by_time[node1_col] == node) 
-                                                | (data_by_time[node2_col] == node)]
-
-            data_dict = {
-                "x": list(data_by_time_and_node[x_pos]),
-                "y": list(data_by_time_and_node[y_pos]),
+def create_frame(grp, node_col, time, x_pos_col, y_pos_col):
+    frame = {"data": [], "name": str(time)}
+    for node, node_grp in grp.groupby(node_col):
+        frame["data"].append(
+            {
+                "x": list(node_grp[x_pos_col]),
+                "y": list(node_grp[y_pos_col]),
                 "mode": "markers",
-                "text": list(node),
-                "color": node,
+                "text": list(node_grp[node_col]),
                 "marker": {
-                    "sizemode": "area",
-                    "sizeref": 200000,
-                    "size": [20]*data_by_time_and_node.shape[0]
+                    "size": [20]*node_grp.shape[0],
+                    'line': {'width': 2,
+                            'color': 'DarkSlateGrey'}
                 },
-                "name": node
+                "name": str(node)
             }
-            frame["data"].append(data_dict)
+        )
+    return frame
 
-        fig_dict["frames"].append(frame)
+
+def create_animation_frames(fig_dict, sliders_dict, data, node_col, time_col, x_pos_col, y_pos_col, frame_duration, transition_duration):
+    print('Creating animation time frames...')
+
+    grp_data_by_time = data.sort_values(time_col, ascending=True).groupby(time_col)
+    for time, grp in tqdm(grp_data_by_time):
+        frame = create_frame(grp, node_col, time, x_pos_col, y_pos_col)
         slider_step = {"args": [
-            [time],
-            {"frame": {"duration": frame_duration, "redraw": False},
+            [str(time)],
+            {"frame": {"duration": 300, "redraw": False},
              "mode": "immediate",
-             "transition": {"duration": transition_duration}}
+             "transition": {"duration": 300}}
         ],
-            "label": time,
+            "label": str(time),
             "method": "animate"}
         sliders_dict["steps"].append(slider_step)
+        fig_dict["frames"].append(frame)
 
+    fig_dict["data"].extend(fig_dict["frames"][0]["data"])
     fig_dict["layout"]["sliders"] = [sliders_dict]
     return fig_dict
 
-
-def update_fig_layout(fig):
-    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)')
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
-    fig.update_traces(marker=dict(size=20,
-                              line=dict(width=2,
-                                        color='DarkSlateGrey')),
-                  selector=dict(mode='markers'))
-    return fig
-
 def animate(model, interaction_data, device, wandb_handler):
-    z0 = model.z0.detach().to(device)
-    v0 = model.v0.detach().to(device)
-    time_deltas = model.time_deltas.detach().to(device)
-    step_size = model.step_size.detach().to(device)
-    start_times = model.start_times.detach().to(device)
 
-    # Starting positions for each model step
-    steps_z0 = z0.unsqueeze(2) + torch.cumsum(v0*time_deltas, dim=2)
-    steps_z0 = torch.cat((z0.unsqueeze(2), steps_z0), dim=2)
-    #times = torch.linspace(t_start, t_end, num_of_time_points).to(device)
-        
-    x_positions = []
-    y_positions = []
-    for data in torch.split(interaction_data, 10000):
-        times = data[:,2]
-        unique_times, unique_time_indices = torch.unique(times, return_inverse=True)
-
-        step_mask = ((unique_times.unsqueeze(1) > start_times) | (start_times == 0).unsqueeze(0))
-        step_end_times = step_mask*torch.cumsum(step_mask*step_size, axis=1)
-        time_mask = unique_times.unsqueeze(1) <= step_end_times
-        time_deltas = (step_size - (step_end_times - unique_times.unsqueeze(1))*time_mask)*step_mask
-        movement = torch.sum(v0.unsqueeze(2)*time_deltas, dim=3)
-        step_zt = z0.unsqueeze(2) + movement
-
-        positions = step_zt[data[:,0].long(), data[:,1].long(), unique_time_indices]
-        x_positions.extend(positions[:,0].tolist())
-        y_positions.extend(positions[:,1].tolist())
+    nodes, x_positions, y_positions, interaction_times = create_animation_data(model=model, 
+                                                            interaction_data=interaction_data, device=device)
 
     node_col, time_col, x, y = 'node', 'interaction_time', 'pos x', 'pos y'
     interactions =  pd.DataFrame({
-        node_col: torch.unique(interaction_data[:,:2].long()).detach().numpy(),
+        node_col: nodes,
         x: x_positions, 
         y: y_positions,
-        time_col: interaction_data[:,2]
+        time_col: interaction_times
     })
-    nodes = pd.unique(interactions[['node1', 'node2']].values.ravel())
-
     # Figure where the animation will take place
     fig_dict = {
     "data": [],
@@ -152,19 +146,22 @@ def animate(model, interaction_data, device, wandb_handler):
     }
 
     # Creating main layout
+    xrange = [interactions[x].min(), interactions[x].max()]
+    yrange = [interactions[y].min(), interactions[y].max()]
     frame_duration = 100
-    transition_duration = 1
-    create_coordinate_system(fig_dict=fig_dict, frame_duration=frame_duration, transition_duration=transition_duration)
+    transition_duration = 1 
+    create_coordinate_system(fig_dict=fig_dict, xrange=xrange, yrange=yrange, 
+                            frame_duration=frame_duration, transition_duration=transition_duration)
     sliders_dict = create_time_slider(prefix='Interaction Time: ', transition_duration=transition_duration)
-    
+
     # Create animation frames
-    fig_dict = create_animation_frames(fig_dict=fig_dict, sliders_dict=sliders_dict, data=interactions, nodes=nodes,
-                                        node1_col=node1_col, node2_col=node_col, time_col=time_col, 
+    fig_dict = create_animation_frames(fig_dict=fig_dict, sliders_dict=sliders_dict, data=interactions, 
+                                        node_col=node_col, time_col=time_col, x_pos_col=x, y_pos_col=y, 
                                         frame_duration=frame_duration, transition_duration=transition_duration)
 
     # Create figure
+    print('Preparing animation...')
     fig = go.Figure(fig_dict)
-    fig = update_fig_layout(fig)
     fig.show()
 
     #wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})

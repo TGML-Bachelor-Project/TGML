@@ -46,7 +46,8 @@ def animate(model, t_start, t_end, num_of_time_points, device, wandb_handler, ti
                                         color='DarkSlateGrey')),
                   selector=dict(mode='markers'))
 
-    wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
+    # wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
+    fig.show()
 
 
 
