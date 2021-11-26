@@ -5,7 +5,28 @@ from tqdm import tqdm
 from itertools import repeat
 import plotly.graph_objects as go
 
-def create_animation_data(model, interaction_data, device):
+
+def new_create_animation_data(model, interaction_data):
+    nodes = []    
+    x_positions = []
+    y_positions = []
+    interaction_times = []
+    interacts_with = []
+    print('Preprocessing animation data...')
+    for data in tqdm(torch.split(interaction_data, 10000)):
+        times = torch.unique(data[:,2])
+        step_zt = model.steps(times)
+        nodes.extend([str(n) for n in [*list(range(step_zt.shape[0]))]*len(times)])
+        x_positions.extend(step_zt[:,0,:].T.flatten().tolist())
+        y_positions.extend(step_zt[:,1,:].T.flatten().tolist())
+        # Adding time of node positions
+        interaction_times.extend([t for t in times.tolist() for _ in list(range(step_zt.shape[0]))])
+
+
+    return nodes, x_positions, y_positions, interaction_times 
+
+
+def create_animation_data(model, interaction_data):
     nodes = []    
     x_positions = []
     y_positions = []
@@ -126,10 +147,10 @@ def create_animation_frames(fig_dict, sliders_dict, data, node_col, time_col, x_
     fig_dict["layout"]["sliders"] = [sliders_dict]
     return fig_dict
 
-def animate(model, interaction_data, device, wandb_handler):
+def animate(model, interaction_data, wandb_handler):
 
-    nodes, x_positions, y_positions, interaction_times = create_animation_data(model=model, 
-                                                            interaction_data=interaction_data, device=device)
+    nodes, x_positions, y_positions, interaction_times = new_create_animation_data(model=model, 
+                                                                                interaction_data=interaction_data)
 
     node_col, time_col, x, y = 'node', 'interaction_time', 'pos x', 'pos y'
     interactions =  pd.DataFrame({

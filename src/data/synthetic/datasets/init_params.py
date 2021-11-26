@@ -39,8 +39,8 @@ def get_initial_parameters(dataset_number, vectorized):
                         [0.09]  #Vy node 3
                         ]])
         max_time = 10
-        true_beta = 1.5
-        model_beta = 2.
+        true_beta = 2.5
+        model_beta = 3.
 
 
     elif dataset_number == 2:
