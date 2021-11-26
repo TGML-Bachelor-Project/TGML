@@ -23,6 +23,7 @@ from utils.results_evaluation.remove_interactions import acc_removed_interaction
 ## Models
 from models.nodynamics import NoDynamicsModel
 from models.constantvelocity.standard import ConstantVelocityModel
+from models.constantvelocity.baseline_mean_intensity import BaselineMeanIntensity
 from models.constantvelocity.vectorized import VectorizedConstantVelocityModel
 from models.constantvelocity.stepwise import StepwiseVectorizedConstantVelocityModel
 from models.constantvelocity.stepwise_stepbeta import StepwiseVectorizedConstantVelocityModel as MultiBetaStepwise
@@ -53,8 +54,9 @@ if __name__ == '__main__':
     arg_parser.add_argument('--train_batch_size', '-TBS', default=-1, type=int)
     arg_parser.add_argument('--real_data', '-RD', default=0, type=int)
     arg_parser.add_argument('--dataset_number', '-DS', default=2, type=int)
-    arg_parser.add_argument('--training_type', '-TT', default=1, type=int)
+    arg_parser.add_argument('--training_type', '-TT', default=0, type=int)
     arg_parser.add_argument('--vectorized', '-VEC', default=2, type=int)
+    arg_parser.add_argument('--baseline_mean', '-BM', action='store_true')
     arg_parser.add_argument('--remove_node_pairs_b', '-T1', default=0, type=int)
     arg_parser.add_argument('--remove_interactions_b', '-T2', default=0, type=int)
     arg_parser.add_argument('--steps', '-steps', default=10, type=int)
@@ -77,6 +79,7 @@ if __name__ == '__main__':
     dataset_number = args.dataset_number
     training_type = args.training_type
     vectorized = args.vectorized
+    baseline_mean = args.baseline_mean
     remove_node_pairs_b = args.remove_node_pairs_b
     remove_interactions_b = args.remove_interactions_b
     device = args.device
@@ -313,13 +316,17 @@ if __name__ == '__main__':
                 result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                                 steps=num_steps, max_time=max_time, device=device)
 
-    
+    # Overwrite ground truth to mean intensity
+    if baseline_mean:
+        baseline_mean = BaselineMeanIntensity(n_points=num_nodes, z=z0, v=v0, beta=true_beta, 
+                                    steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
     
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
         print('Computing Accuracy Scores for Removed Interactions')
         if real_data == 0:
             acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=gt_model)
+            acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=baseline_mean, wandb_handler=wandb, gt_model=gt_model, title_extension=' - Mean Ground truth')
         else:
             acc_removed_interactions(removed_interactions=removed_interactions, num_nodes=num_nodes, result_model=result_model, wandb_handler=wandb, gt_model=None)
 
@@ -327,16 +334,28 @@ if __name__ == '__main__':
         ## Make intensity rate comparison plots for the synthetic datasets
         if dataset_number == 1:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb, num=1)
+            if baseline_mean:
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [1,2], [1,3], [2,3]], wandb_handler=wandb, num=2)
         elif dataset_number == 2:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [0,4], [3,4]], wandb_handler=wandb, num=1)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[1,2], [1,3], [1,4], [2,3], [2,4]], wandb_handler=wandb, num=2)
+            if baseline_mean:
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[[0,1], [0,2], [0,3], [0,4], [3,4]], wandb_handler=wandb, num=3)
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[[1,2], [1,3], [1,4], [2,3], [2,4]], wandb_handler=wandb, num=4)
         elif dataset_number == 3:
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=1)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=2)
             compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb, num=3)
+            if baseline_mean:
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[[0,1], [0,21], [0,102], [0,143]], wandb_handler=wandb, num=4)
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[[20,11], [95, 106], [45, 150], [77, 88]], wandb_handler=wandb, num=5)
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[[13,120], [66, 133], [99, 144], [101, 102]], wandb_handler=wandb, num=6)
 
         ## Compute ground truth training loss for gt model and log  
         wandb.log({'gt_train_NLL': ((gt_model.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
+
+        if baseline_mean:
+            wandb.log({'gt_train_NLL': ((baseline_mean.forward(data=dataset_full.to(device), t0=dataset_full[0,2].item(), tn=dataset_full[-1,2].item()) / num_dyads))})
     
     if animation:
         print(f'Creating animation of latent node positions on {animation_time_points} time points')

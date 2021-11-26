@@ -47,7 +47,7 @@ def make_testset(num_nodes, removed_interactions):
     return pos_test_set, neg_test_set
 
 
-def acc_removed_interactions(removed_interactions, num_nodes, result_model, wandb_handler, gt_model=None):
+def acc_removed_interactions(removed_interactions, num_nodes, result_model, wandb_handler, gt_model=None, title_extension=''):
     
     if gt_model is None:
         pos_test_set, neg_test_set = make_testset(num_nodes=num_nodes, removed_interactions=removed_interactions)
@@ -93,7 +93,7 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         ax.vlines(mean_acc_score, ymin=0, ymax=ymax, colors='yellow', label='Mean')
         
         ax.grid()
-        plt.title('Bootstrapped Accuracy with 95% Confidence Interval')
+        plt.title('Bootstrapped Accuracy with 95% Confidence Interval{title_extension}')
         ax.set_xlabel('Accuracy')
         ax.set_ylabel('Frequency')
 

@@ -19,8 +19,8 @@ class ConstantVelocityModel(nn.Module):
             super().__init__()
     
             self.beta = nn.Parameter(torch.tensor([[beta]]), requires_grad=True)
-            self.z0 = z0 if z0 else nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
-            self.v0 = v0 if v0 else nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+            self.z0 = z0 if z0 is not None else nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
+            self.v0 = v0 if v0 is not None else nn.Parameter(torch.rand(size=(n_points,2))*0.5, requires_grad=True) 
     
             self.num_of_nodes = n_points
             self.n_node_pairs = n_points*(n_points-1) // 2
