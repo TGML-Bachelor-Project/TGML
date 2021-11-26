@@ -6,7 +6,7 @@ from utils.nodes.distances import get_squared_euclidean_dist, vec_squared_euclid
 from utils.integrals.analytical import vec_analytical_integral as evaluate_integral
 
 
-class GTMeanIntensity(nn.Module):
+class BaselineMeanIntensity(nn.Module):
     def __init__(self, n_points:int, z, v, beta, steps, max_time, device):
             '''
             :param n_points:                Number of nodes in the temporal dynamics graph network
