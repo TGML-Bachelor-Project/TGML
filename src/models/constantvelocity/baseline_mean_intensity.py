@@ -135,7 +135,7 @@ class BaselineMeanIntensity(nn.Module):
         log_intensities = self.vec_log_intensity_function(times=unique_times)
 
         # Have to batch event intensity sum, otherwise there are too many time points
-        event_intensity = torch.tensor(0.)
+        event_intensity = torch.tensor(0.).to(self.device)
         for time_batch in torch.split(unique_time_indices, 10000):
             event_intensity += torch.sum(log_intensities[time_batch])
 

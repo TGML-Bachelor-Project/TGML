@@ -7,14 +7,14 @@ from itertools import repeat
 import plotly.graph_objects as go
 
 
-def create_animation_node_data(model, interaction_data):
+def create_animation_node_data(model, interaction_data, device):
     nodes = []    
     x_positions = []
     y_positions = []
     interaction_times = []
     print('Preprocessing animation node data...')
     for data in tqdm(torch.split(interaction_data, 10000)):
-        times = torch.unique(data[:,2])
+        times = torch.unique(data[:,2]).to(device)
         step_zt = model.steps(times)
         nodes.extend([str(n) for n in [*list(range(step_zt.shape[0]))]*len(times)])
         x_positions.extend(step_zt[:,0,:].T.flatten().tolist())
@@ -26,7 +26,7 @@ def create_animation_node_data(model, interaction_data):
     return nodes, x_positions, y_positions, interaction_times
 
 
-def create_animation_edge_data(model, interaction_data):
+def create_animation_edge_data(model, interaction_data, device):
     node1 = []    
     node2 = []    
     node1_x = []
@@ -36,7 +36,7 @@ def create_animation_edge_data(model, interaction_data):
     interaction_times = []
     print('Preprocessing animation edge data...')
     for data in tqdm(torch.split(interaction_data, 10000)):
-        times = torch.unique(data[:,2])
+        times = torch.unique(data[:,2]).to(device)
         step_zt = model.steps(times)
 
         for ti, t in enumerate(times):
@@ -168,9 +168,9 @@ def create_animation_frames(fig_dict, sliders_dict, data, node_col, time_col, x_
     fig_dict["layout"]["sliders"] = [sliders_dict]
     return fig_dict
 
-def animate(model, interaction_data, wandb_handler):
-
-    nodes, x_positions, y_positions, interaction_times = create_animation_node_data(model=model, interaction_data=interaction_data)
+def animate(model, interaction_data, device, wandb_handler):
+    nodes, x_positions, y_positions, interaction_times = create_animation_node_data(model=model, 
+                                                                            interaction_data=interaction_data, device=device)
 
     node_col, time_col, x, y = 'node', 'interaction_time', 'pos_x', 'pos_y' 
     interactions =  pd.DataFrame({
@@ -181,7 +181,7 @@ def animate(model, interaction_data, wandb_handler):
     })
 
     # Edges
-    node1, node1_x, node1_y, node2, node2_x, node2_y, edge_times = create_animation_edge_data(model, interaction_data)
+    node1, node1_x, node1_y, node2, node2_x, node2_y, edge_times = create_animation_edge_data(model, interaction_data, device=device)
     edges = pd.DataFrame({
         'node1': node1,
         'node1_x': node1_x,
@@ -217,6 +217,5 @@ def animate(model, interaction_data, wandb_handler):
     # Create figure
     print('Preparing animation...')
     fig = go.Figure(fig_dict)
-    fig.show()
-
-    #wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
+    
+    wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})

@@ -360,6 +360,6 @@ if __name__ == '__main__':
     
     if animation:
         unique_times = torch.unique(dataset_full[:,2])
-        print(f'Creating animation of latent node positions on {unique_times.shape[0]} time points')
+        print(f'Creating animation of latent node positions on {unique_times.shape[0]} unique time points')
         # animate(model, t_start=0, t_end=max_time, num_of_time_points=animation_time_points, device=device, wandb_handler=wandb)
-        new_animate(model, dataset_full, wandb)
+        new_animate(model, dataset_full, device, wandb)
