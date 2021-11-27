@@ -294,6 +294,11 @@ if __name__ == '__main__':
                                                                 steps=num_steps, max_time=max_time, device=device).to(device, dtype=torch.float32)
                 gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=torch.from_numpy(z0), v=v0.clone().detach(), beta=true_beta, 
                                                                 steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
+
+    # Overwrite ground truth to mean intensity
+    if baseline_mean:
+        baseline_mean = BaselineMeanIntensity(n_points=num_nodes, z=z0, v=v0, beta=true_beta, 
+                                    steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
         
         ## Compare intensity rates of removed node pairs
         if remove_node_pairs_b == 1: 
@@ -302,7 +307,9 @@ if __name__ == '__main__':
             for removed_node_pair in removed_node_pairs:
                 num += 1
                 plot_num = '_removed_dyad' + str(num)
+                mean_plot_num = '_mean_removed_dyad' + str(num)
                 compare_intensity_rates_plot(train_t=train_t, result_model=result_model, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb, num=plot_num)
+                compare_intensity_rates_plot(train_t=train_t, result_model=baseline_mean, gt_model=gt_model, nodes=[list(removed_node_pair)], wandb_handler=wandb, num=mean_plot_num)
     
     else:
         print('Generating RES model')
@@ -316,10 +323,6 @@ if __name__ == '__main__':
                 result_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=result_z0, v=result_v0, beta=result_beta,
                                                                 steps=num_steps, max_time=max_time, device=device)
 
-    # Overwrite ground truth to mean intensity
-    if baseline_mean:
-        baseline_mean = BaselineMeanIntensity(n_points=num_nodes, z=z0, v=v0, beta=true_beta, 
-                                    steps=v0.shape[2], max_time=max_time, device=device).to(device, dtype=torch.float32)
     
     ## Compute ROC AUC for removed interactions
     if remove_interactions_b == 1:
