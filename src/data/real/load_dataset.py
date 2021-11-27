@@ -27,4 +27,23 @@ def load_real_dataset(dataset_number):
         print(f'Length of "Lyon School" dataset: {len(dataset)}')
         model_beta = 2.5
     
+    elif dataset_number == 3:
+        path = os.path.join(path, 'datasets/tij_pres_LyonSchool_22nodes.csv')
+        dataset, num_nodes = load_data(dataset_path=path)
+        print(f'Length of "Lyon School" dataset: {len(dataset)}')
+        model_beta = 2.5
+
+    elif dataset_number == 4:
+        path = os.path.join(path, 'datasets/tij_pres_LyonSchool_47nodes.csv')
+        dataset, num_nodes = load_data(dataset_path=path)
+        print(f'Length of "Lyon School" dataset: {len(dataset)}')
+        model_beta = 2.5
+
+    elif dataset_number == 5:
+        path = os.path.join(path, 'datasets/friends.csv')
+        dataset, num_nodes = load_data(dataset_path=path)
+        print(f'Length of "Friends" dataset: {len(dataset)}')
+        model_beta = 1.
+
+
     return torch.tensor(dataset, dtype=torch.float64), num_nodes, model_beta
