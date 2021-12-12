@@ -233,21 +233,22 @@ if __name__ == '__main__':
     device = 'cpu'
 
     ## Synthetic 2
-    # z0, v0, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=2, vectorized=2)
-    # simulator = StepwiseConstantVelocitySimulator(starting_positions=z0, velocities=v0, max_time=max_time, beta=true_beta, seed=1)
-    # data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=None)
-    # dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
+    z0_data, v0_data, true_beta, model_beta, max_time = get_initial_parameters(dataset_number=2, vectorized=2)
+    num_nodes = z0.shape[0]
+    simulator = StepwiseConstantVelocitySimulator(starting_positions=z0_data, velocities=v0_data, max_time=max_time, beta=true_beta, seed=1)
+    data_builder = StepwiseDatasetBuilder(simulator=simulator, device=device, normalization_max_time=None)
+    dataset = data_builder.build_dataset(num_nodes, time_column_idx=2)
 
-    # z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/synth2_10steps_final_z0.pt', map_location=torch.device(device))
-    # v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/synth2_10steps_final_v0.pt', map_location=torch.device(device))
+    z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/synth2_10steps_final_z0.pt', map_location=torch.device(device))
+    v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/synth2_10steps_final_v0.pt', map_location=torch.device(device))
 
     # dataset = dataset = np.genfromtxt('/home/augustsemrau/drive/bachelor/TGML/src/data/real/datasets/tij_pres_LyonSchool_47nodes.csv', delimiter=',')
-    dataset = dataset = np.genfromtxt('/home/augustsemrau/drive/bachelor/TGML/src/data/real/datasets/tij_pres_LyonSchool.csv', delimiter=',')
-    z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/lyonfull_249steps_final_z0.pt', map_location=torch.device(device))
-    v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/lyonfull_249steps_final_v0.pt', map_location=torch.device(device))
-    num_nodes = z0.shape[0]
-    true_beta = 1.712
-    max_time = 84.258
+    # dataset = dataset = np.genfromtxt('/home/augustsemrau/drive/bachelor/TGML/src/data/real/datasets/tij_pres_LyonSchool.csv', delimiter=',')
+    # z0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/lyonfull_249steps_final_z0.pt', map_location=torch.device(device))
+    # v0 = torch.load('/home/augustsemrau/drive/bachelor/TGML/defence_newviz/lyonfull_249steps_final_v0.pt', map_location=torch.device(device))
+    # true_beta = 1.712
+    # max_time = 84.258
+    # num_nodes = z0.shape[0]
 
 
     gt_model = GTStepwiseConstantVelocityModel(n_points=num_nodes, z=z0, v=v0, beta=true_beta, 
