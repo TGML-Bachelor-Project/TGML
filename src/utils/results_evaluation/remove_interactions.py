@@ -67,8 +67,10 @@ def acc_removed_interactions(removed_interactions, num_nodes, result_model, wand
         for i in range(len(probs)):
             if probs[i][0] > probs[i][1]:
                 y_pred.append(1)
-            else:
+            elif probs[i][0] < probs[i][1]:
                 y_pred.append(0)
+            else:
+                y_pred.append(random.randint(0,1))
 
         ## Compute bootstrapped accuracy metrics
         acc_scores = []

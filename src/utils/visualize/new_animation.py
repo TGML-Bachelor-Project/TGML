@@ -203,8 +203,8 @@ def animate(model, interaction_data, device, wandb_handler):
     # Creating main layout
     xrange = [interactions[x].min(), interactions[x].max()]
     yrange = [interactions[y].min(), interactions[y].max()]
-    frame_duration = 100
-    transition_duration = 1 
+    frame_duration = 0.01
+    transition_duration = 0 
     create_coordinate_system(fig_dict=fig_dict, xrange=xrange, yrange=yrange, 
                             frame_duration=frame_duration, transition_duration=transition_duration)
     sliders_dict = create_time_slider(prefix='Interaction Time: ', transition_duration=transition_duration)
@@ -218,4 +218,4 @@ def animate(model, interaction_data, device, wandb_handler):
     print('Preparing animation...')
     fig = go.Figure(fig_dict)
     
-    wandb_handler.log({'animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
+    wandb_handler.log({'new_animation': wandb_handler.Html(plotly.io.to_html(fig, auto_play=False))})
